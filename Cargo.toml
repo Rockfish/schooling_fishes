@@ -1,0 +1,22 @@
+[package]
+name = "schooling_fishes"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+#glfw = "0.52.0"
+glad-gl = { path = "./glad-gl" }
+glam = "0.24.1"
+#image = "0.24.7"
+#learn_opengl_with_rust = { path = "./learn_opengl_with_rust" }
+#russimp = "2.0.6"
+#russimp = { path = "/Users/john/Dev_Rust/Repos/russimp" }
+#ordered-float = { version = "3.0", default-features = false }
+#itertools = "0.11.0"
+rand = "0.8.5"
+log = "0.4.20"
+
+[dependencies.glfw]
+version = "*"
