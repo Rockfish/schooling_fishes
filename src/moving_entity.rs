@@ -22,7 +22,7 @@ pub struct MovingEntity {
     //the maximum rate (radians per second)this vehicle can rotate
     m_dMaxTurnRate: f32,
 
-    base_entity: BaseGameEntity,
+    pub base_entity: BaseGameEntity,
 }
 
 impl MovingEntity {

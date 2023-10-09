@@ -12,18 +12,20 @@
 //
 //------------------------------------------------------------------------
 
+use std::ops::{AddAssign, Div};
+
 pub struct Smoother<T> {
     //this holds the history
     m_History: Vec<T>,
 
-    m_iNextUpdateSlot: i32,
+    m_iNextUpdateSlot: usize,
 
     // An example of the 'zero' value of the type to be smoothed.
     // This would be something like Vector2D(0,0)
     m_ZeroValue: T,
 }
 
-impl<T> Smoother<T> {
+impl<T: Clone + AddAssign + Div<f32, Output = T>> Smoother<T> {
     //to instantiate a Smoother pass it the number of samples you want
     //to use in the smoothing, and an example of a 'zero' type
     pub fn new(sample_size: i32, zero_value: T) -> Self {
@@ -36,24 +38,24 @@ impl<T> Smoother<T> {
 
     //each time you want to get a new average, feed it the most recent value
     //and this method will return an average over the last SampleSize updates
-    pub fn update(&mut self, most_recent_value: &T) -> T {
+    pub fn update(&mut self, most_recent_value: T) -> T {
         //overwrite the oldest value with the newest
         self.m_History[self.m_iNextUpdateSlot] = most_recent_value;
 
         self.m_iNextUpdateSlot += 1;
 
         //make sure m_iNextUpdateSlot wraps around.
-        if self.m_iNextUpdateSlot == self.m_History.size() {
+        if self.m_iNextUpdateSlot == self.m_History.len() {
             self.m_iNextUpdateSlot = 0;
         }
 
         //now to calculate the average of the history list
         let mut sum = self.m_ZeroValue.clone();
 
-        for it in self.m_History {
-            sum += it;
+        for it in &self.m_History {
+            sum += it.clone();
         }
 
-        sum / self.m_History.len()
+        sum / (self.m_History.len() as f32)
     }
 }

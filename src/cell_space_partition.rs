@@ -1,13 +1,15 @@
+use std::cell::RefCell;
 use crate::inverted_aab_box_2d::InvertedAABBox2D;
 use glam::{vec2, Vec2};
 use std::rc::Rc;
+use crate::base_entity::EntityBase;
 
-pub struct Cell<Entity> {
-    Members: Vec<Rc<Entity>>,
+pub struct Cell<Entity: EntityBase> {
+    Members: Vec<Rc<RefCell<Entity>>>,
     BBox: InvertedAABBox2D,
 }
 
-impl<Entity> Cell<Entity> {
+impl<Entity: EntityBase> Cell<Entity> {
     pub fn new(top_left: Vec2, bottom_right: Vec2) -> Cell<Entity> {
         Cell {
             Members: vec![],
@@ -16,13 +18,13 @@ impl<Entity> Cell<Entity> {
     }
 }
 
-pub struct CellSpacePartition<Entity> {
+pub struct CellSpacePartition<Entity: EntityBase> {
     //the required amount of cells in the space
     m_Cells: Vec<Cell<Entity>>,
 
     //this is used to store any valid neighbors when an agent searches
     //its neighboring space
-    m_Neighbors: Vec<Rc<Entity>>,
+    m_Neighbors: Vec<Rc<RefCell<Entity>>>,
 
     //this iterator will be used by the methods next and begin to traverse
     //through the above vector of neighbors
@@ -41,7 +43,7 @@ pub struct CellSpacePartition<Entity> {
     m_dCellSizeY: f32,
 }
 
-impl<Entity> CellSpacePartition<Entity> {
+impl<Entity: EntityBase> CellSpacePartition<Entity> {
     pub fn new(width: f32, height: f32, cellsX: i32, cellsY: i32, MaxEntities: i32) -> Self {
         let mut cell_space = CellSpacePartition {
             m_Cells: vec![],
@@ -50,15 +52,15 @@ impl<Entity> CellSpacePartition<Entity> {
             m_dSpaceHeight: height,
             m_iNumCellsX: cellsX,
             m_iNumCellsY: cellsY,
-            m_dCellSizeX: width / cellsX,
-            m_dCellSizeY: height / cellsY,
+            m_dCellSizeX: width / cellsX as f32,
+            m_dCellSizeY: height / cellsY as f32,
         };
 
         for y in 0..cell_space.m_iNumCellsY {
             for x in 0..cell_space.m_iNumCellsX {
-                let left = x * cell_space.m_dCellSizeX;
+                let left = x as f32 * cell_space.m_dCellSizeX;
                 let right = left * cell_space.m_dCellSizeX;
-                let top = y * cell_space.m_dCellSizeY;
+                let top = y as f32 * cell_space.m_dCellSizeY;
                 let bottom = top * cell_space.m_dCellSizeY;
 
                 cell_space.m_Cells.push(Cell::<Entity>::new(vec2(left, top), vec2(right, bottom)));
@@ -68,5 +70,32 @@ impl<Entity> CellSpacePartition<Entity> {
         cell_space
     }
 
+    //--------------------- PositionToIndex ----------------------------------
+    //
+    //  Given a 2D vector representing a position within the game world, this
+    //  method calculates an index into its appropriate cell
+    //------------------------------------------------------------------------
+    pub fn PositionToIndex(&self, pos: &Vec2) -> i32 {
+        let idx = (self.m_iNumCellsX as f32 * pos.x / self.m_dSpaceWidth) +
+            ((self.m_iNumCellsY as f32 * pos.y / self.m_dSpaceHeight) * self.m_iNumCellsX as f32);
+
+        let mut idx = idx as i32;
+
+        //if the entity's position is equal to Vector2D(m_dSpaceWidth, m_dSpaceHeight)
+        //then the index will overshoot. We need to check for this and adjust
+        if idx > self.m_Cells.len() as i32 - 1 {
+            idx = self.m_Cells.len() as i32 - 1;
+        }
+
+        return idx;
+    }
+
+    pub fn AddEntity(&mut self, entity: Rc<RefCell<Entity>>) {
+        let sz = self.m_Cells.len();
+        let idx = self.PositionToIndex(&entity.borrow().Pos());
+    }
+
     pub fn CalculateNeighbors(target_pos: Vec2, query_radius: f32) {}
+
+
 }

@@ -1,5 +1,5 @@
 use glam::{vec2, Vec2};
-use std::cmp::max;
+use crate::utils::max;
 
 static mut NEXT_ID: i32 = -1;
 
@@ -82,33 +82,60 @@ impl BaseGameEntity {
             NEXT_ID
         }
     }
-    pub fn Tag(&mut self) {
+}
+
+impl EntityBase for BaseGameEntity {
+
+    fn Pos(&self) -> Vec2 {
+        self.m_vPos.clone()
+    }
+
+    fn Tag(&mut self) {
         self.m_bTag = true;
     }
 
-    pub fn UnTag(&mut self) {
+    fn UnTag(&mut self) {
         self.m_bTag = false;
     }
 
-    pub fn Scale(&self) -> Vec2 {
+    fn Scale(&self) -> Vec2 {
         self.m_vScale
     }
 
-    pub fn SetScale_vec(&mut self, val: Vec2) {
+    fn SetScale_vec(&mut self, val: Vec2) {
         self.m_dBoundingRadius *= max(val.x, val.y) / max(self.m_vScale.x, self.m_vScale.y);
         self.m_vScale = val;
     }
 
-    pub fn SetScale_float(&mut self, val: f32) {
-        self.m_dBoundingRadius *= (val / max(self.m_vScale.x, self.m_vScale.y));
+    fn SetScale_float(&mut self, val: f32) {
+        self.m_dBoundingRadius *= val / max(self.m_vScale.x, self.m_vScale.y);
         self.m_vScale = vec2(val, val);
     }
 
-    pub fn EntityType(&self) -> i32 {
+    fn EntityType(&self) -> i32 {
         self.m_EntityType
     }
 
-    pub fn SetEntityType(&mut self, new_type: i32) {
+    fn SetEntityType(&mut self, new_type: i32) {
         self.m_EntityType = new_type;
     }
+}
+
+pub trait EntityBase {
+
+    fn Pos(&self) -> Vec2;  // TODO: revisit returning cloned Vec2
+
+    fn Tag(&mut self);
+
+    fn UnTag(&mut self);
+
+    fn Scale(&self) -> Vec2;
+
+    fn SetScale_vec(&mut self, val: Vec2);
+
+    fn SetScale_float(&mut self, val: f32);
+
+    fn EntityType(&self) -> i32;
+
+    fn SetEntityType(&mut self, new_type: i32);
 }

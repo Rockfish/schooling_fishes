@@ -21,13 +21,14 @@ mod steering_behavior;
 mod utils;
 mod vehicle;
 mod wall_2d;
+mod transformations;
 
 extern crate glfw;
 
 use camera::{Camera, CameraMovement};
 use glad_gl::gl;
-use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
-use glam::{vec3, Mat4, Vec4};
+use glad_gl::gl::{GLsizeiptr, GLuint, GLvoid};
+use glam::{vec3, Mat4};
 use glfw::{Action, Context, Key};
 // use learn_opengl_with_rust::model::{FlipV, Gamma, Model};
 // use learn_opengl_with_rust::shader::Shader;
@@ -163,9 +164,9 @@ fn main() {
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    unsafe {
+    // unsafe {
         // gl::DeleteShader(asteroidShader.id);
-    }
+    // }
 }
 
 //

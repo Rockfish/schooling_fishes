@@ -1,9 +1,14 @@
 //--------------------------- Constants ----------------------------------
 
+use std::cell::RefCell;
+use std::f32::consts::TAU;
 use crate::path::Path;
 use crate::vehicle::Vehicle;
-use glam::Vec2;
+use glam::{Vec2, vec2};
 use std::rc::Rc;
+use rand::thread_rng;
+use crate::param_loader::PRM;
+use crate::utils::RandFloat;
 
 //the radius of the constraining circle for the wander behavior
 const WANDER_RAD: f32 = 1.2;
@@ -50,15 +55,15 @@ enum BehaviorType {
 
 pub struct SteeringBehavior {
     //a pointer to the owner of this instance
-    m_pVehicle: Rc<Vehicle>,
+    m_pVehicle: Rc<RefCell<Vehicle>>,
 
     //the steering force created by the combined effect of all
     //the selected behaviors
     m_vSteeringForce: Vec2,
 
     //these can be used to keep track of friends, pursuers, or prey
-    m_pTargetAgent1: Rc<Vehicle>,
-    m_pTargetAgent2: Rc<Vehicle>,
+    m_pTargetAgent1: Option<Rc<RefCell<Vehicle>>>,
+    m_pTargetAgent2: Option<Rc<RefCell<Vehicle>>>,
 
     //the current target
     m_vTarget: Vec2,
@@ -104,7 +109,7 @@ pub struct SteeringBehavior {
     m_dViewDistance: f32,
 
     //pointer to any current path
-    m_pPath: Rc<Path>,
+    m_pPath: Path,
 
     //the distance (squared) a vehicle has to be from a path waypoint before
     //it starts seeking to the next waypoint
@@ -126,4 +131,66 @@ pub struct SteeringBehavior {
 
     //what type of method is used to sum any active behavior
     m_SummingMethod: SummingMethod,
+}
+
+impl SteeringBehavior {
+    pub fn new(vehicle: Rc<RefCell<Vehicle>>) -> Self {
+        let wander_radius = WANDER_RAD;
+        let mut rng = thread_rng();
+        let theta = RandFloat(&mut rng) * TAU;
+        let wander_target = vec2(wander_radius * theta.cos(), wander_radius * theta.sin());
+
+        let mut path = Path::default();
+        path.LoopOn();
+
+        SteeringBehavior {
+            m_pVehicle: vehicle,
+            m_iFlags: 0,
+            m_dDBoxLength: PRM.MinDetectionBoxLength,
+            m_dWeightCohesion: PRM.CohesionWeight,
+            m_dWeightAlignment: PRM.AlignmentWeight,
+            m_dWeightSeparation: PRM.SeparationWeight,
+            m_dWeightObstacleAvoidance: PRM.ObstacleAvoidanceWeight,
+            m_dWeightWander: PRM.WanderWeight,
+            m_dWeightWallAvoidance: PRM.WallAvoidanceWeight,
+            m_dViewDistance: PRM.ViewDistance,
+            m_dWallDetectionFeelerLength: PRM.WallDetectionFeelerLength,
+            m_Feelers: vec![], // 3, ?
+            m_Deceleration: Deceleration::normal,
+            m_pTargetAgent1: None,
+            m_pTargetAgent2: None,
+            m_dWanderDistance: WANDER_DIST,
+            m_dWanderJitter: WANDER_JITTER_PER_SEC,
+            m_dWanderRadius: wander_radius,
+            m_dWaypointSeekDistSq: WAYPOINT_SEEK_DIST * WAYPOINT_SEEK_DIST,
+            m_dWeightSeek: PRM.SeekWeight,
+            m_dWeightFlee: PRM.FleeWeight,
+            m_dWeightArrive: PRM.ArriveWeight,
+            m_dWeightPursuit: PRM.PursuitWeight,
+            m_dWeightOffsetPursuit: PRM.OffsetPursuitWeight,
+            m_dWeightInterpose: PRM.InterposeWeight,
+            m_dWeightHide: PRM.HideWeight,
+            m_dWeightEvade: PRM.EvadeWeight,
+            m_dWeightFollowPath: PRM.FollowPathWeight,
+            m_bCellSpaceOn: false,
+            m_SummingMethod: SummingMethod::prioritized,
+            m_vWanderTarget: wander_target,
+            m_pPath: path,
+            m_vSteeringForce: Default::default(),
+            m_vTarget: Default::default(),
+            m_vOffset: Default::default(),
+        }
+    }
+
+    pub fn FlockingOn(&mut self) {
+        self.CohesionOn();
+        self.AlignmentOn();
+        self.SeparationOn();
+        self.WanderOn();
+    }
+
+    pub fn WanderOn(&mut self) { self.m_iFlags |= BehaviorType::wander as i32; }
+    pub fn CohesionOn(&mut self) { self.m_iFlags |= BehaviorType::cohesion as i32; }
+    pub fn SeparationOn(&mut self) { self.m_iFlags |= BehaviorType::separation as i32; }
+    pub fn AlignmentOn(&mut self) { self.m_iFlags |= BehaviorType::alignment as i32; }
 }
