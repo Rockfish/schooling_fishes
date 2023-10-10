@@ -1,4 +1,5 @@
 #![feature(is_sorted)]
+#![feature(extract_if)]
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
@@ -22,6 +23,8 @@ mod utils;
 mod vehicle;
 mod wall_2d;
 mod transformations;
+mod c2d_matrix;
+mod entity_functions;
 
 extern crate glfw;
 

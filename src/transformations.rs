@@ -1,17 +1,13 @@
-use glam::{Mat4, Vec2, vec3};
+use glam::{Mat2, Vec2};
 
 //-------------------------- Vec2DRotateAroundOrigin --------------------------
 //
 //  rotates a vector ang rads around the origin
 //-----------------------------------------------------------------------------
-pub fn Vec2DRotateAroundOrigin(v: Vec2, ang: f32)
+pub fn Vec2DRotateAroundOrigin(v: Vec2, ang: f32) -> Vec2
 {
-//create a transformation matrix
-    let mat = Mat4::from_axis_angle(vec3(v.x, v.y, 0.0), ang);
-
-//rotate
-mat.Rotate(ang);
-
-//now transform the object's vertices
-mat.TransformVector2Ds(v);
+    //create a transformation matrix
+    let mat = Mat2::from_angle(ang);
+    // rotate
+    mat.mul_vec2(v)
 }

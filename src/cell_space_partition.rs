@@ -5,8 +5,8 @@ use std::rc::Rc;
 use crate::base_entity::EntityBase;
 
 pub struct Cell<Entity: EntityBase> {
-    Members: Vec<Rc<RefCell<Entity>>>,
-    BBox: InvertedAABBox2D,
+    pub Members: Vec<Rc<RefCell<Entity>>>,
+    pub BBox: InvertedAABBox2D,
 }
 
 impl<Entity: EntityBase> Cell<Entity> {
@@ -47,7 +47,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
     pub fn new(width: f32, height: f32, cellsX: i32, cellsY: i32, MaxEntities: i32) -> Self {
         let mut cell_space = CellSpacePartition {
             m_Cells: vec![],
-            m_Neighbors: vec![],
+            m_Neighbors: Vec::with_capacity(MaxEntities as usize),
             m_dSpaceWidth: width,
             m_dSpaceHeight: height,
             m_iNumCellsX: cellsX,
@@ -68,6 +68,12 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
         }
 
         cell_space
+    }
+
+    pub fn EmptyCells(&mut self) {
+        for mut cell in &mut self.m_Cells {
+            cell.Members.clear();
+        }
     }
 
     //--------------------- PositionToIndex ----------------------------------
@@ -95,7 +101,64 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
         let idx = self.PositionToIndex(&entity.borrow().Pos());
     }
 
-    pub fn CalculateNeighbors(target_pos: Vec2, query_radius: f32) {}
+    //----------------------- CalculateNeighbors ----------------------------
+    //
+    //  This must be called to create the vector of neighbors.This method
+    //  examines each cell within range of the target, If the
+    //  cells contain entities then they are tested to see if they are situated
+    //  within the target's neighborhood region. If they are they are added to
+    //  neighbor list
+    //------------------------------------------------------------------------
+    pub fn CalculateNeighbors(&mut self, target_pos: Vec2, query_radius: f32) {
+
+        // index into the neighbor vector
+        let mut current_neighbor: usize = 0;
+
+        //create the query box that is the bounding box of the target's query area
+        let query_box = InvertedAABBox2D::new(
+            target_pos - vec2(query_radius, query_radius),
+            target_pos + vec2(query_radius, query_radius),
+        );
+
+        let query_radius_squared = query_radius * query_radius;
+
+        for cur_cell in &self.m_Cells {
+
+            if cur_cell.BBox.isOverlappedWith(&query_box) && !cur_cell.Members.is_empty() {
+
+                for entity in &cur_cell.Members {
+
+                    if entity.borrow().Pos().distance_squared(target_pos) < query_radius_squared {
+                        // todo: revisit probably should just clear then push. Rust vecs probably don't work like the cpp vectors
+                        self.m_Neighbors[current_neighbor] = entity.clone();
+                        current_neighbor += 1;
+                    }
+                }
+            }
+        }
+
+        // TODO: clear and push instead of this
+        self.m_Neighbors.truncate(current_neighbor);
+    }
+
+    //----------------------- UpdateEntity -----------------------------------
+//
+//  Checks to see if an entity has moved cells. If so the data structure
+//  is updated accordingly
+//------------------------------------------------------------------------
+    pub fn UpdateEntity(&mut self, entity: &Rc<RefCell<Entity>>, OldPos: &Vec2) {
+        //if the index for the old pos and the new pos are not equal then
+        //the entity has moved to another cell.
+        let OldIdx = self.PositionToIndex(OldPos);
+        let NewIdx = self.PositionToIndex(&entity.borrow().Pos());
+
+        if NewIdx == OldIdx {return; }
+
+        //the entity has moved into another cell so delete from current cell
+        //and add to new one
+        let _ = self.m_Cells[OldIdx as usize].Members.extract_if(|e| e.borrow().ID() == entity.borrow().ID());
+        self.m_Cells[NewIdx as usize].Members.push(entity.clone());
+    }
 
 
 }

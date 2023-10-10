@@ -7,6 +7,7 @@ use crate::vehicle::Vehicle;
 use glam::{Vec2, vec2};
 use std::rc::Rc;
 use rand::thread_rng;
+use crate::base_entity::EntityBase;
 use crate::param_loader::PRM;
 use crate::utils::RandFloat;
 
@@ -33,6 +34,7 @@ enum SummingMethod {
     dithered,
 }
 
+#[derive(Debug, Copy, Clone)]
 enum BehaviorType {
     none = 0x00000,
     seek = 0x00002,
@@ -127,7 +129,7 @@ pub struct SteeringBehavior {
     m_Deceleration: Deceleration,
 
     //is cell space partitioning to be used or not?
-    m_bCellSpaceOn: bool,
+    pub(crate) m_bCellSpaceOn: bool,
 
     //what type of method is used to sum any active behavior
     m_SummingMethod: SummingMethod,
@@ -193,4 +195,31 @@ impl SteeringBehavior {
     pub fn CohesionOn(&mut self) { self.m_iFlags |= BehaviorType::cohesion as i32; }
     pub fn SeparationOn(&mut self) { self.m_iFlags |= BehaviorType::separation as i32; }
     pub fn AlignmentOn(&mut self) { self.m_iFlags |= BehaviorType::alignment as i32; }
+
+    //this function tests if a specific bit of m_iFlags is set
+    pub fn On(&self, bt: BehaviorType) -> bool {
+        (self.m_iFlags & bt as i32) == bt as i32
+    }
+
+    pub fn Calculate(&mut self) -> Vec2 {
+        //reset the steering force
+        self.m_vSteeringForce.x = 0.0;
+        self.m_vSteeringForce.y = 0.0;
+
+        if !self.m_bCellSpaceOn {
+
+            if self.On(BehaviorType::separation) || self.On(BehaviorType::alignment) || self.On(BehaviorType::cohesion) {
+                self.m_pVehicle.borrow().m_pWorld.borrow_mut().TagVehiclesWithinViewRange(&self.m_pVehicle, self.m_dViewDistance);
+            }
+        } else {
+            //calculate neighbours in cell-space if any of the following 3 group
+            //behaviors are switched on
+            if self.On(BehaviorType::separation) || self.On(BehaviorType::alignment) || self.On(BehaviorType::cohesion) {
+               self.m_pVehicle.borrow().m_pWorld.borrow_mut().m_pCellSpace.CalculateNeighbors(self.m_pVehicle.borrow().Pos(), self.m_dViewDistance);
+            }
+        }
+
+        self.m_vSteeringForce.clone()
+    }
+
 }

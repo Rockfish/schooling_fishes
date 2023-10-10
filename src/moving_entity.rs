@@ -2,25 +2,25 @@ use crate::base_entity::BaseGameEntity;
 use glam::Vec2;
 
 pub struct MovingEntity {
-    m_vVelocity: Vec2,
+    pub m_vVelocity: Vec2,
 
     //a normalized vector pointing in the direction the entity is heading.
-    m_vHeading: Vec2,
+    pub m_vHeading: Vec2,
 
     //a vector perpendicular to the heading vector
-    m_vSide: Vec2,
+    pub m_vSide: Vec2,
 
-    m_dMass: f32,
+    pub m_dMass: f32,
 
     //the maximum speed this entity may travel at.
-    m_dMaxSpeed: f32,
+    pub m_dMaxSpeed: f32,
 
     //the maximum force this entity can produce to power itself
     //(think rockets and thrust)
-    m_dMaxForce: f32,
+    pub m_dMaxForce: f32,
 
     //the maximum rate (radians per second)this vehicle can rotate
-    m_dMaxTurnRate: f32,
+    pub m_dMaxTurnRate: f32,
 
     pub base_entity: BaseGameEntity,
 }

@@ -10,6 +10,7 @@ use glam::{vec2, Vec2};
 use rand::thread_rng;
 use std::f32::consts::TAU;
 use std::rc::Rc;
+use crate::entity_functions::TagNeighbors;
 
 pub struct GameWorld {
     //a container of all the moving entities
@@ -21,7 +22,9 @@ pub struct GameWorld {
     //container containing any walls in the environment
     m_Walls: Vec<Wall2D>,
 
-    m_pCellSpace: CellSpacePartition<Vehicle>,
+    pub m_pCellSpace: CellSpacePartition<Vehicle>,
+    // flag for cell space partitioning
+    m_bCellSpaceOn: bool,
 
     //any path we may create for the vehicles to follow
     m_pPath: Option<Path>,
@@ -64,6 +67,7 @@ impl GameWorld {
             m_Obstacles: vec![],
             m_Walls: vec![],
             m_pCellSpace: cell_space,
+            m_bCellSpaceOn: false,
             m_pPath: Some(path),
             m_bPaused: false,
             m_cxClient: cx,
@@ -109,15 +113,86 @@ impl GameWorld {
                     PRM.VehicleScale,
                 );
 
-                vehicle.borrow_mut().Steering().borrow_mut().FlockingOn();
+                vehicle.borrow_mut().m_pSteering.as_mut().unwrap().FlockingOn();
 
                 game_world_mut.m_Vehicles.push(vehicle.clone());
                 game_world_mut.m_pCellSpace.AddEntity(vehicle.clone());
             }
+
+            game_world_mut.ToggleSpacePartition();
         }
+
+        /* SHOAL
+        #ifdef SHOAL
+        m_Vehicles[Prm.NumAgents-1]->Steering()->FlockingOff();
+        m_Vehicles[Prm.NumAgents-1]->SetScale(Vector2D(10, 10));
+        m_Vehicles[Prm.NumAgents-1]->Steering()->WanderOn();
+        m_Vehicles[Prm.NumAgents-1]->SetMaxSpeed(70);
+
+        for (int i=0; i<Prm.NumAgents-1; ++i)
+        {
+            m_Vehicles[i]->Steering()->EvadeOn(m_Vehicles[Prm.NumAgents-1]);
+        }
+        #endif
+         */
+
+        // TODO: the way cell space partitioning is controlled doesn't make sense
+        // since CellSpacePartition object is owned by the GameWorld and not by the
+        // vehicles. The cpp code checks the vehicles to find out if partition is on
+        // and then has the vehicles change the gameworld's CellSpacePartition object
+        // instead of just having the gameworld do it itself.
+        //ToggleSpacePartition();
+
+        //create any obstacles or walls
+        //CreateObstacles();
+        //CreateWalls();
 
         game_world
     }
+
+    pub fn Update(&mut self, time_elapsed: f32) {
+
+        //  if (m_bPaused) return;
+
+        //create a smoother to smooth the framerate
+        // let SampleRate = 10;
+        //static Smoother<float> FrameRateSmoother(SampleRate, 0.0);
+
+        self.m_dAvFrameTime = time_elapsed;
+
+        for vehicle in &self.m_Vehicles {
+            //vehicle.Update(time_elapsed);
+            let old_position = Vehicle::Update(vehicle, time_elapsed);
+
+            if self.m_bCellSpaceOn {
+                self.m_pCellSpace.UpdateEntity(vehicle, &old_position);
+            }
+        }
+    }
+
+    pub fn ToggleSpacePartition(&mut self) {
+        self.m_bCellSpaceOn = !self.m_bCellSpaceOn;
+
+        for vehicle in &self.m_Vehicles {
+            vehicle.borrow_mut().m_pSteering.as_mut().unwrap().m_bCellSpaceOn = self.m_bCellSpaceOn;
+        }
+
+        if self.m_bCellSpaceOn {
+            self.m_pCellSpace.EmptyCells();
+
+            for vehicle in &self.m_Vehicles {
+                self.m_pCellSpace.AddEntity(vehicle.clone());
+            }
+        } else {
+            self.m_bShowCellSpaceInfo = false;
+        }
+    }
+
+    pub fn TagVehiclesWithinViewRange(&self, pVehicle: &Rc<RefCell<Vehicle>>, range: f32) {
+        TagNeighbors(pVehicle, &self.m_Obstacles, range);
+    }
+
+
 
     pub fn cxClient(&self) -> i32 {
         self.m_cxClient

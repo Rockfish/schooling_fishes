@@ -7,14 +7,15 @@ use glam::{Vec2, vec2};
 use crate::base_entity::EntityBase;
 use crate::moving_entity::MovingEntity;
 use crate::param_loader::PRM;
+use crate::utils::{Truncate, WrapAround};
 
 pub struct Vehicle {
     //a pointer to the world data. So a vehicle can access any obstacle,
     //path, wall or agent data
-    m_pWorld: Rc<RefCell<GameWorld>>,
+    pub m_pWorld: Rc<RefCell<GameWorld>>,
 
     //the steering behavior class
-    m_pSteering: Option<Rc<RefCell<SteeringBehavior>>>,
+    pub m_pSteering: Option<SteeringBehavior>,
 
     //some steering behaviors give jerky looking movement. The
     //following members are used to smooth the vehicle's heading
@@ -58,7 +59,7 @@ impl Vehicle {
             mass,
             vec2(scale, scale),
             max_turn_rate,
-            max_force
+            max_force,
         );
 
         let heading_smoother = Smoother::new(PRM.NumSamplesForSmoothing, vec2(0.0, 0.0));
@@ -74,24 +75,100 @@ impl Vehicle {
             moving_entity,
         }));
 
-        let steering = Rc::new(RefCell::new(SteeringBehavior::new(vehicle.clone())));
+        let steering = SteeringBehavior::new(vehicle.clone());
         vehicle.borrow_mut().m_pSteering = Some(steering);
 
         vehicle
     }
 
-    pub fn Steering(&self) -> Rc<RefCell<SteeringBehavior>> {
-        if let Some(steering) = &self.m_pSteering {
-           steering.clone()
-        } else {
-            panic!("m_pSteering has not been initialized.")
+    // pub fn Steering(&self) -> Rc<RefCell<SteeringBehavior>> {
+    //     if let Some(steering) = &self.m_pSteering {
+    //        steering.clone()
+    //     } else {
+    //         panic!("m_pSteering has not been initialized.")
+    //     }
+    // }
+
+    //------------------------------ Update ----------------------------------
+    //
+    //  Updates the vehicle's position from a series of steering behaviors
+    //------------------------------------------------------------------------
+    pub fn Update(rc_vehicle: &Rc<RefCell<Vehicle>>, time_elapsed: f32) -> Vec2 {
+        let mut vehicle = rc_vehicle.borrow_mut();
+        //update the time elapsed
+        vehicle.m_dTimeElapsed = time_elapsed;
+
+        //keep a record of its old position so we can update its cell later
+        //in this method
+        let OldPos = vehicle.Pos();
+
+        //calculate the combined force from each steering behavior in the
+        //vehicle's list
+        let SteeringForce = vehicle.m_pSteering.as_mut().unwrap().Calculate();
+
+        //Acceleration = Force/Mass
+        let acceleration = SteeringForce / vehicle.moving_entity.m_dMass;
+
+        //update velocity
+        vehicle.moving_entity.m_vVelocity += acceleration * time_elapsed;
+
+        //make sure vehicle does not exceed maximum velocity
+        // vehicle.moving_entity.m_vVelocity.Truncate(vehicle.moving_entity.m_dMaxSpeed);
+        vehicle.moving_entity.m_vVelocity = Truncate(vehicle.moving_entity.m_vVelocity, vehicle.moving_entity.m_dMaxSpeed);
+
+        //update the position
+        vehicle.moving_entity.base_entity.m_vPos += vehicle.moving_entity.m_vVelocity.clone() * time_elapsed;
+
+        //update the heading if the vehicle has a non zero velocity
+        if vehicle.moving_entity.m_vVelocity.length_squared() > 0.00000001 {
+            vehicle.moving_entity.m_vHeading = vehicle.moving_entity.m_vVelocity.normalize();
+            vehicle.moving_entity.m_vSide = vehicle.moving_entity.m_vHeading.perp();
         }
+
+        //EnforceNonPenetrationConstraint(this, World()->Agents());
+
+        //treat the screen as a toroid
+        WrapAround(&mut vehicle.moving_entity.base_entity.m_vPos, vehicle.m_pWorld.borrow().cxClient(), vehicle.m_pWorld.borrow().cyClient());
+
+        // TODO: Note, this moved this to gameworld object
+        //update the vehicle's current cell if space partitioning is turned on
+        // if vehicle.Steering().isSpacePartitioningOn() {
+        //     vehicle.m_pWorld.borrow_mut().m_pCellSpace.UpdateEntity(this, &OldPos);
+        // }
+
+        if vehicle.m_bSmoothingOn {
+            vehicle.m_vSmoothedHeading = vehicle.m_pHeadingSmoother.update(vehicle.moving_entity.m_vHeading);
+        }
+        OldPos
     }
+
+    /*-------------------------------------------accessor methods
+    // for reference only since accessors are more of a cpp pattern than rust
+
+    SteeringBehavior*const Steering(&self)const {return m_pSteering;}
+    GameWorld*const World()const {return m_pWorld;}
+    Vector2D SmoothedHeading()const {return m_vSmoothedHeading;}
+    bool isSmoothingOn()const {return m_bSmoothingOn;}
+    void SmoothingOn() {m_bSmoothingOn = true;}
+    void SmoothingOff() {m_bSmoothingOn = false;}
+    void ToggleSmoothing() {m_bSmoothingOn = !m_bSmoothingOn;}
+
+    float TimeElapsed()const {return m_dTimeElapsed;}
+
+     */
 }
 
 impl EntityBase for Vehicle {
+    fn ID(&self) -> i32 {
+        self.moving_entity.base_entity.m_ID
+    }
+
     fn Pos(&self) -> Vec2 {
         self.moving_entity.base_entity.m_vPos.clone()
+    }
+
+    fn BRadius(&self) -> f32 {
+        self.moving_entity.base_entity.m_dBoundingRadius
     }
 
     fn Tag(&mut self) {

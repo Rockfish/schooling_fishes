@@ -85,9 +85,16 @@ impl BaseGameEntity {
 }
 
 impl EntityBase for BaseGameEntity {
+    fn ID(&self) -> i32 {
+        self.m_ID
+    }
 
     fn Pos(&self) -> Vec2 {
         self.m_vPos.clone()
+    }
+
+    fn BRadius(&self) -> f32 {
+        self.m_dBoundingRadius
     }
 
     fn Tag(&mut self) {
@@ -123,7 +130,11 @@ impl EntityBase for BaseGameEntity {
 
 pub trait EntityBase {
 
+    fn ID(&self) -> i32;
+
     fn Pos(&self) -> Vec2;  // TODO: revisit returning cloned Vec2
+
+    fn BRadius(&self) -> f32;
 
     fn Tag(&mut self);
 
