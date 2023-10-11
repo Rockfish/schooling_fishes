@@ -1,6 +1,5 @@
 use std::f32::consts::PI;
 
-
 const STEERING_FORCE_TWEAKER: f32 = 200.0;
 
 pub struct ParamLoader {
@@ -70,55 +69,54 @@ pub struct ParamLoader {
     pub prArrive: f32,
 }
 
-pub const PRM: ParamLoader =
-    ParamLoader {
-        NumAgents: 250,
-        NumObstacles: 7,
-        MinObstacleRadius: 10.0,
-        MaxObstacleRadius: 30.0,
+pub const PRM: ParamLoader = ParamLoader {
+    NumAgents: 250,
+    NumObstacles: 7,
+    MinObstacleRadius: 10.0,
+    MaxObstacleRadius: 30.0,
 
-        NumCellsX: 7,
-        NumCellsY: 7,
+    NumCellsX: 7,
+    NumCellsY: 7,
 
-        NumSamplesForSmoothing: 10,
+    NumSamplesForSmoothing: 10,
 
-        SteeringForceTweaker: STEERING_FORCE_TWEAKER,
-        MaxSteeringForce: 2.0 * STEERING_FORCE_TWEAKER,
-        MaxSpeed: 150.0,
-        VehicleMass: 1.0,
-        VehicleScale: 3.0,
+    SteeringForceTweaker: STEERING_FORCE_TWEAKER,
+    MaxSteeringForce: 2.0 * STEERING_FORCE_TWEAKER,
+    MaxSpeed: 150.0,
+    VehicleMass: 1.0,
+    VehicleScale: 3.0,
 
-        SeparationWeight: 1.0 * STEERING_FORCE_TWEAKER,
-        AlignmentWeight: 1.0 * STEERING_FORCE_TWEAKER,
-        CohesionWeight: 2.0 * STEERING_FORCE_TWEAKER,
-        ObstacleAvoidanceWeight: 10.0 * STEERING_FORCE_TWEAKER,
-        WallAvoidanceWeight: 10.0 * STEERING_FORCE_TWEAKER,
-        WanderWeight: 1.0 * STEERING_FORCE_TWEAKER,
-        SeekWeight: 1.0 * STEERING_FORCE_TWEAKER,
-        FleeWeight: 1.0 * STEERING_FORCE_TWEAKER,
-        ArriveWeight: 1.0 * STEERING_FORCE_TWEAKER,
-        PursuitWeight: 1.0 * STEERING_FORCE_TWEAKER,
-        OffsetPursuitWeight: 1.0 * STEERING_FORCE_TWEAKER,
-        InterposeWeight: 1.0 * STEERING_FORCE_TWEAKER,
-        HideWeight: 1.0 * STEERING_FORCE_TWEAKER,
-        EvadeWeight: 1.0 * STEERING_FORCE_TWEAKER,
-        FollowPathWeight: 1.0 * STEERING_FORCE_TWEAKER,
+    SeparationWeight: 1.0 * STEERING_FORCE_TWEAKER,
+    AlignmentWeight: 1.0 * STEERING_FORCE_TWEAKER,
+    CohesionWeight: 2.0 * STEERING_FORCE_TWEAKER,
+    ObstacleAvoidanceWeight: 10.0 * STEERING_FORCE_TWEAKER,
+    WallAvoidanceWeight: 10.0 * STEERING_FORCE_TWEAKER,
+    WanderWeight: 1.0 * STEERING_FORCE_TWEAKER,
+    SeekWeight: 1.0 * STEERING_FORCE_TWEAKER,
+    FleeWeight: 1.0 * STEERING_FORCE_TWEAKER,
+    ArriveWeight: 1.0 * STEERING_FORCE_TWEAKER,
+    PursuitWeight: 1.0 * STEERING_FORCE_TWEAKER,
+    OffsetPursuitWeight: 1.0 * STEERING_FORCE_TWEAKER,
+    InterposeWeight: 1.0 * STEERING_FORCE_TWEAKER,
+    HideWeight: 1.0 * STEERING_FORCE_TWEAKER,
+    EvadeWeight: 1.0 * STEERING_FORCE_TWEAKER,
+    FollowPathWeight: 1.0 * STEERING_FORCE_TWEAKER,
 
-        ViewDistance: 50.0,
-        MinDetectionBoxLength: 40.0,
-        WallDetectionFeelerLength: 40.0,
+    ViewDistance: 50.0,
+    MinDetectionBoxLength: 40.0,
+    WallDetectionFeelerLength: 40.0,
 
-        prWallAvoidance: 0.5,
-        prObstacleAvoidance: 0.5,
-        prSeparation: 0.2,
-        prAlignment: 0.3,
-        prCohesion: 0.6,
-        prWander: 0.8,
-        prSeek: 0.8,
-        prFlee: 0.6,
-        prEvade: 1.0,
-        prHide: 0.8,
-        prArrive: 0.5,
+    prWallAvoidance: 0.5,
+    prObstacleAvoidance: 0.5,
+    prSeparation: 0.2,
+    prAlignment: 0.3,
+    prCohesion: 0.6,
+    prWander: 0.8,
+    prSeek: 0.8,
+    prFlee: 0.6,
+    prEvade: 1.0,
+    prHide: 0.8,
+    prArrive: 0.5,
 
-        MaxTurnRatePerSecond: PI,
-    };
+    MaxTurnRatePerSecond: PI,
+};

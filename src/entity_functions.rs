@@ -1,6 +1,3 @@
-
-
-
 // //------------------------- Overlapped -----------------------------------
 // //
 // //  tests to see if an entity is overlapping any of a number of entities
@@ -25,9 +22,9 @@
 // return false;
 // }
 
+use crate::base_entity::EntityBase;
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::base_entity::EntityBase;
 
 //----------------------- TagNeighbors ----------------------------------
 //
@@ -35,10 +32,8 @@ use crate::base_entity::EntityBase;
 //  radius of the single entity parameter
 //------------------------------------------------------------------------
 pub fn TagNeighbors<E1: EntityBase, E2: EntityBase>(entity: &Rc<RefCell<E1>>, ContainerOfEntities: &mut Vec<E2>, radius: f32) {
-
     //iterate through all entities checking for range
-    for curEntity in ContainerOfEntities
-    {
+    for curEntity in ContainerOfEntities {
         //first clear any current tag
         curEntity.UnTag();
 
@@ -50,12 +45,11 @@ pub fn TagNeighbors<E1: EntityBase, E2: EntityBase>(entity: &Rc<RefCell<E1>>, Co
 
         //if entity within range, tag for further consideration. (working in
         //distance-squared space to avoid sqrts)
-        if  (curEntity.ID() != entity.borrow().ID()) && (to.length_squared() < range * range) {
+        if (curEntity.ID() != entity.borrow().ID()) && (to.length_squared() < range * range) {
             curEntity.Tag();
         }
     }
 }
-
 
 //------------------- EnforceNonPenetrationConstraint ---------------------
 //
@@ -95,9 +89,6 @@ pub fn TagNeighbors<E1: EntityBase, E2: EntityBase>(entity: &Rc<RefCell<E1>>, Co
 // }
 // }//next entity
 // }
-
-
-
 
 //-------------------- GetEntityLineSegmentIntersections ----------------------
 //

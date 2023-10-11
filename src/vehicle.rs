@@ -1,14 +1,17 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-use crate::game_world::GameWorld;
-use crate::smoother::Smoother;
-use crate::steering_behavior::SteeringBehavior;
-use glam::{Vec2, vec2};
 use crate::base_entity::EntityBase;
+use crate::game_world::GameWorld;
 use crate::moving_entity::MovingEntity;
 use crate::param_loader::PRM;
+use crate::smoother::Smoother;
+use crate::steering_behavior::SteeringBehavior;
 use crate::utils::{Truncate, WrapAround};
+use glad_gl::gl;
+use glad_gl::gl::{GLenum, GLvoid};
+use glam::{vec2, Vec2};
+use std::cell::RefCell;
+use std::rc::Rc;
 
+#[derive(Debug)]
 pub struct Vehicle {
     //a pointer to the world data. So a vehicle can access any obstacle,
     //path, wall or agent data
@@ -39,7 +42,6 @@ pub struct Vehicle {
 }
 
 impl Vehicle {
-
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         world: Rc<RefCell<GameWorld>>,
@@ -163,6 +165,124 @@ impl Vehicle {
     float TimeElapsed()const {return m_dTimeElapsed;}
 
      */
+
+    pub fn Render(&mut self) {
+        /*
+            //a vector to hold the transformed vertices
+            static std::vector<Vector2D>  m_vecVehicleVBTrans;
+            static C2DMatrix m_transform;
+
+            //render neighboring vehicles in different colors if requested
+            if (m_pWorld->RenderNeighbors())
+            {
+                if (ID() == 0)
+                    gdi->RedPen();
+                else if(IsTagged())
+                    gdi->GreenPen();
+                else
+                    gdi->BluePen();
+            }
+            else
+            {
+                gdi->BluePen();
+            }
+
+            if (Steering()->isInterposeOn())
+            {
+                gdi->RedPen();
+            }
+
+            if (Steering()->isHideOn())
+            {
+                gdi->GreenPen();
+            }
+
+            if (isSmoothingOn())
+            {
+
+                m_vecVehicleVBTrans = WorldTransform(m_vecVehicleVB,
+                                                     Pos(),
+                                                     SmoothedHeading(),
+                                                     SmoothedHeading().Perp(),
+                                                     Scale());
+            }
+            else
+            {
+                m_vecVehicleVBTrans = WorldTransform(m_vecVehicleVB,
+                                                     Pos(),
+                                                     Heading(),
+                                                     Side(),
+                                                     Scale());
+            }
+
+
+            gdi->ClosedShape(m_vecVehicleVBTrans);
+
+        */
+
+        // if self.m_bSmoothingOn {
+        // {
+        //     gdi->Triangle(Pos(),
+        //                   SmoothedHeading(),
+        //                   SmoothedHeading().Perp(),
+        //                   Scale());
+        //
+        // } else {
+        //gdi->Triangle(Pos(),
+        //			  Heading(),
+        //			  Side(),
+        //			  Scale());
+        self.Triangle();
+        // }
+
+        //render any visual aids / and or user options
+        // if (m_pWorld->ViewKeys())
+        // {
+        //     Steering()->RenderAids();
+        // }
+    }
+
+    pub fn Triangle(&self) {
+        // let error: GLenum;
+
+        #[rustfmt::skip]
+        let verts: [f32; 9] = [
+            -1.0,  0.6,  0.0,
+            1.0,  0.0,  0.0,
+            -1.0, -0.6,  0.0
+        ];
+
+        #[rustfmt::skip]
+        let _vertsBig: [f32; 9] = [
+            0.0,  0.0,  0.0,
+            2.5,  5.0,  0.0,
+            5.0,  0.0,  0.0
+        ];
+
+        unsafe {
+            gl::Color4f(0.2, 0.1, 1.0, 1.0);
+
+            gl::PushMatrix();
+
+            gl::Translatef(self.moving_entity.base_entity.m_vPos.x, self.moving_entity.base_entity.m_vPos.y, 0.0);
+            gl::Scalef(self.moving_entity.base_entity.m_vScale.x, self.moving_entity.base_entity.m_vScale.y, 1.0);
+
+            //float angle = (acos(forward.x)/(2*M_PI))*360;
+            //let angle = acos(self.moving_entity.m_vHeading.x) * RADTODEG; // RadToDeg(acos(m_vHeading.x));
+            let mut angle = self.moving_entity.m_vHeading.x.acos().to_degrees();
+
+            if self.moving_entity.m_vHeading.y < 0.0 {
+                angle = 360.0 - angle;
+            }
+
+            gl::Rotatef(angle, 0.0, 0.0, 1.0);
+
+            gl::VertexPointer(3, gl::FLOAT, 0, verts.as_ptr() as *const GLvoid);
+            gl::DrawArrays(gl::TRIANGLE_STRIP, 0, 3);
+
+            gl::PopMatrix();
+        }
+    }
 }
 
 impl EntityBase for Vehicle {

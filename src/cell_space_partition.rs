@@ -1,9 +1,10 @@
-use std::cell::RefCell;
+use crate::base_entity::EntityBase;
 use crate::inverted_aab_box_2d::InvertedAABBox2D;
 use glam::{vec2, Vec2};
+use std::cell::RefCell;
 use std::rc::Rc;
-use crate::base_entity::EntityBase;
 
+#[derive(Debug)]
 pub struct Cell<Entity: EntityBase> {
     pub Members: Vec<Rc<RefCell<Entity>>>,
     pub BBox: InvertedAABBox2D,
@@ -18,6 +19,7 @@ impl<Entity: EntityBase> Cell<Entity> {
     }
 }
 
+#[derive(Debug)]
 pub struct CellSpacePartition<Entity: EntityBase> {
     //the required amount of cells in the space
     m_Cells: Vec<Cell<Entity>>,
@@ -41,6 +43,12 @@ pub struct CellSpacePartition<Entity: EntityBase> {
 
     m_dCellSizeX: f32,
     m_dCellSizeY: f32,
+}
+
+impl<Entity: EntityBase> CellSpacePartition<Entity> {
+    pub(crate) fn RenderCells(&self) {
+        todo!()
+    }
 }
 
 impl<Entity: EntityBase> CellSpacePartition<Entity> {
@@ -82,8 +90,8 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
     //  method calculates an index into its appropriate cell
     //------------------------------------------------------------------------
     pub fn PositionToIndex(&self, pos: &Vec2) -> i32 {
-        let idx = (self.m_iNumCellsX as f32 * pos.x / self.m_dSpaceWidth) +
-            ((self.m_iNumCellsY as f32 * pos.y / self.m_dSpaceHeight) * self.m_iNumCellsX as f32);
+        let idx = (self.m_iNumCellsX as f32 * pos.x / self.m_dSpaceWidth)
+            + ((self.m_iNumCellsY as f32 * pos.y / self.m_dSpaceHeight) * self.m_iNumCellsX as f32);
 
         let mut idx = idx as i32;
 
@@ -112,7 +120,6 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
     //  neighbor list
     //------------------------------------------------------------------------
     pub fn CalculateNeighbors(&mut self, target_pos: Vec2, query_radius: f32) {
-
         // index into the neighbor vector
         let mut current_neighbor: usize = 0;
 
@@ -125,11 +132,8 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
         let query_radius_squared = query_radius * query_radius;
 
         for cur_cell in &self.m_Cells {
-
             if cur_cell.BBox.isOverlappedWith(&query_box) && !cur_cell.Members.is_empty() {
-
                 for entity in &cur_cell.Members {
-
                     if entity.borrow().Pos().distance_squared(target_pos) < query_radius_squared {
                         // todo: revisit probably should just clear then push. Rust vecs probably don't work like the cpp vectors
                         self.m_Neighbors[current_neighbor] = entity.clone();
@@ -144,23 +148,25 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
     }
 
     //----------------------- UpdateEntity -----------------------------------
-//
-//  Checks to see if an entity has moved cells. If so the data structure
-//  is updated accordingly
-//------------------------------------------------------------------------
+    //
+    //  Checks to see if an entity has moved cells. If so the data structure
+    //  is updated accordingly
+    //------------------------------------------------------------------------
     pub fn UpdateEntity(&mut self, entity: &Rc<RefCell<Entity>>, OldPos: &Vec2) {
         //if the index for the old pos and the new pos are not equal then
         //the entity has moved to another cell.
         let OldIdx = self.PositionToIndex(OldPos);
         let NewIdx = self.PositionToIndex(&entity.borrow().Pos());
 
-        if NewIdx == OldIdx {return; }
+        if NewIdx == OldIdx {
+            return;
+        }
 
         //the entity has moved into another cell so delete from current cell
         //and add to new one
-        let _ = self.m_Cells[OldIdx as usize].Members.extract_if(|e| e.borrow().ID() == entity.borrow().ID());
+        let _ = self.m_Cells[OldIdx as usize]
+            .Members
+            .extract_if(|e| e.borrow().ID() == entity.borrow().ID());
         self.m_Cells[NewIdx as usize].Members.push(entity.clone());
     }
-
-
 }

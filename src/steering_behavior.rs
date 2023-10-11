@@ -1,15 +1,15 @@
 //--------------------------- Constants ----------------------------------
 
-use std::cell::RefCell;
-use std::f32::consts::TAU;
-use crate::path::Path;
-use crate::vehicle::Vehicle;
-use glam::{Vec2, vec2};
-use std::rc::Rc;
-use rand::thread_rng;
 use crate::base_entity::EntityBase;
 use crate::param_loader::PRM;
+use crate::path::Path;
 use crate::utils::RandFloat;
+use crate::vehicle::Vehicle;
+use glam::{vec2, Vec2};
+use rand::thread_rng;
+use std::cell::RefCell;
+use std::f32::consts::TAU;
+use std::rc::Rc;
 
 //the radius of the constraining circle for the wander behavior
 const WANDER_RAD: f32 = 1.2;
@@ -21,13 +21,14 @@ const WANDER_JITTER_PER_SEC: f32 = 80.0;
 const WAYPOINT_SEEK_DIST: f32 = 20.0;
 
 //------------------------------------------------------------------------
-
+#[derive(Debug)]
 pub enum Deceleration {
     slow = 3,
     normal = 2,
     fast = 1,
 }
 
+#[derive(Debug)]
 pub enum SummingMethod {
     weighted_average,
     prioritized,
@@ -55,6 +56,7 @@ pub enum BehaviorType {
     offset_pursuit = 0x10000,
 }
 
+#[derive(Debug)]
 pub struct SteeringBehavior {
     //a pointer to the owner of this instance
     m_pVehicle: Rc<RefCell<Vehicle>>,
@@ -191,10 +193,18 @@ impl SteeringBehavior {
         self.WanderOn();
     }
 
-    pub fn WanderOn(&mut self) { self.m_iFlags |= BehaviorType::wander as i32; }
-    pub fn CohesionOn(&mut self) { self.m_iFlags |= BehaviorType::cohesion as i32; }
-    pub fn SeparationOn(&mut self) { self.m_iFlags |= BehaviorType::separation as i32; }
-    pub fn AlignmentOn(&mut self) { self.m_iFlags |= BehaviorType::alignment as i32; }
+    pub fn WanderOn(&mut self) {
+        self.m_iFlags |= BehaviorType::wander as i32;
+    }
+    pub fn CohesionOn(&mut self) {
+        self.m_iFlags |= BehaviorType::cohesion as i32;
+    }
+    pub fn SeparationOn(&mut self) {
+        self.m_iFlags |= BehaviorType::separation as i32;
+    }
+    pub fn AlignmentOn(&mut self) {
+        self.m_iFlags |= BehaviorType::alignment as i32;
+    }
 
     //this function tests if a specific bit of m_iFlags is set
     pub fn On(&self, bt: BehaviorType) -> bool {
@@ -207,19 +217,27 @@ impl SteeringBehavior {
         self.m_vSteeringForce.y = 0.0;
 
         if !self.m_bCellSpaceOn {
-
             if self.On(BehaviorType::separation) || self.On(BehaviorType::alignment) || self.On(BehaviorType::cohesion) {
-                self.m_pVehicle.borrow().m_pWorld.borrow_mut().TagVehiclesWithinViewRange(&self.m_pVehicle, self.m_dViewDistance);
+                self.m_pVehicle
+                    .borrow()
+                    .m_pWorld
+                    .borrow_mut()
+                    .TagVehiclesWithinViewRange(&self.m_pVehicle, self.m_dViewDistance);
             }
         } else {
             //calculate neighbours in cell-space if any of the following 3 group
             //behaviors are switched on
             if self.On(BehaviorType::separation) || self.On(BehaviorType::alignment) || self.On(BehaviorType::cohesion) {
-               self.m_pVehicle.borrow().m_pWorld.borrow_mut().m_pCellSpace.CalculateNeighbors(self.m_pVehicle.borrow().Pos(), self.m_dViewDistance);
+                let pos = self.m_pVehicle.borrow().Pos();
+                self.m_pVehicle
+                    .borrow()
+                    .m_pWorld
+                    .borrow_mut()
+                    .m_pCellSpace
+                    .CalculateNeighbors(pos, self.m_dViewDistance);
             }
         }
 
         self.m_vSteeringForce
     }
-
 }

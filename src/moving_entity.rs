@@ -1,6 +1,7 @@
 use crate::base_entity::BaseGameEntity;
 use glam::Vec2;
 
+#[derive(Debug)]
 pub struct MovingEntity {
     pub m_vVelocity: Vec2,
 
@@ -26,7 +27,6 @@ pub struct MovingEntity {
 }
 
 impl MovingEntity {
-
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         position: Vec2,

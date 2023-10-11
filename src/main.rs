@@ -8,9 +8,11 @@
 #![allow(clippy::assign_op_pattern)]
 
 mod base_entity;
+mod c2d_matrix;
 mod camera;
 mod cell_space_partition;
 mod constants;
+mod entity_functions;
 mod fish_main;
 mod game_world;
 mod inverted_aab_box_2d;
@@ -19,12 +21,10 @@ mod param_loader;
 mod path;
 mod smoother;
 mod steering_behavior;
+mod transformations;
 mod utils;
 mod vehicle;
 mod wall_2d;
-mod transformations;
-mod c2d_matrix;
-mod entity_functions;
 
 extern crate glfw;
 
@@ -35,6 +35,7 @@ use glam::{vec3, Mat4};
 use glfw::{Action, Context, Key};
 // use learn_opengl_with_rust::model::{FlipV, Gamma, Model};
 // use learn_opengl_with_rust::shader::Shader;
+use crate::fish_main::FishMain;
 use log::error;
 use rand::prelude::*;
 use std::mem;
@@ -88,57 +89,12 @@ fn main() {
         lastY: SCR_HEIGHT / 2.0,
     };
 
+    let mut fish_main = FishMain::new();
+
     unsafe {
         // configure global opengl state
         // -----------------------------
         gl::Enable(gl::DEPTH_TEST);
-    }
-
-    // generate a large list of semi-random model transformation matrices
-    // ------------------------------------------------------------------
-    let amount: i32 = 100000;
-    let radius: f32 = 150.0;
-    let offset: f32 = 25.0;
-    let mut rng = rand::thread_rng();
-    let mut modelMatrices: Vec<Mat4> = vec![];
-
-    for i in 0..amount {
-        // 1. translation: displace along circle with 'radius' in range [-offset, offset]
-        let angle = (i as f32) / (amount as f32) * 360.0;
-        let displacement: f32 = rng.gen::<f32>() * (2.0 * offset * 100.0) / 100.0 - offset;
-        let x = angle.sin() * radius + displacement;
-        let displacement: f32 = rng.gen::<f32>() * (2.0 * offset * 100.0) / 100.0 - offset;
-        let y = displacement * 4.0; // keep height of asteroid field smaller compared to width of x and z
-        let displacement: f32 = rng.gen::<f32>() * (2.0 * offset * 100.0) / 100.0 - offset;
-        let z = angle.cos() * radius + displacement;
-        let mut model = Mat4::from_translation(vec3(x, y, z));
-
-        // 2. scale: Scale between 0.05 and 0.25f
-        let scale = rng.gen_range(0.0..20.0) / 100.0 + 0.05;
-        model *= Mat4::from_scale(vec3(scale, scale, scale));
-
-        // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
-        let rot_angle = rng.gen_range(0..360) as f32;
-        model *= Mat4::from_axis_angle(vec3(0.4, 0.6, 0.8), rot_angle.to_radians());
-
-        // 4. now add to list of matrices
-        modelMatrices.push(model);
-    }
-
-    // Buffer
-    let mut instanceVBO: GLuint = 0;
-
-    unsafe {
-        // configure instanced array
-        // -------------------------
-        gl::GenBuffers(1, &mut instanceVBO);
-        gl::BindBuffer(gl::ARRAY_BUFFER, instanceVBO);
-        gl::BufferData(
-            gl::ARRAY_BUFFER,
-            (mem::size_of::<Mat4>() * amount as usize) as GLsizeiptr,
-            modelMatrices.as_ptr() as *const GLvoid,
-            gl::STATIC_DRAW,
-        );
     }
 
     // render loop
@@ -160,6 +116,15 @@ fn main() {
             gl::MatrixMode(gl::PROJECTION);
             gl::LoadIdentity();
             gl::Ortho(0.0, 400.0, 0.0, 600.0, -1.0, 1.0);
+
+            fish_main.update_with_interval(state.deltaTime);
+
+            gl::Disable(gl::CULL_FACE);
+            gl::MatrixMode(gl::MODELVIEW);
+            gl::LoadIdentity();
+            gl::EnableClientState(gl::VERTEX_ARRAY);
+
+            fish_main.render();
         }
 
         window.swap_buffers();
@@ -168,7 +133,7 @@ fn main() {
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
     // unsafe {
-        // gl::DeleteShader(asteroidShader.id);
+    // gl::DeleteShader(asteroidShader.id);
     // }
 }
 

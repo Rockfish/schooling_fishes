@@ -1,6 +1,6 @@
-use std::cell::RefCell;
 use crate::base_entity::BaseGameEntity;
 use crate::cell_space_partition::CellSpacePartition;
+use crate::entity_functions::TagNeighbors;
 use crate::param_loader::PRM;
 use crate::path::Path;
 use crate::utils::*;
@@ -8,10 +8,11 @@ use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
 use glam::{vec2, Vec2};
 use rand::thread_rng;
+use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
-use crate::entity_functions::TagNeighbors;
 
+#[derive(Debug)]
 pub struct GameWorld {
     //a container of all the moving entities
     m_Vehicles: Vec<Rc<RefCell<Vehicle>>>,
@@ -60,7 +61,7 @@ impl GameWorld {
     pub fn new(cx: i32, cy: i32) -> Rc<RefCell<GameWorld>> {
         let border = 30f32;
         let path = Path::new(5, border, border, cx as f32 - border, cy as f32 - border, true);
-        let cell_space = CellSpacePartition::<Vehicle>::new(cx as f32, cy as f32, 0, 0, 0);
+        let cell_space = CellSpacePartition::<Vehicle>::new(cx as f32, cy as f32, PRM.NumCellsX, PRM.NumCellsY, PRM.NumAgents);
 
         let game_world = GameWorld {
             m_Vehicles: vec![],
@@ -159,7 +160,6 @@ impl GameWorld {
     }
 
     pub fn Update(&mut self, time_elapsed: f32) {
-
         //  if (m_bPaused) return;
 
         //create a smoother to smooth the framerate
@@ -201,6 +201,53 @@ impl GameWorld {
         TagNeighbors(pVehicle, &mut self.m_Obstacles, range);
     }
 
+    pub fn Render(&self) {
+        for wall in &self.m_Walls {
+            wall.Render(true);
+        }
 
+        // for obstacle in &self.m_Obstacles {
+        // gdi->Circle(m_Obstacles[ob]->Pos(), m_Obstacles[ob]->BRadius());
+        // }
 
+        let mut first = true;
+        //render the agents
+        for vehicle in &self.m_Vehicles {
+            vehicle.borrow_mut().Render();
+
+            //render cell partitioning stuff
+            if self.m_bShowCellSpaceInfo && first {
+                // gdi->HollowBrush();
+                // InvertedAABBox2D box(m_Vehicles[a]->Pos() - Vector2D(Prm.ViewDistance, Prm.ViewDistance),
+                // m_Vehicles[a]->Pos() + Vector2D(Prm.ViewDistance, Prm.ViewDistance));
+                // box.Render();
+                //
+                // gdi->RedPen();
+                // CellSpace()->CalculateNeighbors(m_Vehicles[a]->Pos(), Prm.ViewDistance);
+                // for (BaseGameEntity* pV = CellSpace()->begin();!CellSpace()->end();pV = CellSpace()->next())
+                // {
+                //     gdi->Circle(pV->Pos(), pV->BRadius());
+                // }
+                //
+                // gdi->GreenPen();
+                // gdi->Circle(m_Vehicles[a]->Pos(), Prm.ViewDistance);
+            }
+            first = false;
+        }
+
+        if self.m_bShowPath {
+            if let Some(path) = &self.m_pPath {
+                path.Render();
+            }
+        }
+
+        // if self.m_bShowFPS {
+        //gdi->TextColor(Cgl::grey);
+        //gdi->TextAtPos(5, cyClient() - 20, ttos(1.0 / m_dAvFrameTime));
+        // }
+
+        if self.m_bShowCellSpaceInfo {
+            self.m_pCellSpace.RenderCells();
+        }
+    }
 }

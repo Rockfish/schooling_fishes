@@ -14,6 +14,7 @@
 
 use std::ops::{AddAssign, Div};
 
+#[derive(Debug)]
 pub struct Smoother<T> {
     //this holds the history
     m_History: Vec<T>,

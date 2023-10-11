@@ -1,9 +1,8 @@
-use std::cmp::Ordering;
-use std::ops::Mul;
 use glam::Vec2;
 use rand::prelude::ThreadRng;
 use rand::Rng;
-
+use std::cmp::Ordering;
+use std::ops::Mul;
 
 #[inline]
 pub fn min<T: PartialOrd>(a: T, b: T) -> T {
@@ -60,10 +59,8 @@ pub fn Truncate(v: Vec2, max: f32) -> Vec2 {
     v
 }
 
-pub fn WrapAround(pos: &mut Vec2, MaxX: i32, MaxY: i32)
-{
-    if pos.x > MaxX as f32
-    {
+pub fn WrapAround(pos: &mut Vec2, MaxX: i32, MaxY: i32) {
+    if pos.x > MaxX as f32 {
         pos.x = 0.0;
     }
 
@@ -82,8 +79,8 @@ pub fn WrapAround(pos: &mut Vec2, MaxX: i32, MaxY: i32)
 
 #[cfg(test)]
 mod tests {
-    use glam::vec2;
     use crate::utils::{Truncate, WrapAround};
+    use glam::vec2;
 
     #[test]
     pub fn test_truncate() {
@@ -104,4 +101,3 @@ mod tests {
         println!("{:?}", v);
     }
 }
-

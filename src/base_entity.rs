@@ -1,5 +1,5 @@
-use glam::{vec2, Vec2};
 use crate::utils::max;
+use glam::{vec2, Vec2};
 
 static mut NEXT_ID: i32 = -1;
 
@@ -7,6 +7,7 @@ pub enum EntityType {
     default_entity_type = -1,
 }
 
+#[derive(Debug)]
 pub struct BaseGameEntity {
     //each entity has a unique ID
     pub m_ID: i32,
@@ -129,10 +130,9 @@ impl EntityBase for BaseGameEntity {
 }
 
 pub trait EntityBase {
-
     fn ID(&self) -> i32;
 
-    fn Pos(&self) -> Vec2;  // TODO: revisit returning cloned Vec2
+    fn Pos(&self) -> Vec2; // TODO: revisit returning cloned Vec2
 
     fn BRadius(&self) -> f32;
 

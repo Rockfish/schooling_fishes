@@ -4,8 +4,7 @@ use glam::{Mat2, Vec2};
 //
 //  rotates a vector ang rads around the origin
 //-----------------------------------------------------------------------------
-pub fn Vec2DRotateAroundOrigin(v: Vec2, ang: f32) -> Vec2
-{
+pub fn Vec2DRotateAroundOrigin(v: Vec2, ang: f32) -> Vec2 {
     //create a transformation matrix
     let mat = Mat2::from_angle(ang);
     // rotate
