@@ -182,22 +182,22 @@ fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent, stat
             framebuffer_size_event(window, width, height);
         }
         glfw::WindowEvent::Key(Key::W, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::FORWARD, state.deltaTime);
+            state.camera.ProcessKeyboard(CameraMovement::Forward, state.deltaTime);
         }
         glfw::WindowEvent::Key(Key::S, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::BACKWARD, state.deltaTime);
+            state.camera.ProcessKeyboard(CameraMovement::Backward, state.deltaTime);
         }
         glfw::WindowEvent::Key(Key::A, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::LEFT, state.deltaTime);
+            state.camera.ProcessKeyboard(CameraMovement::Left, state.deltaTime);
         }
         glfw::WindowEvent::Key(Key::D, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::RIGHT, state.deltaTime);
+            state.camera.ProcessKeyboard(CameraMovement::Right, state.deltaTime);
         }
         glfw::WindowEvent::Key(Key::Q, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::UP, state.deltaTime);
+            state.camera.ProcessKeyboard(CameraMovement::Up, state.deltaTime);
         }
         glfw::WindowEvent::Key(Key::Z, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::DOWN, state.deltaTime);
+            state.camera.ProcessKeyboard(CameraMovement::Down, state.deltaTime);
         }
         glfw::WindowEvent::CursorPos(xpos, ypos) => mouse_handler(state, xpos, ypos),
         glfw::WindowEvent::Scroll(xoffset, ysoffset) => scroll_handler(state, xoffset, ysoffset),

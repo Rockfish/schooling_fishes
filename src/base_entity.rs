@@ -90,7 +90,7 @@ impl EntityBase for BaseGameEntity {
     }
 
     fn Pos(&self) -> Vec2 {
-        self.m_vPos.clone()
+        self.m_vPos
     }
 
     fn BRadius(&self) -> f32 {

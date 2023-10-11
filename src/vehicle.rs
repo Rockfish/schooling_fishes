@@ -39,6 +39,8 @@ pub struct Vehicle {
 }
 
 impl Vehicle {
+
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         world: Rc<RefCell<GameWorld>>,
         position: Vec2,
@@ -117,7 +119,7 @@ impl Vehicle {
         vehicle.moving_entity.m_vVelocity = Truncate(vehicle.moving_entity.m_vVelocity, vehicle.moving_entity.m_dMaxSpeed);
 
         //update the position
-        let velo = vehicle.moving_entity.m_vVelocity.clone() * time_elapsed;
+        let velo = vehicle.moving_entity.m_vVelocity * time_elapsed;
         vehicle.moving_entity.base_entity.m_vPos += velo;
         // vehicle.moving_entity.base_entity.m_vPos += vehicle.moving_entity.m_vVelocity.clone() * time_elapsed;
 
@@ -169,7 +171,7 @@ impl EntityBase for Vehicle {
     }
 
     fn Pos(&self) -> Vec2 {
-        self.moving_entity.base_entity.m_vPos.clone()
+        self.moving_entity.base_entity.m_vPos
     }
 
     fn BRadius(&self) -> f32 {
@@ -185,7 +187,7 @@ impl EntityBase for Vehicle {
     }
 
     fn Scale(&self) -> Vec2 {
-        self.moving_entity.base_entity.m_vScale.clone()
+        self.moving_entity.base_entity.m_vScale
     }
 
     fn SetScale_vec(&mut self, val: Vec2) {

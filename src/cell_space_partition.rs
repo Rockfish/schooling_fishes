@@ -93,7 +93,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
             idx = self.m_Cells.len() as i32 - 1;
         }
 
-        return idx;
+        idx
     }
 
     pub fn AddEntity(&mut self, entity: Rc<RefCell<Entity>>) {

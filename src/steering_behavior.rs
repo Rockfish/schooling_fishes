@@ -219,7 +219,7 @@ impl SteeringBehavior {
             }
         }
 
-        self.m_vSteeringForce.clone()
+        self.m_vSteeringForce
     }
 
 }

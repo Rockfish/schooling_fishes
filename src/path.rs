@@ -4,6 +4,7 @@ use rand::thread_rng;
 use crate::transformations::Vec2DRotateAroundOrigin;
 use crate::utils::{min, RandInRange};
 
+#[derive(Debug, Default)]
 pub struct Path {
     m_WayPoints: Vec<Vec2>,
 
@@ -12,16 +13,6 @@ pub struct Path {
     curWaypoint: usize,
 
     m_bLooped: bool,
-}
-
-impl Default for Path {
-    fn default() -> Self {
-        Path {
-            m_WayPoints: vec![],
-            curWaypoint: 0,
-            m_bLooped: false,
-        }
-    }
 }
 
 impl Path {

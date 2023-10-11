@@ -26,6 +26,8 @@ pub struct MovingEntity {
 }
 
 impl MovingEntity {
+
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         position: Vec2,
         radius: f32,

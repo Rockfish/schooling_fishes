@@ -12,12 +12,12 @@ pub const ZOOM: f32 = 45.0;
 // Defines several possible options for camera movement. Used as abstraction
 // to stay away from window-system specific input methods
 pub enum CameraMovement {
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT,
-    UP,
-    DOWN,
+    Forward,
+    Backward,
+    Left,
+    Right,
+    Up,
+    Down,
 }
 
 #[derive(Default)]
@@ -72,6 +72,7 @@ impl Camera {
     }
 
     // constructor with scalar values
+    #[allow(clippy::too_many_arguments)]
     pub fn camera_scalar(posX: f32, posY: f32, posZ: f32, upX: f32, upY: f32, upZ: f32, yaw: f32, pitch: f32) -> Camera {
         let mut camera = Camera::new();
         camera.Position = vec3(posX, posY, posZ);
@@ -93,12 +94,12 @@ impl Camera {
         let velocity: f32 = self.MovementSpeed * deltaTime;
 
         match direction {
-            CameraMovement::FORWARD => self.Position += self.Front * velocity,
-            CameraMovement::BACKWARD => self.Position -= self.Front * velocity,
-            CameraMovement::LEFT => self.Position -= self.Right * velocity,
-            CameraMovement::RIGHT => self.Position += self.Right * velocity,
-            CameraMovement::UP => self.Position += self.Up * velocity,
-            CameraMovement::DOWN => self.Position -= self.Up * velocity,
+            CameraMovement::Forward => self.Position += self.Front * velocity,
+            CameraMovement::Backward => self.Position -= self.Front * velocity,
+            CameraMovement::Left => self.Position -= self.Right * velocity,
+            CameraMovement::Right => self.Position += self.Right * velocity,
+            CameraMovement::Up => self.Position += self.Up * velocity,
+            CameraMovement::Down => self.Position -= self.Up * velocity,
         }
 
         // For FPS: make sure the user stays at the ground level

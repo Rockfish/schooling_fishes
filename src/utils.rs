@@ -44,11 +44,7 @@ pub fn RandInRange(mut rng: ThreadRng, x: f32, y: f32) -> f32 {
 }
 
 pub fn RandBool(rng: &mut ThreadRng) -> bool {
-    if rng.gen_range(0.0..=1.0) > 0.5 {
-        true
-    } else {
-        false
-    }
+    rng.gen_range(0.0..=1.0) > 0.5
 }
 
 //returns a random float in the range -1 < n < 1
