@@ -71,7 +71,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
     }
 
     pub fn EmptyCells(&mut self) {
-        for mut cell in &mut self.m_Cells {
+        for cell in &mut self.m_Cells {
             cell.Members.clear();
         }
     }
@@ -98,7 +98,9 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
 
     pub fn AddEntity(&mut self, entity: Rc<RefCell<Entity>>) {
         let sz = self.m_Cells.len();
-        let idx = self.PositionToIndex(&entity.borrow().Pos());
+        let idx = self.PositionToIndex(&entity.borrow().Pos()) as usize;
+        assert!(idx < sz);
+        self.m_Cells[idx].Members.push(entity);
     }
 
     //----------------------- CalculateNeighbors ----------------------------

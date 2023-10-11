@@ -22,20 +22,20 @@ const WAYPOINT_SEEK_DIST: f32 = 20.0;
 
 //------------------------------------------------------------------------
 
-enum Deceleration {
+pub enum Deceleration {
     slow = 3,
     normal = 2,
     fast = 1,
 }
 
-enum SummingMethod {
+pub enum SummingMethod {
     weighted_average,
     prioritized,
     dithered,
 }
 
 #[derive(Debug, Copy, Clone)]
-enum BehaviorType {
+pub enum BehaviorType {
     none = 0x00000,
     seek = 0x00002,
     flee = 0x00004,

@@ -34,10 +34,10 @@ use crate::base_entity::EntityBase;
 //  tags any entities contained in a std container that are within the
 //  radius of the single entity parameter
 //------------------------------------------------------------------------
-pub fn TagNeighbors<E1: EntityBase, E2: EntityBase>(entity: &Rc<RefCell<E1>>, ContainerOfEntities: &Vec<E2>, radius: f32) {
+pub fn TagNeighbors<E1: EntityBase, E2: EntityBase>(entity: &Rc<RefCell<E1>>, ContainerOfEntities: &mut Vec<E2>, radius: f32) {
 
     //iterate through all entities checking for range
-    for mut curEntity in ContainerOfEntities
+    for curEntity in ContainerOfEntities
     {
         //first clear any current tag
         curEntity.UnTag();

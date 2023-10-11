@@ -58,9 +58,8 @@ pub fn RandomClamped(rng: &mut ThreadRng) -> f32 {
 
 pub fn Truncate(v: Vec2, max: f32) -> Vec2 {
     if v.length() > max {
-        let mut v = v.normalize();
-        v.mul(max);
-        return v;
+        let v = v.normalize();
+        return v.mul(max);
     }
     v
 }
@@ -72,11 +71,17 @@ pub fn WrapAround(pos: &mut Vec2, MaxX: i32, MaxY: i32)
         pos.x = 0.0;
     }
 
-    if pos.x < 0.0 { pos.x = MaxX as f32; }
+    if pos.x < 0.0 {
+        pos.x = MaxX as f32;
+    }
 
-    if pos.y < 0.0 { pos.y = MaxY as f32; }
+    if pos.y < 0.0 {
+        pos.y = MaxY as f32;
+    }
 
-    if pos.y > MaxY as f32 { pos.y = 0.0; }
+    if pos.y > MaxY as f32 {
+        pos.y = 0.0;
+    }
 }
 
 #[cfg(test)]
@@ -90,13 +95,16 @@ mod tests {
         println!("length: {}", v.length());
 
         v = Truncate(v, 5.0);
-        println!("length: {}", v.length());
+        println!("vec: {:?}  length: {}", v, v.length());
     }
 
     #[test]
     pub fn test_wraparound() {
         let mut v = vec2(10.0, 10.0);
         WrapAround(&mut v, 8, 8);
+        println!("{:?}", v);
+        let mut v = vec2(10.0, 10.0);
+        WrapAround(&mut v, 10, 11);
         println!("{:?}", v);
     }
 }

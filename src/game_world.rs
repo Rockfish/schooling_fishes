@@ -150,6 +150,14 @@ impl GameWorld {
         game_world
     }
 
+    pub fn cxClient(&self) -> i32 {
+        self.m_cxClient
+    }
+
+    pub fn cyClient(&self) -> i32 {
+        self.m_cyClient
+    }
+
     pub fn Update(&mut self, time_elapsed: f32) {
 
         //  if (m_bPaused) return;
@@ -158,12 +166,13 @@ impl GameWorld {
         // let SampleRate = 10;
         //static Smoother<float> FrameRateSmoother(SampleRate, 0.0);
 
-        self.m_dAvFrameTime = time_elapsed;
+        self.m_dAvFrameTime = time_elapsed; // FrameRateSmoother.Update(time_elapsed);
 
         for vehicle in &self.m_Vehicles {
             //vehicle.Update(time_elapsed);
             let old_position = Vehicle::Update(vehicle, time_elapsed);
 
+            // This bit was in vehicle, seem to make more sense to have it here.
             if self.m_bCellSpaceOn {
                 self.m_pCellSpace.UpdateEntity(vehicle, &old_position);
             }
@@ -188,17 +197,10 @@ impl GameWorld {
         }
     }
 
-    pub fn TagVehiclesWithinViewRange(&self, pVehicle: &Rc<RefCell<Vehicle>>, range: f32) {
-        TagNeighbors(pVehicle, &self.m_Obstacles, range);
+    pub fn TagVehiclesWithinViewRange(&mut self, pVehicle: &Rc<RefCell<Vehicle>>, range: f32) {
+        TagNeighbors(pVehicle, &mut self.m_Obstacles, range);
     }
 
 
 
-    pub fn cxClient(&self) -> i32 {
-        self.m_cxClient
-    }
-
-    pub fn cyClient(&self) -> i32 {
-        self.m_cyClient
-    }
 }

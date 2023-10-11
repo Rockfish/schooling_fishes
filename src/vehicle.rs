@@ -117,7 +117,9 @@ impl Vehicle {
         vehicle.moving_entity.m_vVelocity = Truncate(vehicle.moving_entity.m_vVelocity, vehicle.moving_entity.m_dMaxSpeed);
 
         //update the position
-        vehicle.moving_entity.base_entity.m_vPos += vehicle.moving_entity.m_vVelocity.clone() * time_elapsed;
+        let velo = vehicle.moving_entity.m_vVelocity.clone() * time_elapsed;
+        vehicle.moving_entity.base_entity.m_vPos += velo;
+        // vehicle.moving_entity.base_entity.m_vPos += vehicle.moving_entity.m_vVelocity.clone() * time_elapsed;
 
         //update the heading if the vehicle has a non zero velocity
         if vehicle.moving_entity.m_vVelocity.length_squared() > 0.00000001 {
@@ -128,7 +130,9 @@ impl Vehicle {
         //EnforceNonPenetrationConstraint(this, World()->Agents());
 
         //treat the screen as a toroid
-        WrapAround(&mut vehicle.moving_entity.base_entity.m_vPos, vehicle.m_pWorld.borrow().cxClient(), vehicle.m_pWorld.borrow().cyClient());
+        let cx = vehicle.m_pWorld.borrow().cxClient();
+        let cy = vehicle.m_pWorld.borrow().cyClient();
+        WrapAround(&mut vehicle.moving_entity.base_entity.m_vPos, cx, cy);
 
         // TODO: Note, this moved this to gameworld object
         //update the vehicle's current cell if space partitioning is turned on
@@ -137,7 +141,8 @@ impl Vehicle {
         // }
 
         if vehicle.m_bSmoothingOn {
-            vehicle.m_vSmoothedHeading = vehicle.m_pHeadingSmoother.update(vehicle.moving_entity.m_vHeading);
+            let heading = vehicle.moving_entity.m_vHeading;
+            vehicle.m_vSmoothedHeading = vehicle.m_pHeadingSmoother.update(heading);
         }
         OldPos
     }
