@@ -15,7 +15,7 @@ use std::rc::Rc;
 #[derive(Debug)]
 pub struct GameWorld {
     //a container of all the moving entities
-    m_Vehicles: Vec<Rc<RefCell<Vehicle>>>,
+    pub(crate) m_Vehicles: Vec<Rc<RefCell<Vehicle>>>,
 
     //any obstacles
     m_Obstacles: Vec<BaseGameEntity>,
@@ -38,7 +38,7 @@ pub struct GameWorld {
     m_cyClient: i32,
 
     //the position of the crosshair
-    m_vCrosshair: Vec2,
+    pub(crate) m_vCrosshair: Vec2,
 
     //keeps track of the average FPS
     m_dAvFrameTime: f32,

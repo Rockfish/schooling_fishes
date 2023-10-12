@@ -106,6 +106,10 @@ impl EntityBase for BaseGameEntity {
         self.m_bTag = false;
     }
 
+    fn IsTagged(&self) -> bool {
+        self.m_bTag
+    }
+
     fn Scale(&self) -> Vec2 {
         self.m_vScale
     }
@@ -139,6 +143,7 @@ pub trait EntityBase {
     fn Tag(&mut self);
 
     fn UnTag(&mut self);
+    fn IsTagged(&self) -> bool;
 
     fn Scale(&self) -> Vec2;
 

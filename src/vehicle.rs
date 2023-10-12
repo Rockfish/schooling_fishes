@@ -38,7 +38,7 @@ pub struct Vehicle {
     //buffer for the vehicle shape
     m_vecVehicleVB: Vec<Vec2>,
 
-    moving_entity: MovingEntity,
+    pub(crate) moving_entity: MovingEntity,
 }
 
 impl Vehicle {
@@ -97,46 +97,48 @@ impl Vehicle {
     //
     //  Updates the vehicle's position from a series of steering behaviors
     //------------------------------------------------------------------------
-    pub fn Update(rc_vehicle: &Rc<RefCell<Vehicle>>, time_elapsed: f32) -> Vec2 {
-        let mut vehicle = rc_vehicle.borrow_mut();
+    pub fn Update(vehicle: &Rc<RefCell<Vehicle>>, time_elapsed: f32) -> Vec2 {
+        // let mut vehicle = rc_vehicle.borrow_mut();
         //update the time elapsed
-        vehicle.m_dTimeElapsed = time_elapsed;
+        vehicle.borrow_mut().m_dTimeElapsed = time_elapsed;
 
         //keep a record of its old position so we can update its cell later
         //in this method
-        let OldPos = vehicle.Pos();
+        let OldPos = vehicle.borrow().Pos();
 
         //calculate the combined force from each steering behavior in the
         //vehicle's list
-        let SteeringForce = vehicle.m_pSteering.as_mut().unwrap().Calculate();
+        let steering = vehicle.borrow().m_pSteering.as_mut().unwrap();
+        let steering_force = steering.Calculate(vehicle.borrow());
+        // let steering_force = vehicle.borrow_mut().m_pSteering.as_mut().unwrap().Calculate();
 
         //Acceleration = Force/Mass
-        let acceleration = SteeringForce / vehicle.moving_entity.m_dMass;
+        let acceleration = steering_force / vehicle.borrow().moving_entity.m_dMass;
 
         //update velocity
-        vehicle.moving_entity.m_vVelocity += acceleration * time_elapsed;
+        vehicle.borrow_mut().moving_entity.m_vVelocity += acceleration * time_elapsed;
 
         //make sure vehicle does not exceed maximum velocity
         // vehicle.moving_entity.m_vVelocity.Truncate(vehicle.moving_entity.m_dMaxSpeed);
-        vehicle.moving_entity.m_vVelocity = Truncate(vehicle.moving_entity.m_vVelocity, vehicle.moving_entity.m_dMaxSpeed);
+        vehicle.borrow_mut().moving_entity.m_vVelocity = Truncate(vehicle.borrow().moving_entity.m_vVelocity, vehicle.borrow().moving_entity.m_dMaxSpeed);
 
         //update the position
-        let velo = vehicle.moving_entity.m_vVelocity * time_elapsed;
-        vehicle.moving_entity.base_entity.m_vPos += velo;
+        let velo = vehicle.borrow().moving_entity.m_vVelocity * time_elapsed;
+        vehicle.borrow_mut().moving_entity.base_entity.m_vPos += velo;
         // vehicle.moving_entity.base_entity.m_vPos += vehicle.moving_entity.m_vVelocity.clone() * time_elapsed;
 
         //update the heading if the vehicle has a non zero velocity
-        if vehicle.moving_entity.m_vVelocity.length_squared() > 0.00000001 {
-            vehicle.moving_entity.m_vHeading = vehicle.moving_entity.m_vVelocity.normalize();
-            vehicle.moving_entity.m_vSide = vehicle.moving_entity.m_vHeading.perp();
+        if vehicle.borrow().moving_entity.m_vVelocity.length_squared() > 0.00000001 {
+            vehicle.borrow_mut().moving_entity.m_vHeading = vehicle.borrow().moving_entity.m_vVelocity.normalize();
+            vehicle.borrow_mut().moving_entity.m_vSide = vehicle.borrow().moving_entity.m_vHeading.perp();
         }
 
         //EnforceNonPenetrationConstraint(this, World()->Agents());
 
         //treat the screen as a toroid
-        let cx = vehicle.m_pWorld.borrow().cxClient();
-        let cy = vehicle.m_pWorld.borrow().cyClient();
-        WrapAround(&mut vehicle.moving_entity.base_entity.m_vPos, cx, cy);
+        let cx = vehicle.borrow().m_pWorld.borrow().cxClient();
+        let cy = vehicle.borrow().m_pWorld.borrow().cyClient();
+        WrapAround(&mut vehicle.borrow_mut().moving_entity.base_entity.m_vPos, cx, cy);
 
         // TODO: Note, this moved this to gameworld object
         //update the vehicle's current cell if space partitioning is turned on
@@ -144,9 +146,10 @@ impl Vehicle {
         //     vehicle.m_pWorld.borrow_mut().m_pCellSpace.UpdateEntity(this, &OldPos);
         // }
 
-        if vehicle.m_bSmoothingOn {
-            let heading = vehicle.moving_entity.m_vHeading;
-            vehicle.m_vSmoothedHeading = vehicle.m_pHeadingSmoother.update(heading);
+        if vehicle.borrow().m_bSmoothingOn {
+            let heading = vehicle.borrow().moving_entity.m_vHeading;
+            let smoothed_heading = vehicle.borrow_mut().m_pHeadingSmoother.update(heading);
+            vehicle.borrow_mut().m_vSmoothedHeading = smoothed_heading;
         }
         OldPos
     }
@@ -304,6 +307,10 @@ impl EntityBase for Vehicle {
 
     fn UnTag(&mut self) {
         self.moving_entity.base_entity.UnTag();
+    }
+
+    fn IsTagged(&self) -> bool {
+        self.moving_entity.base_entity.IsTagged()
     }
 
     fn Scale(&self) -> Vec2 {

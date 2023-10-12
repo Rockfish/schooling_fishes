@@ -53,4 +53,24 @@ impl MovingEntity {
             base_entity,
         }
     }
+
+    pub fn MaxForce(&self) -> f32 {
+       self.m_dMaxForce
+    }
+
+    pub fn MaxSpeed(&self) -> f32 {
+        self.m_dMaxSpeed
+    }
+
+    pub fn Velocity(&self) -> Vec2 {
+        self.m_vVelocity
+    }
+
+    pub fn Speed(&self) -> f32 {
+        self.m_vVelocity.length()
+    }
+
+    pub fn Heading(&self) -> Vec2 {
+        self.m_vHeading
+    }
 }
