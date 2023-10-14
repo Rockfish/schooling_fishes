@@ -17,7 +17,8 @@ impl FishMain {
     }
 
     pub fn update_with_interval(&self, time_interval: f32) {
-        self.game_world.borrow_mut().Update(time_interval);
+        println!("time_interval: {}", time_interval);
+        GameWorld::Update(self.game_world.clone(), time_interval);
     }
 
     pub fn render(&self) {

@@ -23,7 +23,7 @@ pub struct GameWorld {
     //container containing any walls in the environment
     m_Walls: Vec<Wall2D>,
 
-    pub m_pCellSpace: CellSpacePartition<Vehicle>,
+    pub m_pCellSpace: RefCell<CellSpacePartition<Vehicle>>,
     // flag for cell space partitioning
     m_bCellSpaceOn: bool,
 
@@ -67,7 +67,7 @@ impl GameWorld {
             m_Vehicles: vec![],
             m_Obstacles: vec![],
             m_Walls: vec![],
-            m_pCellSpace: cell_space,
+            m_pCellSpace: cell_space.into(),
             m_bCellSpaceOn: false,
             m_pPath: Some(path),
             m_bPaused: false,
@@ -92,8 +92,6 @@ impl GameWorld {
 
         let game_world = Rc::new(RefCell::new(game_world));
         {
-            let mut game_world_mut = game_world.borrow_mut();
-
             // setup the agents
             for _a in 0..PRM.NumAgents {
                 //determine a random starting position
@@ -114,13 +112,16 @@ impl GameWorld {
                     PRM.VehicleScale,
                 );
 
-                vehicle.borrow_mut().m_pSteering.as_mut().unwrap().FlockingOn();
+                // vehicle.borrow_mut().m_pSteering.as_mut().unwrap().FlockingOn();
+                if let Some(steering) = &vehicle.borrow().m_pSteering {
+                    steering.borrow_mut().FlockingOn();
+                }
 
-                game_world_mut.m_Vehicles.push(vehicle.clone());
-                game_world_mut.m_pCellSpace.AddEntity(vehicle.clone());
+                game_world.borrow_mut().m_Vehicles.push(vehicle.clone());
+                game_world.borrow().m_pCellSpace.borrow_mut().AddEntity(vehicle.clone());
             }
 
-            game_world_mut.ToggleSpacePartition();
+            game_world.borrow_mut().ToggleSpacePartition();
         }
 
         /* SHOAL
@@ -159,22 +160,22 @@ impl GameWorld {
         self.m_cyClient
     }
 
-    pub fn Update(&mut self, time_elapsed: f32) {
+    pub fn Update(game_world: Rc<RefCell<GameWorld>>, time_elapsed: f32) {
         //  if (m_bPaused) return;
 
         //create a smoother to smooth the framerate
         // let SampleRate = 10;
         //static Smoother<float> FrameRateSmoother(SampleRate, 0.0);
 
-        self.m_dAvFrameTime = time_elapsed; // FrameRateSmoother.Update(time_elapsed);
+        game_world.borrow_mut().m_dAvFrameTime = time_elapsed; // FrameRateSmoother.Update(time_elapsed);
 
-        for vehicle in &self.m_Vehicles {
+        for vehicle in &game_world.borrow().m_Vehicles {
             //vehicle.Update(time_elapsed);
             let old_position = Vehicle::Update(vehicle, time_elapsed);
 
             // This bit was in vehicle, seem to make more sense to have it here.
-            if self.m_bCellSpaceOn {
-                self.m_pCellSpace.UpdateEntity(vehicle, &old_position);
+            if game_world.borrow().m_bCellSpaceOn {
+                game_world.borrow().m_pCellSpace.borrow_mut().UpdateEntity(vehicle, &old_position);
             }
         }
     }
@@ -183,14 +184,16 @@ impl GameWorld {
         self.m_bCellSpaceOn = !self.m_bCellSpaceOn;
 
         for vehicle in &self.m_Vehicles {
-            vehicle.borrow_mut().m_pSteering.as_mut().unwrap().m_bCellSpaceOn = self.m_bCellSpaceOn;
+            if let Some(steering) = &vehicle.borrow().m_pSteering {
+                steering.borrow_mut().m_bCellSpaceOn = self.m_bCellSpaceOn;
+            }
         }
 
         if self.m_bCellSpaceOn {
-            self.m_pCellSpace.EmptyCells();
+            self.m_pCellSpace.borrow_mut().EmptyCells();
 
             for vehicle in &self.m_Vehicles {
-                self.m_pCellSpace.AddEntity(vehicle.clone());
+                self.m_pCellSpace.borrow_mut().AddEntity(vehicle.clone());
             }
         } else {
             self.m_bShowCellSpaceInfo = false;
@@ -247,7 +250,7 @@ impl GameWorld {
         // }
 
         if self.m_bShowCellSpaceInfo {
-            self.m_pCellSpace.RenderCells();
+            self.m_pCellSpace.borrow().RenderCells();
         }
     }
 }

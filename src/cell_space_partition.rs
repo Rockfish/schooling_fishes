@@ -122,6 +122,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
     pub fn CalculateNeighbors(&mut self, target_pos: Vec2, query_radius: f32) {
         // index into the neighbor vector
         let mut current_neighbor: usize = 0;
+        self.m_Neighbors.clear();
 
         //create the query box that is the bounding box of the target's query area
         let query_box = InvertedAABBox2D::new(
@@ -135,16 +136,12 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
             if cur_cell.BBox.isOverlappedWith(&query_box) && !cur_cell.Members.is_empty() {
                 for entity in &cur_cell.Members {
                     if entity.borrow().Pos().distance_squared(target_pos) < query_radius_squared {
-                        // todo: revisit probably should just clear then push. Rust vecs probably don't work like the cpp vectors
-                        self.m_Neighbors[current_neighbor] = entity.clone();
+                        self.m_Neighbors.push(entity.clone());
                         current_neighbor += 1;
                     }
                 }
             }
         }
-
-        // TODO: clear and push instead of this
-        self.m_Neighbors.truncate(current_neighbor);
     }
 
     //----------------------- UpdateEntity -----------------------------------

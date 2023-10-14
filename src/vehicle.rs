@@ -18,7 +18,7 @@ pub struct Vehicle {
     pub m_pWorld: Rc<RefCell<GameWorld>>,
 
     //the steering behavior class
-    pub m_pSteering: Option<SteeringBehavior>,
+    pub m_pSteering: Option<RefCell<SteeringBehavior>>,
 
     //some steering behaviors give jerky looking movement. The
     //following members are used to smooth the vehicle's heading
@@ -80,7 +80,7 @@ impl Vehicle {
         }));
 
         let steering = SteeringBehavior::new(vehicle.clone());
-        vehicle.borrow_mut().m_pSteering = Some(steering);
+        vehicle.borrow_mut().m_pSteering = Some(RefCell::new(steering));
 
         vehicle
     }
@@ -108,8 +108,10 @@ impl Vehicle {
 
         //calculate the combined force from each steering behavior in the
         //vehicle's list
-        let steering = vehicle.borrow().m_pSteering.as_mut().unwrap();
-        let steering_force = steering.Calculate(vehicle.borrow());
+        let mut steering_force = Vec2::default();
+        if let Some(steering) = &vehicle.borrow().m_pSteering {
+            steering_force = steering.borrow_mut().Calculate(vehicle.clone());
+        }
         // let steering_force = vehicle.borrow_mut().m_pSteering.as_mut().unwrap().Calculate();
 
         //Acceleration = Force/Mass
@@ -120,7 +122,9 @@ impl Vehicle {
 
         //make sure vehicle does not exceed maximum velocity
         // vehicle.moving_entity.m_vVelocity.Truncate(vehicle.moving_entity.m_dMaxSpeed);
-        vehicle.borrow_mut().moving_entity.m_vVelocity = Truncate(vehicle.borrow().moving_entity.m_vVelocity, vehicle.borrow().moving_entity.m_dMaxSpeed);
+        let velocity = vehicle.borrow().moving_entity.m_vVelocity;
+        let max_speed = vehicle.borrow().moving_entity.m_dMaxSpeed;
+        vehicle.borrow_mut().moving_entity.m_vVelocity = Truncate(velocity, max_speed);
 
         //update the position
         let velo = vehicle.borrow().moving_entity.m_vVelocity * time_elapsed;
