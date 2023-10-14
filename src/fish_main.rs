@@ -22,6 +22,6 @@ impl FishMain {
     }
 
     pub fn render(&self) {
-        self.game_world.borrow_mut().Render();
+        self.game_world.borrow().Render();
     }
 }

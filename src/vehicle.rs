@@ -267,7 +267,7 @@ impl Vehicle {
         ];
 
         unsafe {
-            gl::Color4f(0.2, 0.1, 1.0, 1.0);
+            gl::Color4f(0.2, 1.0, 1.0, 1.0);
 
             gl::PushMatrix();
 

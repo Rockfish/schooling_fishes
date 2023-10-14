@@ -30,15 +30,15 @@ extern crate glfw;
 
 use camera::{Camera, CameraMovement};
 use glad_gl::gl;
-use glad_gl::gl::{GLsizeiptr, GLuint, GLvoid};
-use glam::{vec3, Mat4};
+use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
+use glam::{vec3, Mat4, Vec3};
 use glfw::{Action, Context, Key};
-// use learn_opengl_with_rust::model::{FlipV, Gamma, Model};
-// use learn_opengl_with_rust::shader::Shader;
 use crate::fish_main::FishMain;
 use log::error;
 use rand::prelude::*;
-use std::mem;
+use std::{mem, ptr};
+use opengl_lib::shader::Shader;
+use opengl_lib::SIZE_OF_FLOAT;
 
 const SCR_WIDTH: f32 = 800.0;
 const SCR_HEIGHT: f32 = 800.0;
@@ -78,6 +78,7 @@ fn main() {
     gl::load(|e| glfw.get_proc_address_raw(e) as *const std::os::raw::c_void);
 
     let camera = Camera::camera_vec3(vec3(0.0, 0.0, 55.0));
+    // let camera = None;
 
     // Initialize the world state
     let mut state = State {
@@ -89,12 +90,42 @@ fn main() {
         lastY: SCR_HEIGHT / 2.0,
     };
 
-    let mut fish_main = FishMain::new();
+    // let mut fish_main = FishMain::new();
+
+    let shader = Shader::new(
+        "assets/shaders/simple.vert",
+        "assets/shaders/simple.frag",
+        None,
+    )
+    .unwrap();
+
+    let mut VAO: GLuint = 0;
+    let mut VBO: GLuint = 0;
+
+    #[rustfmt::skip]
+    let vertices: [f32; 9] = [
+        -1.0,  0.6,  0.0,
+         1.0,  0.0,  0.0,
+        -1.0, -0.6,  0.0
+    ];
 
     unsafe {
-        // configure global opengl state
-        // -----------------------------
-        gl::Enable(gl::DEPTH_TEST);
+        // gl::Enable(gl::DEPTH_TEST);
+
+        gl::GenVertexArrays(1, &mut VAO);
+        gl::GenBuffers(1, &mut VBO);
+        gl::BindVertexArray(VAO);
+        gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
+        gl::BufferData(
+            gl::ARRAY_BUFFER,
+            (vertices.len() * SIZE_OF_FLOAT) as GLsizeiptr,
+            vertices.as_ptr()  as *const GLvoid,
+            gl::STATIC_DRAW,
+        );
+        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (3 * SIZE_OF_FLOAT) as GLsizei, ptr::null());
+        gl::EnableVertexAttribArray(0);
+        gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+        gl::BindVertexArray(0);
     }
 
     // render loop
@@ -113,28 +144,37 @@ fn main() {
             gl::ClearColor(0.1, 0.1, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT); //  | gl::DEPTH_BUFFER_BIT);
 
-            gl::MatrixMode(gl::PROJECTION);
-            gl::LoadIdentity();
-            gl::Ortho(0.0, 400.0, 0.0, 600.0, -1.0, 1.0);
+            let mut transform = Mat4::IDENTITY;
+            transform = transform * Mat4::from_translation(Vec3::new(0.5, -0.5, 0.0));
+            transform = transform * Mat4::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), glfw.get_time() as f32);
 
-            fish_main.update_with_interval(state.deltaTime);
+            shader.setMat4("transform", &transform);
 
-            gl::Disable(gl::CULL_FACE);
-            gl::MatrixMode(gl::MODELVIEW);
-            gl::LoadIdentity();
-            gl::EnableClientState(gl::VERTEX_ARRAY);
+            // gl::UseProgram(shader.id);
+            shader.use_shader();
+            gl::BindVertexArray(VAO);
+            gl::DrawArrays(gl::TRIANGLES, 0, 3);
 
-            fish_main.render();
+            // gl::MatrixMode(gl::PROJECTION);
+            // gl::LoadIdentity();
+            // gl::Ortho(0.0, 400.0, 0.0, 600.0, -1.0, 1.0);
+
+            // fish_main.update_with_interval(state.deltaTime);
+
+            // gl::Disable(gl::CULL_FACE);
+            // gl::MatrixMode(gl::MODELVIEW);
+            // gl::LoadIdentity();
+            // gl::EnableClientState(gl::VERTEX_ARRAY);
+
+            // fish_main.render();
         }
 
         window.swap_buffers();
     }
 
-    // optional: de-allocate all resources once they've outlived their purpose:
-    // ------------------------------------------------------------------------
-    // unsafe {
-    // gl::DeleteShader(asteroidShader.id);
-    // }
+    unsafe {
+        gl::DeleteShader(shader.id);
+    }
 }
 
 //
@@ -167,7 +207,7 @@ fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent, stat
         glfw::WindowEvent::CursorPos(xpos, ypos) => mouse_handler(state, xpos, ypos),
         glfw::WindowEvent::Scroll(xoffset, ysoffset) => scroll_handler(state, xoffset, ysoffset),
         _evt => {
-            // println!("WindowEvent: {:?}", evt);
+            println!("WindowEvent: {:?}", _evt);
         }
     }
 }
@@ -203,5 +243,5 @@ fn mouse_handler(state: &mut State, xposIn: f64, yposIn: f64) {
 }
 
 fn scroll_handler(state: &mut State, _xoffset: f64, yoffset: f64) {
-    state.camera.ProcessMouseScroll(yoffset as f32);
+    // state.camera.ProcessMouseScroll(yoffset as f32);
 }
