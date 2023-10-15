@@ -11,6 +11,8 @@ use rand::thread_rng;
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
+use glad_gl::gl::GLuint;
+use opengl_lib::shader::Shader;
 
 #[derive(Debug)]
 pub struct GameWorld {
@@ -204,7 +206,7 @@ impl GameWorld {
         TagNeighbors(pVehicle, &mut self.m_Obstacles, range);
     }
 
-    pub fn Render(&self) {
+    pub fn Render(&self, shader: &Shader, VAO: GLuint) {
         for wall in &self.m_Walls {
             wall.Render(true);
         }
@@ -216,7 +218,7 @@ impl GameWorld {
         let mut first = true;
         //render the agents
         for vehicle in &self.m_Vehicles {
-            vehicle.borrow_mut().Render();
+            vehicle.borrow_mut().Render(shader, VAO);
 
             //render cell partitioning stuff
             if self.m_bShowCellSpaceInfo && first {

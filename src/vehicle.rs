@@ -6,10 +6,11 @@ use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
 use crate::utils::{Truncate, WrapAround};
 use glad_gl::gl;
-use glad_gl::gl::{GLenum, GLvoid};
-use glam::{vec2, Vec2};
+use glad_gl::gl::{GLenum, GLuint, GLvoid};
+use glam::{Mat4, vec2, Vec2, Vec3};
 use std::cell::RefCell;
 use std::rc::Rc;
+use opengl_lib::shader::Shader;
 
 #[derive(Debug)]
 pub struct Vehicle {
@@ -173,7 +174,32 @@ impl Vehicle {
 
      */
 
-    pub fn Render(&mut self) {
+    pub fn Render(&mut self, shader: &Shader, VAO: GLuint) {
+
+        //float angle = (acos(forward.x)/(2*M_PI))*360;
+        //let angle = acos(self.moving_entity.m_vHeading.x) * RADTODEG; // RadToDeg(acos(m_vHeading.x));
+        let mut angle = self.moving_entity.m_vHeading.x.acos().to_degrees();
+
+        if self.moving_entity.m_vHeading.y < 0.0 {
+            angle = 360.0 - angle;
+        }
+
+        let position = Vec3::new(self.moving_entity.base_entity.m_vPos.x, self.moving_entity.base_entity.m_vPos.y, 0.0);
+
+        let mut model_transform = Mat4::from_translation(position);
+        model_transform *= Mat4::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), angle.to_radians());
+        model_transform *= Mat4::from_scale(Vec3::new(3.0, 3.0, 1.0));
+
+        shader.use_shader();
+        shader.setMat4("model", &model_transform);
+
+        unsafe {
+            gl::BindVertexArray(VAO);
+            gl::DrawArrays(gl::TRIANGLES, 0, 3);
+        }
+
+        println!("fish id: {}   position: {}", self.ID(), position);
+
         /*
             //a vector to hold the transformed vertices
             static std::vector<Vector2D>  m_vecVehicleVBTrans;
@@ -239,7 +265,7 @@ impl Vehicle {
         //			  Heading(),
         //			  Side(),
         //			  Scale());
-        self.Triangle();
+        // self.Triangle();
         // }
 
         //render any visual aids / and or user options

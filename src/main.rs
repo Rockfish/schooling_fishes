@@ -78,7 +78,6 @@ fn main() {
     gl::load(|e| glfw.get_proc_address_raw(e) as *const std::os::raw::c_void);
 
     let camera = Camera::camera_vec3(vec3(0.0, 0.0, 55.0));
-    // let camera = None;
 
     // Initialize the world state
     let mut state = State {
@@ -90,11 +89,11 @@ fn main() {
         lastY: SCR_HEIGHT / 2.0,
     };
 
-    // let mut fish_main = FishMain::new();
+    let mut fish_main = FishMain::new();
 
     let shader = Shader::new(
-        "assets/shaders/simple.vert",
-        "assets/shaders/simple.frag",
+        "assets/shaders/camera.vert",
+        "assets/shaders/camera.frag",
         None,
     )
     .unwrap();
@@ -144,11 +143,20 @@ fn main() {
             gl::ClearColor(0.1, 0.1, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT); //  | gl::DEPTH_BUFFER_BIT);
 
-            let mut transform = Mat4::IDENTITY;
-            transform = transform * Mat4::from_translation(Vec3::new(0.5, -0.5, 0.0));
-            transform = transform * Mat4::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), glfw.get_time() as f32);
+            // let projection = Mat4::perspective_rh_gl(state.camera.Zoom.to_radians(), SCR_WIDTH / SCR_HEIGHT, 0.1, 100.0);
+            let projection = Mat4::orthographic_rh_gl(0.0, 600.0, 0.0, 600.0, 0.1, 100.0);
+            shader.setMat4("projection", &projection);
 
-            shader.setMat4("transform", &transform);
+            // camera/view transformation
+            // let view = state.camera.GetViewMatrix();
+            let view = Mat4::look_at_rh(state.camera.Position, state.camera.Position + state.camera.Front, state.camera.Up);
+            shader.setMat4("view", &view);
+
+            let mut model_transform = Mat4::from_translation(Vec3::new(300.0, 300.0, 0.0));
+            model_transform *= Mat4::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), glfw.get_time() as f32);
+            model_transform *= Mat4::from_scale(Vec3::new(10.0, 10.0, 1.0));
+
+            shader.setMat4("model", &model_transform);
 
             // gl::UseProgram(shader.id);
             shader.use_shader();
@@ -159,14 +167,14 @@ fn main() {
             // gl::LoadIdentity();
             // gl::Ortho(0.0, 400.0, 0.0, 600.0, -1.0, 1.0);
 
-            // fish_main.update_with_interval(state.deltaTime);
+            fish_main.update_with_interval(state.deltaTime);
 
             // gl::Disable(gl::CULL_FACE);
             // gl::MatrixMode(gl::MODELVIEW);
             // gl::LoadIdentity();
             // gl::EnableClientState(gl::VERTEX_ARRAY);
 
-            // fish_main.render();
+            fish_main.render(&shader, VAO);
         }
 
         window.swap_buffers();
