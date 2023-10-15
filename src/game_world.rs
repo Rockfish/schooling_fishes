@@ -6,13 +6,13 @@ use crate::path::Path;
 use crate::utils::*;
 use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
+use glad_gl::gl::GLuint;
 use glam::{vec2, Vec2};
+use opengl_lib::shader::Shader;
 use rand::thread_rng;
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
-use glad_gl::gl::GLuint;
-use opengl_lib::shader::Shader;
 
 #[derive(Debug)]
 pub struct GameWorld {

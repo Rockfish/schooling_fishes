@@ -22,11 +22,11 @@ impl<Entity: EntityBase> Cell<Entity> {
 #[derive(Debug)]
 pub struct CellSpacePartition<Entity: EntityBase> {
     //the required amount of cells in the space
-    m_Cells: Vec<Cell<Entity>>,
+    pub m_Cells: Vec<Cell<Entity>>,
 
     //this is used to store any valid neighbors when an agent searches
     //its neighboring space
-    m_Neighbors: Vec<Rc<RefCell<Entity>>>,
+    pub m_Neighbors: Vec<Rc<RefCell<Entity>>>,
 
     //this iterator will be used by the methods next and begin to traverse
     //through the above vector of neighbors

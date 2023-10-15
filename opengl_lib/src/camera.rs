@@ -147,11 +147,11 @@ impl Camera {
             self.Yaw.to_radians().sin() * self.Pitch.to_radians().cos(),
         );
 
-        self.Front = front.normalize();
+        self.Front = front.normalize_or_zero();
 
         // also re-calculate the Right and Up vector
         // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-        self.Right = self.Front.cross(self.WorldUp).normalize();
-        self.Up = self.Right.cross(self.Front).normalize();
+        self.Right = self.Front.cross(self.WorldUp).normalize_or_zero();
+        self.Up = self.Right.cross(self.Front).normalize_or_zero();
     }
 }

@@ -55,7 +55,7 @@ impl MovingEntity {
     }
 
     pub fn MaxForce(&self) -> f32 {
-       self.m_dMaxForce
+        self.m_dMaxForce
     }
 
     pub fn MaxSpeed(&self) -> f32 {

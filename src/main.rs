@@ -28,17 +28,17 @@ mod wall_2d;
 
 extern crate glfw;
 
+use crate::fish_main::FishMain;
 use camera::{Camera, CameraMovement};
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use glam::{vec3, Mat4, Vec3};
 use glfw::{Action, Context, Key};
-use crate::fish_main::FishMain;
 use log::error;
-use rand::prelude::*;
-use std::{mem, ptr};
 use opengl_lib::shader::Shader;
 use opengl_lib::SIZE_OF_FLOAT;
+use rand::prelude::*;
+use std::{mem, ptr};
 
 const SCR_WIDTH: f32 = 800.0;
 const SCR_HEIGHT: f32 = 800.0;
@@ -91,12 +91,7 @@ fn main() {
 
     let mut fish_main = FishMain::new();
 
-    let shader = Shader::new(
-        "assets/shaders/camera.vert",
-        "assets/shaders/camera.frag",
-        None,
-    )
-    .unwrap();
+    let shader = Shader::new("assets/shaders/camera.vert", "assets/shaders/camera.frag", None).unwrap();
 
     let mut VAO: GLuint = 0;
     let mut VBO: GLuint = 0;
@@ -118,7 +113,7 @@ fn main() {
         gl::BufferData(
             gl::ARRAY_BUFFER,
             (vertices.len() * SIZE_OF_FLOAT) as GLsizeiptr,
-            vertices.as_ptr()  as *const GLvoid,
+            vertices.as_ptr() as *const GLvoid,
             gl::STATIC_DRAW,
         );
         gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (3 * SIZE_OF_FLOAT) as GLsizei, ptr::null());

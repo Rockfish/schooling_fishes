@@ -1,8 +1,8 @@
 use crate::game_world::GameWorld;
-use std::cell::RefCell;
-use std::rc::Rc;
 use glad_gl::gl::GLuint;
 use opengl_lib::shader::Shader;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct FishMain {

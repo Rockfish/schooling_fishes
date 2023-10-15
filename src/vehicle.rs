@@ -7,10 +7,10 @@ use crate::steering_behavior::SteeringBehavior;
 use crate::utils::{Truncate, WrapAround};
 use glad_gl::gl;
 use glad_gl::gl::{GLenum, GLuint, GLvoid};
-use glam::{Mat4, vec2, Vec2, Vec3};
+use glam::{vec2, vec3, Mat4, Vec2, Vec3};
+use opengl_lib::shader::Shader;
 use std::cell::RefCell;
 use std::rc::Rc;
-use opengl_lib::shader::Shader;
 
 #[derive(Debug)]
 pub struct Vehicle {
@@ -34,7 +34,7 @@ pub struct Vehicle {
 
     //keeps a track of the most recent update time. (some of the
     //steering behaviors make use of this - see Wander)
-    m_dTimeElapsed: f32,
+    pub(crate) m_dTimeElapsed: f32,
 
     //buffer for the vehicle shape
     m_vecVehicleVB: Vec<Vec2>,
@@ -113,7 +113,6 @@ impl Vehicle {
         if let Some(steering) = &vehicle.borrow().m_pSteering {
             steering_force = steering.borrow_mut().Calculate(vehicle.clone());
         }
-        // let steering_force = vehicle.borrow_mut().m_pSteering.as_mut().unwrap().Calculate();
 
         //Acceleration = Force/Mass
         let acceleration = steering_force / vehicle.borrow().moving_entity.m_dMass;
@@ -125,17 +124,28 @@ impl Vehicle {
         // vehicle.moving_entity.m_vVelocity.Truncate(vehicle.moving_entity.m_dMaxSpeed);
         let velocity = vehicle.borrow().moving_entity.m_vVelocity;
         let max_speed = vehicle.borrow().moving_entity.m_dMaxSpeed;
-        vehicle.borrow_mut().moving_entity.m_vVelocity = Truncate(velocity, max_speed);
+        let truncated_velocity = Truncate(velocity, max_speed);
+
+        vehicle.borrow_mut().moving_entity.m_vVelocity = truncated_velocity;
 
         //update the position
         let velo = vehicle.borrow().moving_entity.m_vVelocity * time_elapsed;
+
         vehicle.borrow_mut().moving_entity.base_entity.m_vPos += velo;
+
+        let new_position = vehicle.borrow().moving_entity.base_entity.Pos();
+        if new_position.x.is_nan() || new_position.y.is_nan() {
+            println!("position is nan!");
+        }
         // vehicle.moving_entity.base_entity.m_vPos += vehicle.moving_entity.m_vVelocity.clone() * time_elapsed;
 
         //update the heading if the vehicle has a non zero velocity
         if vehicle.borrow().moving_entity.m_vVelocity.length_squared() > 0.00000001 {
-            vehicle.borrow_mut().moving_entity.m_vHeading = vehicle.borrow().moving_entity.m_vVelocity.normalize();
-            vehicle.borrow_mut().moving_entity.m_vSide = vehicle.borrow().moving_entity.m_vHeading.perp();
+            let normalize = vehicle.borrow().moving_entity.m_vVelocity.normalize_or_zero();
+            vehicle.borrow_mut().moving_entity.m_vHeading = normalize;
+
+            let prep = vehicle.borrow().moving_entity.m_vHeading.perp();
+            vehicle.borrow_mut().moving_entity.m_vSide = prep;
         }
 
         //EnforceNonPenetrationConstraint(this, World()->Agents());
@@ -175,7 +185,6 @@ impl Vehicle {
      */
 
     pub fn Render(&mut self, shader: &Shader, VAO: GLuint) {
-
         //float angle = (acos(forward.x)/(2*M_PI))*360;
         //let angle = acos(self.moving_entity.m_vHeading.x) * RADTODEG; // RadToDeg(acos(m_vHeading.x));
         let mut angle = self.moving_entity.m_vHeading.x.acos().to_degrees();
@@ -184,11 +193,13 @@ impl Vehicle {
             angle = 360.0 - angle;
         }
 
-        let position = Vec3::new(self.moving_entity.base_entity.m_vPos.x, self.moving_entity.base_entity.m_vPos.y, 0.0);
+        let position = vec3(self.moving_entity.base_entity.m_vPos.x, self.moving_entity.base_entity.m_vPos.y, 0.0);
+        let scale = vec3(self.moving_entity.base_entity.m_vScale.x, self.moving_entity.base_entity.m_vScale.y, 1.0);
 
         let mut model_transform = Mat4::from_translation(position);
-        model_transform *= Mat4::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), angle.to_radians());
-        model_transform *= Mat4::from_scale(Vec3::new(3.0, 3.0, 1.0));
+        model_transform *= Mat4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle.to_radians());
+        // model_transform *= Mat4::from_scale(Vec3::new(3.0, 3.0, 1.0));
+        model_transform *= Mat4::from_scale(scale);
 
         shader.use_shader();
         shader.setMat4("model", &model_transform);
@@ -198,7 +209,7 @@ impl Vehicle {
             gl::DrawArrays(gl::TRIANGLES, 0, 3);
         }
 
-        println!("fish id: {}   position: {}", self.ID(), position);
+        // println!("fish id: {}   position: {}", self.ID(), position);
 
         /*
             //a vector to hold the transformed vertices

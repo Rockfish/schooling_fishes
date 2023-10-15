@@ -53,7 +53,7 @@ pub fn RandomClamped(rng: &mut ThreadRng) -> f32 {
 
 pub fn Truncate(v: Vec2, max: f32) -> Vec2 {
     if v.length() > max {
-        let v = v.normalize();
+        let v = v.normalize_or_zero();
         return v.mul(max);
     }
     v
