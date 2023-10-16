@@ -8,7 +8,7 @@
 //
 //------------------------------------------------------------------------
 
-use glam::{Vec2, vec2};
+use glam::{vec2, Vec2};
 
 #[derive(Default)]
 pub struct C2DMatrix {
@@ -24,24 +24,22 @@ pub struct C2DMatrix {
 }
 
 impl C2DMatrix {
-
     pub fn MatrixMultiply(&self, mIn: C2DMatrix) -> C2DMatrix {
-
         let new_mat = C2DMatrix {
             //first row
-            _11: (self._11*mIn._11) + (self._12*mIn._21) + (self._13*mIn._31),
-            _12: (self._11*mIn._12) + (self._12*mIn._22) + (self._13*mIn._32),
-            _13: (self._11*mIn._13) + (self._12*mIn._23) + (self._13*mIn._33),
+            _11: (self._11 * mIn._11) + (self._12 * mIn._21) + (self._13 * mIn._31),
+            _12: (self._11 * mIn._12) + (self._12 * mIn._22) + (self._13 * mIn._32),
+            _13: (self._11 * mIn._13) + (self._12 * mIn._23) + (self._13 * mIn._33),
 
             //second
-            _21: (self._21*mIn._11) + (self._22*mIn._21) + (self._23*mIn._31),
-            _22: (self._21*mIn._12) + (self._22*mIn._22) + (self._23*mIn._32),
-            _23: (self._21*mIn._13) + (self._22*mIn._23) + (self._23*mIn._33),
+            _21: (self._21 * mIn._11) + (self._22 * mIn._21) + (self._23 * mIn._31),
+            _22: (self._21 * mIn._12) + (self._22 * mIn._22) + (self._23 * mIn._32),
+            _23: (self._21 * mIn._13) + (self._22 * mIn._23) + (self._23 * mIn._33),
 
             //third
-            _31: (self._31*mIn._11) + (self._32*mIn._21) + (self._33*mIn._31),
-            _32: (self._31*mIn._12) + (self._32*mIn._22) + (self._33*mIn._32),
-            _33: (self._31*mIn._13) + (self._32*mIn._23) + (self._33*mIn._33), 
+            _31: (self._31 * mIn._11) + (self._32 * mIn._21) + (self._33 * mIn._31),
+            _32: (self._31 * mIn._12) + (self._32 * mIn._22) + (self._33 * mIn._32),
+            _33: (self._31 * mIn._13) + (self._32 * mIn._23) + (self._33 * mIn._33),
         };
 
         new_mat
@@ -82,12 +80,11 @@ impl C2DMatrix {
     }
 
     pub(crate) fn TransformVector2Ds(&self, vPoint: Vec2) -> Vec2 {
-        let tempX =(self._11*vPoint.x) + (self._21*vPoint.y) + (self._31);
-        let tempY = (self._12*vPoint.x) + (self._22*vPoint.y) + (self._32);
+        let tempX = (self._11 * vPoint.x) + (self._21 * vPoint.y) + (self._31);
+        let tempY = (self._12 * vPoint.x) + (self._22 * vPoint.y) + (self._32);
         vec2(tempX, tempY)
     }
 }
-
 
 /*
 C2DMatrix()

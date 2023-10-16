@@ -1,5 +1,5 @@
-use glam::{Mat2, Mat3, Vec2, vec3};
 use crate::c2d_matrix::C2DMatrix;
+use glam::{Mat2, Vec2};
 
 //-------------------------- Vec2DRotateAroundOrigin --------------------------
 //
@@ -16,8 +16,7 @@ pub fn Vec2DRotateAroundOrigin(v: Vec2, ang: f32) -> Vec2 {
 //
 //  Transforms a point from the agent's local space into world space
 //------------------------------------------------------------------------
-pub fn PointToWorldSpace(point: Vec2, AgentHeading: Vec2, AgentSide: Vec2, AgentPosition: Vec2) -> Vec2
-{
+pub fn PointToWorldSpace(point: Vec2, AgentHeading: Vec2, AgentSide: Vec2, AgentPosition: Vec2) -> Vec2 {
     //make a copy of the point
     let TransPoint = point;
 

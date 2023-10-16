@@ -6,8 +6,8 @@ use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
 use crate::utils::{Truncate, WrapAround};
 use glad_gl::gl;
-use glad_gl::gl::{GLenum, GLuint, GLvoid};
-use glam::{vec2, vec3, Mat4, Vec2, Vec3};
+use glad_gl::gl::{GLuint, GLvoid};
+use glam::{vec2, vec3, Mat4, Vec2};
 use opengl_lib::shader::Shader;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -111,7 +111,7 @@ impl Vehicle {
         //vehicle's list
         let mut steering_force = Vec2::default();
         if let Some(steering) = &vehicle.borrow().m_pSteering {
-            steering_force = steering.borrow_mut().Calculate(vehicle.clone());
+            steering_force = steering.borrow_mut().Calculate(vehicle);
         }
 
         //Acceleration = Force/Mass

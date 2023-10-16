@@ -162,7 +162,7 @@ impl GameWorld {
         self.m_cyClient
     }
 
-    pub fn Update(game_world: Rc<RefCell<GameWorld>>, time_elapsed: f32) {
+    pub fn Update(game_world: &Rc<RefCell<GameWorld>>, time_elapsed: f32) {
         //  if (m_bPaused) return;
 
         //create a smoother to smooth the framerate

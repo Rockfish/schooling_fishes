@@ -13,7 +13,6 @@ mod camera;
 mod cell_space_partition;
 mod constants;
 mod entity_functions;
-mod fish_main;
 mod game_world;
 mod inverted_aab_box_2d;
 mod moving_entity;
@@ -28,7 +27,7 @@ mod wall_2d;
 
 extern crate glfw;
 
-use crate::fish_main::FishMain;
+use crate::game_world::GameWorld;
 use camera::{Camera, CameraMovement};
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
@@ -38,7 +37,7 @@ use log::error;
 use opengl_lib::shader::Shader;
 use opengl_lib::SIZE_OF_FLOAT;
 use rand::prelude::*;
-use std::{mem, ptr};
+use std::ptr;
 
 const SCR_WIDTH: f32 = 800.0;
 const SCR_HEIGHT: f32 = 800.0;
@@ -89,7 +88,7 @@ fn main() {
         lastY: SCR_HEIGHT / 2.0,
     };
 
-    let mut fish_main = FishMain::new();
+    let mut game_world = GameWorld::new(600, 600);
 
     let shader = Shader::new("assets/shaders/camera.vert", "assets/shaders/camera.frag", None).unwrap();
 
@@ -153,23 +152,13 @@ fn main() {
 
             shader.setMat4("model", &model_transform);
 
-            // gl::UseProgram(shader.id);
             shader.use_shader();
             gl::BindVertexArray(VAO);
             gl::DrawArrays(gl::TRIANGLES, 0, 3);
 
-            // gl::MatrixMode(gl::PROJECTION);
-            // gl::LoadIdentity();
-            // gl::Ortho(0.0, 400.0, 0.0, 600.0, -1.0, 1.0);
+            GameWorld::Update(&game_world, state.deltaTime);
 
-            fish_main.update_with_interval(state.deltaTime);
-
-            // gl::Disable(gl::CULL_FACE);
-            // gl::MatrixMode(gl::MODELVIEW);
-            // gl::LoadIdentity();
-            // gl::EnableClientState(gl::VERTEX_ARRAY);
-
-            fish_main.render(&shader, VAO);
+            game_world.borrow().Render(&shader, VAO);
         }
 
         window.swap_buffers();
