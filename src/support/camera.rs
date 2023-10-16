@@ -1,4 +1,4 @@
-#![allow(non_snake_case)]
+// #![allow(non_snake_case)]
 
 use glam::*;
 
@@ -23,83 +23,82 @@ pub enum CameraMovement {
 #[derive(Default)]
 pub struct Camera {
     // camera Attributes
-    pub Position: Vec3,
-    pub Front: Vec3,
-    pub WorldUp: Vec3,
-    pub Up: Vec3,
-    pub Right: Vec3,
+    pub position: Vec3,
+    pub front: Vec3,
+    pub world_up: Vec3,
+    pub up: Vec3,
+    pub right: Vec3,
     // euler Angles
-    pub Yaw: f32,
-    pub Pitch: f32,
+    pub yaw: f32,
+    pub pitch: f32,
     // camera options
-    pub MovementSpeed: f32,
-    pub MouseSensitivity: f32,
-    pub Zoom: f32,
+    pub movement_speed: f32,
+    pub mouse_sensitivity: f32,
+    pub zoom: f32,
 }
 
 impl Camera {
     pub fn new() -> Camera {
         Camera {
-            Position: vec3(0.0, 0.0, 3.0),
-            Front: vec3(0.0, 0.0, -1.0),
-            WorldUp: vec3(0.0, 1.0, 0.0),
-            Up: vec3(0.0, 1.0, 0.0),
-            Right: Default::default(),
-            Yaw: YAW,
-            Pitch: PITCH,
-            MovementSpeed: SPEED,
-            MouseSensitivity: SENSITIVITY,
-            Zoom: ZOOM,
+            position: vec3(0.0, 0.0, 3.0),
+            front: vec3(0.0, 0.0, -1.0),
+            world_up: vec3(0.0, 1.0, 0.0),
+            up: vec3(0.0, 1.0, 0.0),
+            right: Default::default(),
+            yaw: YAW,
+            pitch: PITCH,
+            movement_speed: SPEED,
+            mouse_sensitivity: SENSITIVITY,
+            zoom: ZOOM,
         }
     }
 
     // constructor with vectors
     pub fn camera_vec3(position: Vec3) -> Camera {
         let mut camera = Camera::new();
-        camera.Position = position;
+        camera.position = position;
         camera.updateCameraVectors();
         camera
     }
 
     pub fn camera_vec3_up_yaw_pitch(position: Vec3, up: Vec3, yaw: f32, pitch: f32) -> Camera {
         let mut camera = Camera::new();
-        camera.Position = position;
-        camera.WorldUp = up;
-        camera.Yaw = yaw;
-        camera.Pitch = pitch;
+        camera.position = position;
+        camera.world_up = up;
+        camera.yaw = yaw;
+        camera.pitch = pitch;
         camera.updateCameraVectors();
         camera
     }
 
     // constructor with scalar values
-    #[allow(clippy::too_many_arguments)]
-    pub fn camera_scalar(posX: f32, posY: f32, posZ: f32, upX: f32, upY: f32, upZ: f32, yaw: f32, pitch: f32) -> Camera {
+    pub fn camera_scalar(pos_x: f32, pos_y: f32, pos_z: f32, up_x: f32, up_y: f32, up_z: f32, yaw: f32, pitch: f32) -> Camera {
         let mut camera = Camera::new();
-        camera.Position = vec3(posX, posY, posZ);
-        camera.WorldUp = vec3(upX, upY, upZ);
-        camera.Yaw = yaw;
-        camera.Pitch = pitch;
+        camera.position = vec3(pos_x, pos_y, pos_z);
+        camera.world_up = vec3(up_x, up_y, up_z);
+        camera.yaw = yaw;
+        camera.pitch = pitch;
         camera.updateCameraVectors();
         camera
     }
 
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix
-    pub fn GetViewMatrix(&self) -> Mat4 {
-        Mat4::look_at_rh(self.Position, self.Position + self.Front, self.Up)
+    pub fn get_view_matrix(&self) -> Mat4 {
+        Mat4::look_at_rh(self.position, self.position + self.front, self.up)
     }
 
     // processes input received from any keyboard-like input system. Accepts input parameter
     // in the form of camera defined ENUM (to abstract it from windowing systems)
     pub fn ProcessKeyboard(&mut self, direction: CameraMovement, deltaTime: f32) {
-        let velocity: f32 = self.MovementSpeed * deltaTime;
+        let velocity: f32 = self.movement_speed * deltaTime;
 
         match direction {
-            CameraMovement::Forward => self.Position += self.Front * velocity,
-            CameraMovement::Backward => self.Position -= self.Front * velocity,
-            CameraMovement::Left => self.Position -= self.Right * velocity,
-            CameraMovement::Right => self.Position += self.Right * velocity,
-            CameraMovement::Up => self.Position += self.Up * velocity,
-            CameraMovement::Down => self.Position -= self.Up * velocity,
+            CameraMovement::Forward => self.position += self.front * velocity,
+            CameraMovement::Backward => self.position -= self.front * velocity,
+            CameraMovement::Left => self.position -= self.right * velocity,
+            CameraMovement::Right => self.position += self.right * velocity,
+            CameraMovement::Up => self.position += self.up * velocity,
+            CameraMovement::Down => self.position -= self.up * velocity,
         }
 
         // For FPS: make sure the user stays at the ground level
@@ -107,20 +106,20 @@ impl Camera {
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-    pub fn ProcessMouseMovement(&mut self, mut xoffset: f32, mut yoffset: f32, constrainPitch: bool) {
-        xoffset *= self.MouseSensitivity;
-        yoffset *= self.MouseSensitivity;
+    pub fn process_mouse_movement(&mut self, mut xoffset: f32, mut yoffset: f32, constrainPitch: bool) {
+        xoffset *= self.mouse_sensitivity;
+        yoffset *= self.mouse_sensitivity;
 
-        self.Yaw += xoffset;
-        self.Pitch += yoffset;
+        self.yaw += xoffset;
+        self.pitch += yoffset;
 
         // make sure that when pitch is out of bounds, screen doesn't get flipped
         if constrainPitch {
-            if self.Pitch > 89.0 {
-                self.Pitch = 89.0;
+            if self.pitch > 89.0 {
+                self.pitch = 89.0;
             }
-            if self.Pitch < -89.0 {
-                self.Pitch = -89.0;
+            if self.pitch < -89.0 {
+                self.pitch = -89.0;
             }
         }
 
@@ -130,12 +129,12 @@ impl Camera {
 
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
     pub fn ProcessMouseScroll(&mut self, yoffset: f32) {
-        self.Zoom -= yoffset;
-        if self.Zoom < 1.0 {
-            self.Zoom = 1.0;
+        self.zoom -= yoffset;
+        if self.zoom < 1.0 {
+            self.zoom = 1.0;
         }
-        if self.Zoom > 45.0 {
-            self.Zoom = 45.0;
+        if self.zoom > 45.0 {
+            self.zoom = 45.0;
         }
     }
 
@@ -143,16 +142,16 @@ impl Camera {
     fn updateCameraVectors(&mut self) {
         // calculate the new Front vector
         let front = vec3(
-            self.Yaw.to_radians().cos() * self.Pitch.to_radians().cos(),
-            self.Pitch.to_radians().sin(),
-            self.Yaw.to_radians().sin() * self.Pitch.to_radians().cos(),
+            self.yaw.to_radians().cos() * self.pitch.to_radians().cos(),
+            self.pitch.to_radians().sin(),
+            self.yaw.to_radians().sin() * self.pitch.to_radians().cos(),
         );
 
-        self.Front = front.normalize_or_zero();
+        self.front = front.normalize_or_zero();
 
         // also re-calculate the Right and Up vector
         // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-        self.Right = self.Front.cross(self.WorldUp).normalize_or_zero();
-        self.Up = self.Right.cross(self.Front).normalize_or_zero();
+        self.right = self.front.cross(self.world_up).normalize_or_zero();
+        self.up = self.right.cross(self.front).normalize_or_zero();
     }
 }

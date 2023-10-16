@@ -14,6 +14,7 @@ use std::path::Path;
 use std::ptr;
 
 use crate::*;
+use crate::support::ShaderId;
 
 pub struct Shader {
     pub id: ShaderId,

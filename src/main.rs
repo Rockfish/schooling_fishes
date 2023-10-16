@@ -1,5 +1,6 @@
 #![feature(is_sorted)]
 #![feature(extract_if)]
+#![feature(offset_of)]
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
@@ -9,7 +10,6 @@
 
 mod base_entity;
 mod c2d_matrix;
-mod camera;
 mod cell_space_partition;
 mod constants;
 mod entity_functions;
@@ -24,20 +24,20 @@ mod transformations;
 mod utils;
 mod vehicle;
 mod wall_2d;
+mod support;
 
 extern crate glfw;
 
 use crate::game_world::GameWorld;
-use camera::{Camera, CameraMovement};
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use glam::{vec3, Mat4, Vec3};
 use glfw::{Action, Context, Key};
 use log::error;
-use opengl_lib::shader::Shader;
-use opengl_lib::SIZE_OF_FLOAT;
-use rand::prelude::*;
 use std::ptr;
+use crate::support::camera::{Camera, CameraMovement};
+use crate::support::shader::Shader;
+use crate::support::SIZE_OF_FLOAT;
 
 const SCR_WIDTH: f32 = 800.0;
 const SCR_HEIGHT: f32 = 800.0;
@@ -76,7 +76,8 @@ fn main() {
     // --------------------------------------------------
     gl::load(|e| glfw.get_proc_address_raw(e) as *const std::os::raw::c_void);
 
-    let camera = Camera::camera_vec3(vec3(0.0, 0.0, 55.0));
+    // let camera = Camera::camera_vec3(vec3(300.0, 300.0, 500.0));
+    let camera = Camera::camera_vec3(vec3(0.0, 0.0, 55.0)); // for ortho perspective
 
     // Initialize the world state
     let mut state = State {
@@ -88,7 +89,7 @@ fn main() {
         lastY: SCR_HEIGHT / 2.0,
     };
 
-    let mut game_world = GameWorld::new(600, 600);
+    let game_world = GameWorld::new(600, 600);
 
     let shader = Shader::new("assets/shaders/camera.vert", "assets/shaders/camera.frag", None).unwrap();
 
@@ -137,13 +138,12 @@ fn main() {
             gl::ClearColor(0.1, 0.1, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT); //  | gl::DEPTH_BUFFER_BIT);
 
-            // let projection = Mat4::perspective_rh_gl(state.camera.Zoom.to_radians(), SCR_WIDTH / SCR_HEIGHT, 0.1, 100.0);
+            // let projection = Mat4::perspective_rh_gl(state.camera.Zoom.to_radians(), SCR_WIDTH / SCR_HEIGHT, 0.1, 1000.0);
             let projection = Mat4::orthographic_rh_gl(0.0, 600.0, 0.0, 600.0, 0.1, 100.0);
             shader.setMat4("projection", &projection);
 
             // camera/view transformation
-            // let view = state.camera.GetViewMatrix();
-            let view = Mat4::look_at_rh(state.camera.Position, state.camera.Position + state.camera.Front, state.camera.Up);
+            let view = state.camera.get_view_matrix();
             shader.setMat4("view", &view);
 
             let mut model_transform = Mat4::from_translation(Vec3::new(300.0, 300.0, 0.0));
@@ -231,9 +231,9 @@ fn mouse_handler(state: &mut State, xposIn: f64, yposIn: f64) {
     state.lastX = xpos;
     state.lastY = ypos;
 
-    state.camera.ProcessMouseMovement(xoffset, yoffset, true);
+    state.camera.process_mouse_movement(xoffset, yoffset, true);
 }
 
 fn scroll_handler(state: &mut State, _xoffset: f64, yoffset: f64) {
-    // state.camera.ProcessMouseScroll(yoffset as f32);
+    state.camera.ProcessMouseScroll(yoffset as f32);
 }

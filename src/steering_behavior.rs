@@ -249,7 +249,6 @@ impl SteeringBehavior {
             SummingMethod::weighted_average => self.CalculateWeightedSum(),
             SummingMethod::prioritized => self.CalculatePrioritized(vehicle),
             SummingMethod::dithered => self.CalculateDithered(),
-            _ => vec2(0.0, 0.0),
         };
 
         if new_steering_force.x.is_nan() {
@@ -267,7 +266,7 @@ impl SteeringBehavior {
     //  vehicle has left to apply and then applies that amount of the
     //  force to add.
     //------------------------------------------------------------------------
-    pub fn AccumulateForce(vehicle: &Rc<RefCell<Vehicle>>, mut RunningTot: &mut Vec2, ForceToAdd: Vec2) -> bool {
+    pub fn AccumulateForce(vehicle: &Rc<RefCell<Vehicle>>, RunningTot: &mut Vec2, ForceToAdd: Vec2) -> bool {
         //calculate how much steering force the vehicle has used so far
         let MagnitudeSoFar = RunningTot.length();
 
@@ -276,7 +275,7 @@ impl SteeringBehavior {
 
         //return false if there is no more force left to use
         if MagnitudeRemaining <= 0.0 {
-            return false;
+           return false;
         }
 
         //calculate the magnitude of the force we want to add

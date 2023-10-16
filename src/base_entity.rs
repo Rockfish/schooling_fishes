@@ -136,7 +136,7 @@ impl EntityBase for BaseGameEntity {
 pub trait EntityBase {
     fn ID(&self) -> i32;
 
-    fn Pos(&self) -> Vec2; // TODO: revisit returning cloned Vec2
+    fn Pos(&self) -> Vec2;
 
     fn BRadius(&self) -> f32;
 

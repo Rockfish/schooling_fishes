@@ -8,7 +8,7 @@ use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
 use glad_gl::gl::GLuint;
 use glam::{vec2, Vec2};
-use opengl_lib::shader::Shader;
+use crate::support::shader::Shader;
 use rand::thread_rng;
 use std::cell::RefCell;
 use std::f32::consts::TAU;

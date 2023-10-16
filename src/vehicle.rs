@@ -8,7 +8,7 @@ use crate::utils::{Truncate, WrapAround};
 use glad_gl::gl;
 use glad_gl::gl::{GLuint, GLvoid};
 use glam::{vec2, vec3, Mat4, Vec2};
-use opengl_lib::shader::Shader;
+use crate::support::shader::Shader;
 use std::cell::RefCell;
 use std::rc::Rc;
 

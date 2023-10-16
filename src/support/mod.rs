@@ -1,4 +1,3 @@
-#![feature(offset_of)]
 
 pub mod aiscene;
 pub mod camera;

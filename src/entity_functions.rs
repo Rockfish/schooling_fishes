@@ -32,19 +32,18 @@ use std::rc::Rc;
 //  radius of the single entity parameter
 //------------------------------------------------------------------------
 pub fn TagNeighbors<E1: EntityBase, E2: EntityBase>(entity: &Rc<RefCell<E1>>, ContainerOfEntities: &mut Vec<E2>, radius: f32) {
-    //iterate through all entities checking for range
+    // iterate through all entities checking for range
     for curEntity in ContainerOfEntities {
-        //first clear any current tag
+        // first clear any current tag
         curEntity.UnTag();
 
         let to = curEntity.Pos() - entity.borrow().Pos();
 
-        //the bounding radius of the other is taken into account by adding it
-        //to the range
+        // the bounding radius of the other is taken into account by adding it to the range
         let range = radius + curEntity.BRadius();
 
-        //if entity within range, tag for further consideration. (working in
-        //distance-squared space to avoid sqrts)
+        // if entity within range, tag for further consideration. (working in
+        // distance-squared space to avoid square roots)
         if (curEntity.ID() != entity.borrow().ID()) && (to.length_squared() < range * range) {
             curEntity.Tag();
         }
