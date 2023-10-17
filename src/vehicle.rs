@@ -4,10 +4,10 @@ use crate::moving_entity::MovingEntity;
 use crate::param_loader::PRM;
 use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
-use crate::utils::{Truncate, WrapAround};
+use crate::utils::{RandInRange, Truncate, WrapAround};
 use glad_gl::gl;
-use glad_gl::gl::{GLuint, GLvoid};
-use glam::{vec2, vec3, Mat4, Vec2};
+use glad_gl::gl::GLuint;
+use glam::{vec2, vec3, Mat4, Vec2, Vec3};
 use crate::support::shader::Shader;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -40,6 +40,8 @@ pub struct Vehicle {
     m_vecVehicleVB: Vec<Vec2>,
 
     pub(crate) moving_entity: MovingEntity,
+
+    color: Vec3,
 }
 
 impl Vehicle {
@@ -69,6 +71,12 @@ impl Vehicle {
 
         let heading_smoother = Smoother::new(PRM.NumSamplesForSmoothing, vec2(0.0, 0.0));
 
+        let color = vec3(
+            RandInRange(0.2,1.0),
+            RandInRange(0.2,1.0),
+            RandInRange(0.2,1.0),
+        );
+
         let vehicle = Rc::new(RefCell::new(Vehicle {
             m_pWorld: world,
             m_pSteering: None,
@@ -78,6 +86,7 @@ impl Vehicle {
             m_dTimeElapsed: 0.0,
             m_vecVehicleVB: vec![],
             moving_entity,
+            color
         }));
 
         let steering = SteeringBehavior::new(vehicle.clone());
@@ -105,7 +114,7 @@ impl Vehicle {
 
         //keep a record of its old position so we can update its cell later
         //in this method
-        let OldPos = vehicle.borrow().Pos();
+        let old_pos = vehicle.borrow().position();
 
         //calculate the combined force from each steering behavior in the
         //vehicle's list
@@ -133,7 +142,7 @@ impl Vehicle {
 
         vehicle.borrow_mut().moving_entity.base_entity.m_vPos += velo;
 
-        let new_position = vehicle.borrow().moving_entity.base_entity.Pos();
+        let new_position = vehicle.borrow().moving_entity.base_entity.position();
         if new_position.x.is_nan() || new_position.y.is_nan() {
             println!("position is nan!");
         }
@@ -166,7 +175,7 @@ impl Vehicle {
             let smoothed_heading = vehicle.borrow_mut().m_pHeadingSmoother.update(heading);
             vehicle.borrow_mut().m_vSmoothedHeading = smoothed_heading;
         }
-        OldPos
+        old_pos
     }
 
     /*-------------------------------------------accessor methods
@@ -198,11 +207,11 @@ impl Vehicle {
 
         let mut model_transform = Mat4::from_translation(position);
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle.to_radians());
-        // model_transform *= Mat4::from_scale(Vec3::new(3.0, 3.0, 1.0));
         model_transform *= Mat4::from_scale(scale);
 
         shader.use_shader();
         shader.setMat4("model", &model_transform);
+        shader.setVec3("color", &self.color);
 
         unsafe {
             gl::BindVertexArray(VAO);
@@ -285,92 +294,50 @@ impl Vehicle {
         //     Steering()->RenderAids();
         // }
     }
-
-    pub fn Triangle(&self) {
-        // let error: GLenum;
-
-        #[rustfmt::skip]
-        let verts: [f32; 9] = [
-            -1.0,  0.6,  0.0,
-            1.0,  0.0,  0.0,
-            -1.0, -0.6,  0.0
-        ];
-
-        #[rustfmt::skip]
-        let _vertsBig: [f32; 9] = [
-            0.0,  0.0,  0.0,
-            2.5,  5.0,  0.0,
-            5.0,  0.0,  0.0
-        ];
-
-        unsafe {
-            gl::Color4f(0.2, 1.0, 1.0, 1.0);
-
-            gl::PushMatrix();
-
-            gl::Translatef(self.moving_entity.base_entity.m_vPos.x, self.moving_entity.base_entity.m_vPos.y, 0.0);
-            gl::Scalef(self.moving_entity.base_entity.m_vScale.x, self.moving_entity.base_entity.m_vScale.y, 1.0);
-
-            //float angle = (acos(forward.x)/(2*M_PI))*360;
-            //let angle = acos(self.moving_entity.m_vHeading.x) * RADTODEG; // RadToDeg(acos(m_vHeading.x));
-            let mut angle = self.moving_entity.m_vHeading.x.acos().to_degrees();
-
-            if self.moving_entity.m_vHeading.y < 0.0 {
-                angle = 360.0 - angle;
-            }
-
-            gl::Rotatef(angle, 0.0, 0.0, 1.0);
-
-            gl::VertexPointer(3, gl::FLOAT, 0, verts.as_ptr() as *const GLvoid);
-            gl::DrawArrays(gl::TRIANGLE_STRIP, 0, 3);
-
-            gl::PopMatrix();
-        }
-    }
 }
 
 impl EntityBase for Vehicle {
-    fn ID(&self) -> i32 {
+    fn id(&self) -> i32 {
         self.moving_entity.base_entity.m_ID
     }
 
-    fn Pos(&self) -> Vec2 {
+    fn position(&self) -> Vec2 {
         self.moving_entity.base_entity.m_vPos
     }
 
-    fn BRadius(&self) -> f32 {
+    fn bounding_radius(&self) -> f32 {
         self.moving_entity.base_entity.m_dBoundingRadius
     }
 
-    fn Tag(&mut self) {
-        self.moving_entity.base_entity.Tag();
+    fn tag(&mut self) {
+        self.moving_entity.base_entity.tag();
     }
 
-    fn UnTag(&mut self) {
-        self.moving_entity.base_entity.UnTag();
+    fn untag(&mut self) {
+        self.moving_entity.base_entity.untag();
     }
 
-    fn IsTagged(&self) -> bool {
-        self.moving_entity.base_entity.IsTagged()
+    fn is_tagged(&self) -> bool {
+        self.moving_entity.base_entity.is_tagged()
     }
 
-    fn Scale(&self) -> Vec2 {
+    fn scale(&self) -> Vec2 {
         self.moving_entity.base_entity.m_vScale
     }
 
-    fn SetScale_vec(&mut self, val: Vec2) {
-        self.moving_entity.base_entity.SetScale_vec(val);
+    fn set_scale_vec(&mut self, val: Vec2) {
+        self.moving_entity.base_entity.set_scale_vec(val);
     }
 
-    fn SetScale_float(&mut self, val: f32) {
-        self.moving_entity.base_entity.SetScale_float(val);
+    fn set_scale_float(&mut self, val: f32) {
+        self.moving_entity.base_entity.set_scale_float(val);
     }
 
-    fn EntityType(&self) -> i32 {
-        self.moving_entity.base_entity.EntityType()
+    fn entity_type(&self) -> i32 {
+        self.moving_entity.base_entity.entity_type()
     }
 
-    fn SetEntityType(&mut self, new_type: i32) {
-        self.moving_entity.base_entity.SetEntityType(new_type);
+    fn set_entity_type(&mut self, new_type: i32) {
+        self.moving_entity.base_entity.set_entity_type(new_type);
     }
 }

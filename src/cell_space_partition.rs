@@ -106,7 +106,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
 
     pub fn AddEntity(&mut self, entity: Rc<RefCell<Entity>>) {
         let sz = self.m_Cells.len();
-        let idx = self.PositionToIndex(&entity.borrow().Pos()) as usize;
+        let idx = self.PositionToIndex(&entity.borrow().position()) as usize;
         assert!(idx < sz);
         self.m_Cells[idx].Members.push(entity);
     }
@@ -135,7 +135,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
         for cur_cell in &self.m_Cells {
             if cur_cell.BBox.isOverlappedWith(&query_box) && !cur_cell.Members.is_empty() {
                 for entity in &cur_cell.Members {
-                    if entity.borrow().Pos().distance_squared(target_pos) < query_radius_squared {
+                    if entity.borrow().position().distance_squared(target_pos) < query_radius_squared {
                         self.m_Neighbors.push(entity.clone());
                         current_neighbor += 1;
                     }
@@ -153,7 +153,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
         //if the index for the old pos and the new pos are not equal then
         //the entity has moved to another cell.
         let OldIdx = self.PositionToIndex(OldPos);
-        let NewIdx = self.PositionToIndex(&entity.borrow().Pos());
+        let NewIdx = self.PositionToIndex(&entity.borrow().position());
 
         if NewIdx == OldIdx {
             return;
@@ -163,7 +163,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
         //and add to new one
         let _ = self.m_Cells[OldIdx as usize]
             .Members
-            .extract_if(|e| e.borrow().ID() == entity.borrow().ID());
+            .extract_if(|e| e.borrow().id() == entity.borrow().id());
         self.m_Cells[NewIdx as usize].Members.push(entity.clone());
     }
 }

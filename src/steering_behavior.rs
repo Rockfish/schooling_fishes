@@ -8,7 +8,6 @@ use crate::utils::{min, RandFloat, RandomClamped};
 use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
 use glam::{vec2, Vec2};
-use rand::thread_rng;
 use std::cell::{Ref, RefCell};
 use std::f32::consts::TAU;
 use std::ops::Div;
@@ -143,8 +142,7 @@ pub struct SteeringBehavior {
 impl SteeringBehavior {
     pub fn new(vehicle: Rc<RefCell<Vehicle>>) -> Self {
         let wander_radius = WANDER_RAD;
-        let mut rng = thread_rng();
-        let theta = RandFloat(&mut rng) * TAU;
+        let theta = RandFloat() * TAU;
         let wander_target = vec2(wander_radius * theta.cos(), wander_radius * theta.sin());
 
         let mut path = Path::default();
@@ -233,7 +231,7 @@ impl SteeringBehavior {
             //calculate neighbours in cell-space if any of the following 3 group
             //behaviors are switched on
             if self.On(BehaviorType::separation) || self.On(BehaviorType::alignment) || self.On(BehaviorType::cohesion) {
-                let pos = self.vehicle.borrow().Pos();
+                let pos = self.vehicle.borrow().position();
 
                 vehicle
                     .borrow()
@@ -496,7 +494,7 @@ impl SteeringBehavior {
     //  direct the agent towards the target
     //------------------------------------------------------------------------
     pub fn Seek(vehicle: &Rc<RefCell<Vehicle>>, TargetPos: Vec2) -> Vec2 {
-        let mut desired_velocity = TargetPos - vehicle.borrow().Pos();
+        let mut desired_velocity = TargetPos - vehicle.borrow().position();
         desired_velocity = desired_velocity.normalize_or_zero();
         desired_velocity *= vehicle.borrow().moving_entity.MaxSpeed();
 
@@ -517,7 +515,7 @@ impl SteeringBehavior {
         }
         */
 
-        let mut desired_velocity = vehicle.borrow().Pos() - TargetPos;
+        let mut desired_velocity = vehicle.borrow().position() - TargetPos;
         desired_velocity = desired_velocity.normalize_or_zero();
         desired_velocity *= vehicle.borrow().moving_entity.MaxSpeed();
 
@@ -530,7 +528,7 @@ impl SteeringBehavior {
     //  target with a zero velocity
     //------------------------------------------------------------------------
     pub fn Arrive(vehicle: Vehicle, TargetPos: Vec2, deceleration: Deceleration) -> Vec2 {
-        let ToTarget = TargetPos - vehicle.Pos();
+        let ToTarget = TargetPos - vehicle.position();
 
         //calculate the distance to the target
         let dist = ToTarget.length();
@@ -566,14 +564,14 @@ impl SteeringBehavior {
     pub fn Pursuit(&self, vehicle: &Rc<RefCell<Vehicle>>, evader: Vehicle) -> Vec2 {
         //if the evader is ahead and facing the agent then we can just seek
         //for the evader's current position.
-        let ToEvader = evader.Pos() - vehicle.borrow().Pos();
+        let ToEvader = evader.position() - vehicle.borrow().position();
 
         let RelativeHeading = vehicle.borrow().moving_entity.Heading().dot(evader.moving_entity.Heading());
 
         if (ToEvader.dot(vehicle.borrow().moving_entity.Heading()) > 0.0) & &(RelativeHeading < -0.95)
         //acos(0.95)=18 degs
         {
-            return SteeringBehavior::Seek(vehicle, evader.Pos());
+            return SteeringBehavior::Seek(vehicle, evader.position());
         }
 
         //Not considered ahead so we predict where the evader will be.
@@ -584,7 +582,7 @@ impl SteeringBehavior {
         let LookAheadTime = ToEvader.length() / (vehicle.borrow().moving_entity.MaxSpeed() + evader.moving_entity.Speed());
 
         //now seek to the predicted future position of the evader
-        return SteeringBehavior::Seek(vehicle, evader.Pos() + evader.moving_entity.Velocity() * LookAheadTime);
+        return SteeringBehavior::Seek(vehicle, evader.position() + evader.moving_entity.Velocity() * LookAheadTime);
     }
 
     //----------------------------- Evade ------------------------------------
@@ -595,7 +593,7 @@ impl SteeringBehavior {
     pub fn Evade(vehicle: &Rc<RefCell<Vehicle>>, pursuer: Ref<Vehicle>) -> Vec2 {
         /* Not necessary to include the check for facing direction this time */
 
-        let ToPursuer = pursuer.Pos() - vehicle.borrow().Pos();
+        let ToPursuer = pursuer.position() - vehicle.borrow().position();
 
         //uncomment the following two lines to have Evade only consider pursuers
         //within a 'threat range'
@@ -610,7 +608,7 @@ impl SteeringBehavior {
         let LookAheadTime = ToPursuer.length() / (vehicle.borrow().moving_entity.MaxSpeed() + pursuer.moving_entity.Speed());
 
         //now flee away from predicted future position of the pursuer
-        return SteeringBehavior::Flee(vehicle, pursuer.Pos() + pursuer.moving_entity.Velocity() * LookAheadTime);
+        return SteeringBehavior::Flee(vehicle, pursuer.position() + pursuer.moving_entity.Velocity() * LookAheadTime);
     }
 
     //--------------------------- Wander -------------------------------------
@@ -618,37 +616,37 @@ impl SteeringBehavior {
     //  This behavior makes the agent wander about randomly
     //------------------------------------------------------------------------
     pub fn Wander(&mut self, vehicle: &Rc<RefCell<Vehicle>>) -> Vec2 {
-        //this behavior is dependent on the update rate, so this line must
-        //be included when using time independent framerate.
-        let JitterThisTimeSlice = self.m_dWanderJitter * vehicle.borrow().m_dTimeElapsed;
+        // this behavior is dependent on the update rate, so this line must
+        // be included when using time independent framerate.
+        let jitter_this_time_slice = self.m_dWanderJitter * vehicle.borrow().m_dTimeElapsed;
 
-        //first, add a small random vector to the target's position
-        let mut rng = thread_rng();
+        // first, add a small random vector to the target's position
+
         self.m_vWanderTarget += vec2(
-            RandomClamped(&mut rng) * JitterThisTimeSlice,
-            RandomClamped(&mut rng) * JitterThisTimeSlice,
+            RandomClamped() * jitter_this_time_slice,
+            RandomClamped() * jitter_this_time_slice,
         );
 
-        //reproject this new vector back on to a unit circle
+        // reproject this new vector back on to a unit circle
         self.m_vWanderTarget = self.m_vWanderTarget.normalize_or_zero();
 
-        //increase the length of the vector to the same as the radius
-        //of the wander circle
+        // increase the length of the vector to the same as the radius
+        // of the wander circle
         self.m_vWanderTarget *= self.m_dWanderRadius;
 
-        //move the target into a position WanderDist in front of the agent
+        // move the target into a position WanderDist in front of the agent
         let target = self.m_vWanderTarget + vec2(self.m_dWanderDistance, 0.0);
 
-        //project the target into world space
-        let Target = PointToWorldSpace(
+        // project the target into world space
+        let target = PointToWorldSpace(
             target,
             vehicle.borrow().moving_entity.m_vHeading,
             vehicle.borrow().moving_entity.m_vSide,
-            vehicle.borrow().Pos(),
+            vehicle.borrow().position(),
         );
 
         //and steer towards it
-        return Target - vehicle.borrow().Pos();
+        return target - vehicle.borrow().position();
     }
 
     //---------------------- ObstacleAvoidance -------------------------------
@@ -945,13 +943,13 @@ impl SteeringBehavior {
             //the agent being examined is close enough ***also make sure it doesn't
             //include the evade target ***
             let is_target_agent = if let Some(agent) = m_pTargetAgent1 {
-                agent.borrow().ID() == neighbor.borrow().ID()
+                agent.borrow().id() == neighbor.borrow().id()
             } else {
                 false
             };
 
-            if (neighbor.borrow().ID() != vehicle.borrow().ID()) && neighbor.borrow().IsTagged() && (!is_target_agent) {
-                center_of_mass += neighbor.borrow().Pos();
+            if (neighbor.borrow().id() != vehicle.borrow().id()) && neighbor.borrow().is_tagged() && (!is_target_agent) {
+                center_of_mass += neighbor.borrow().position();
 
                 NeighborCount += 1;
             }
@@ -985,8 +983,8 @@ impl SteeringBehavior {
 
         //iterate through the neighbors and sum up all the position vectors
         for pv in vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors.iter() {
-            if pv.borrow().ID() != vehicle.borrow().ID() {
-                let to_agent = vehicle.borrow().Pos() - pv.borrow().Pos();
+            if pv.borrow().id() != vehicle.borrow().id() {
+                let to_agent = vehicle.borrow().position() - pv.borrow().position();
                 // scale the force inversely proportional to the agents distance from its neighbor.
                 SteeringForce += to_agent.normalize_or_zero() / to_agent.length();
             }
@@ -1009,7 +1007,7 @@ impl SteeringBehavior {
         let mut NeighborCount: f32 = 0.0;
 
         for pv in vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors.iter() {
-            if pv.borrow().ID() != vehicle.borrow().ID() {
+            if pv.borrow().id() != vehicle.borrow().id() {
                 AverageHeading += pv.borrow().moving_entity.m_vHeading;
                 NeighborCount += 1.0;
             }
@@ -1041,8 +1039,8 @@ impl SteeringBehavior {
         for pv in vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors.iter() {
             //make sure *this* agent isn't included in the calculations and that
             //the agent being examined is close enough
-            if pv.borrow().ID() != vehicle.borrow().ID() {
-                CenterOfMass += pv.borrow().Pos();
+            if pv.borrow().id() != vehicle.borrow().id() {
+                CenterOfMass += pv.borrow().position();
                 NeighborCount += 1;
             }
         }

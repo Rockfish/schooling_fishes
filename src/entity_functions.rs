@@ -35,17 +35,17 @@ pub fn TagNeighbors<E1: EntityBase, E2: EntityBase>(entity: &Rc<RefCell<E1>>, Co
     // iterate through all entities checking for range
     for curEntity in ContainerOfEntities {
         // first clear any current tag
-        curEntity.UnTag();
+        curEntity.untag();
 
-        let to = curEntity.Pos() - entity.borrow().Pos();
+        let to = curEntity.position() - entity.borrow().position();
 
         // the bounding radius of the other is taken into account by adding it to the range
-        let range = radius + curEntity.BRadius();
+        let range = radius + curEntity.bounding_radius();
 
         // if entity within range, tag for further consideration. (working in
         // distance-squared space to avoid square roots)
-        if (curEntity.ID() != entity.borrow().ID()) && (to.length_squared() < range * range) {
-            curEntity.Tag();
+        if (curEntity.id() != entity.borrow().id()) && (to.length_squared() < range * range) {
+            curEntity.tag();
         }
     }
 }

@@ -9,7 +9,6 @@ use crate::wall_2d::Wall2D;
 use glad_gl::gl::GLuint;
 use glam::{vec2, Vec2};
 use crate::support::shader::Shader;
-use rand::thread_rng;
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
@@ -90,22 +89,20 @@ impl GameWorld {
             m_bShowCellSpaceInfo: false,
         };
 
-        let mut rng = thread_rng();
-
         let game_world = Rc::new(RefCell::new(game_world));
         {
             // setup the agents
             for _a in 0..PRM.NumAgents {
                 //determine a random starting position
                 let spawn_pos = vec2(
-                    cx as f32 / 2.0 + RandomClamped(&mut rng) * cx as f32 / 2.0,
-                    cy as f32 / 2.0 + RandomClamped(&mut rng) * cy as f32 / 2.0,
+                    cx as f32 / 2.0 + RandomClamped() * cx as f32 / 2.0,
+                    cy as f32 / 2.0 + RandomClamped() * cy as f32 / 2.0,
                 );
 
                 let vehicle = Vehicle::new(
                     game_world.clone(),
                     spawn_pos,
-                    RandFloat(&mut rng) * TAU,
+                    RandFloat() * TAU,
                     vec2(0.0, 0.0),
                     PRM.VehicleMass,
                     PRM.MaxSteeringForce,

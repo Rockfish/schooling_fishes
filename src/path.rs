@@ -1,7 +1,6 @@
 use crate::transformations::Vec2DRotateAroundOrigin;
 use crate::utils::{min, RandInRange};
 use glam::{vec2, Vec2};
-use rand::thread_rng;
 use std::f32::consts::TAU;
 
 #[derive(Debug, Default)]
@@ -39,7 +38,7 @@ impl Path {
         let spacing = TAU / num_way_points as f32;
 
         for i in 0..num_way_points {
-            let RadialDist = RandInRange(thread_rng(), smaller * 0.2, smaller);
+            let RadialDist = RandInRange(smaller * 0.2, smaller);
 
             let mut temp = vec2(RadialDist, 0.0);
 

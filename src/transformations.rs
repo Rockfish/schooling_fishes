@@ -22,7 +22,7 @@ pub fn PointToWorldSpace(point: Vec2, AgentHeading: Vec2, AgentSide: Vec2, Agent
 
     //create a transformation matrix
     //C2DMatrix
-    let mut matTransform = C2DMatrix::default();
+    let mut matTransform = C2DMatrix::identity();
 
     //rotate
     matTransform = matTransform.Rotate(AgentHeading, AgentSide);

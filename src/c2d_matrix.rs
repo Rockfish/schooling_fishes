@@ -10,7 +10,7 @@
 
 use glam::{vec2, Vec2};
 
-#[derive(Default)]
+#[derive(Debug)]
 pub struct C2DMatrix {
     _11: f32,
     _12: f32,
@@ -24,6 +24,21 @@ pub struct C2DMatrix {
 }
 
 impl C2DMatrix {
+
+    pub fn identity() -> Self {
+        C2DMatrix {
+            _11: 1.0,
+            _12: 0.0,
+            _13: 0.0,
+            _21: 0.0,
+            _22: 1.0,
+            _23: 0.0,
+            _31: 0.0,
+            _32: 0.0,
+            _33: 1.0,
+        }
+    }
+
     pub fn MatrixMultiply(&self, mIn: C2DMatrix) -> C2DMatrix {
         let new_mat = C2DMatrix {
             //first row

@@ -86,72 +86,72 @@ impl BaseGameEntity {
 }
 
 impl EntityBase for BaseGameEntity {
-    fn ID(&self) -> i32 {
+    fn id(&self) -> i32 {
         self.m_ID
     }
 
-    fn Pos(&self) -> Vec2 {
+    fn position(&self) -> Vec2 {
         self.m_vPos
     }
 
-    fn BRadius(&self) -> f32 {
+    fn bounding_radius(&self) -> f32 {
         self.m_dBoundingRadius
     }
 
-    fn Tag(&mut self) {
+    fn tag(&mut self) {
         self.m_bTag = true;
     }
 
-    fn UnTag(&mut self) {
+    fn untag(&mut self) {
         self.m_bTag = false;
     }
 
-    fn IsTagged(&self) -> bool {
+    fn is_tagged(&self) -> bool {
         self.m_bTag
     }
 
-    fn Scale(&self) -> Vec2 {
+    fn scale(&self) -> Vec2 {
         self.m_vScale
     }
 
-    fn SetScale_vec(&mut self, val: Vec2) {
+    fn set_scale_vec(&mut self, val: Vec2) {
         self.m_dBoundingRadius *= max(val.x, val.y) / max(self.m_vScale.x, self.m_vScale.y);
         self.m_vScale = val;
     }
 
-    fn SetScale_float(&mut self, val: f32) {
+    fn set_scale_float(&mut self, val: f32) {
         self.m_dBoundingRadius *= val / max(self.m_vScale.x, self.m_vScale.y);
         self.m_vScale = vec2(val, val);
     }
 
-    fn EntityType(&self) -> i32 {
+    fn entity_type(&self) -> i32 {
         self.m_EntityType
     }
 
-    fn SetEntityType(&mut self, new_type: i32) {
+    fn set_entity_type(&mut self, new_type: i32) {
         self.m_EntityType = new_type;
     }
 }
 
 pub trait EntityBase {
-    fn ID(&self) -> i32;
+    fn id(&self) -> i32;
 
-    fn Pos(&self) -> Vec2;
+    fn position(&self) -> Vec2;
 
-    fn BRadius(&self) -> f32;
+    fn bounding_radius(&self) -> f32;
 
-    fn Tag(&mut self);
+    fn tag(&mut self);
 
-    fn UnTag(&mut self);
-    fn IsTagged(&self) -> bool;
+    fn untag(&mut self);
+    fn is_tagged(&self) -> bool;
 
-    fn Scale(&self) -> Vec2;
+    fn scale(&self) -> Vec2;
 
-    fn SetScale_vec(&mut self, val: Vec2);
+    fn set_scale_vec(&mut self, val: Vec2);
 
-    fn SetScale_float(&mut self, val: f32);
+    fn set_scale_float(&mut self, val: f32);
 
-    fn EntityType(&self) -> i32;
+    fn entity_type(&self) -> i32;
 
-    fn SetEntityType(&mut self, new_type: i32);
+    fn set_entity_type(&mut self, new_type: i32);
 }

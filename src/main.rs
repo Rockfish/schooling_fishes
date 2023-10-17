@@ -153,6 +153,8 @@ fn main() {
             shader.setMat4("model", &model_transform);
 
             shader.use_shader();
+            shader.setVec3("color", &vec3(1.0, 0.5, 0.2));
+
             gl::BindVertexArray(VAO);
             gl::DrawArrays(gl::TRIANGLES, 0, 3);
 
