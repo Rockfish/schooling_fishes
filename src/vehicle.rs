@@ -19,7 +19,7 @@ pub struct Vehicle {
     pub m_pWorld: Rc<RefCell<GameWorld>>,
 
     //the steering behavior class
-    pub m_pSteering: Option<RefCell<SteeringBehavior>>,
+    pub m_pSteering: RefCell<SteeringBehavior>,
 
     //some steering behaviors give jerky looking movement. The
     //following members are used to smooth the vehicle's heading
@@ -39,7 +39,7 @@ pub struct Vehicle {
     //buffer for the vehicle shape
     m_vecVehicleVB: Vec<Vec2>,
 
-    pub(crate) moving_entity: MovingEntity,
+    pub moving_entity: MovingEntity,
 
     color: Vec3,
 }
@@ -79,7 +79,7 @@ impl Vehicle {
 
         let vehicle = Rc::new(RefCell::new(Vehicle {
             m_pWorld: world,
-            m_pSteering: None,
+            m_pSteering: RefCell::new(SteeringBehavior::new()),
             m_pHeadingSmoother: heading_smoother,
             m_vSmoothedHeading: Default::default(),
             m_bSmoothingOn: false,
@@ -88,9 +88,6 @@ impl Vehicle {
             moving_entity,
             color
         }));
-
-        let steering = SteeringBehavior::new(vehicle.clone());
-        vehicle.borrow_mut().m_pSteering = Some(RefCell::new(steering));
 
         vehicle
     }
@@ -108,47 +105,33 @@ impl Vehicle {
     //  Updates the vehicle's position from a series of steering behaviors
     //------------------------------------------------------------------------
     pub fn Update(vehicle: &Rc<RefCell<Vehicle>>, time_elapsed: f32) -> Vec2 {
-        // let mut vehicle = rc_vehicle.borrow_mut();
-        //update the time elapsed
+        // update the time elapsed
         vehicle.borrow_mut().m_dTimeElapsed = time_elapsed;
 
-        //keep a record of its old position so we can update its cell later
-        //in this method
+        // keep a record of its old position so we can update its cell later in this method
         let old_pos = vehicle.borrow().position();
 
-        //calculate the combined force from each steering behavior in the
-        //vehicle's list
-        let mut steering_force = Vec2::default();
-        if let Some(steering) = &vehicle.borrow().m_pSteering {
-            steering_force = steering.borrow_mut().Calculate(vehicle);
-        }
+        // calculate the combined force from each steering behavior in the vehicle's list
+        let steering_force = vehicle.borrow().m_pSteering.borrow_mut().Calculate(vehicle);
 
-        //Acceleration = Force/Mass
+        // Acceleration = Force/Mass
         let acceleration = steering_force / vehicle.borrow().moving_entity.m_dMass;
 
-        //update velocity
+        // update velocity
         vehicle.borrow_mut().moving_entity.m_vVelocity += acceleration * time_elapsed;
 
-        //make sure vehicle does not exceed maximum velocity
+        // make sure vehicle does not exceed maximum velocity
         // vehicle.moving_entity.m_vVelocity.Truncate(vehicle.moving_entity.m_dMaxSpeed);
         let velocity = vehicle.borrow().moving_entity.m_vVelocity;
         let max_speed = vehicle.borrow().moving_entity.m_dMaxSpeed;
         let truncated_velocity = Truncate(velocity, max_speed);
-
         vehicle.borrow_mut().moving_entity.m_vVelocity = truncated_velocity;
 
-        //update the position
-        let velo = vehicle.borrow().moving_entity.m_vVelocity * time_elapsed;
+        // update the position
+        let travel_distance = vehicle.borrow().moving_entity.m_vVelocity * time_elapsed;
+        vehicle.borrow_mut().moving_entity.base_entity.m_vPos += travel_distance;
 
-        vehicle.borrow_mut().moving_entity.base_entity.m_vPos += velo;
-
-        let new_position = vehicle.borrow().moving_entity.base_entity.position();
-        if new_position.x.is_nan() || new_position.y.is_nan() {
-            println!("position is nan!");
-        }
-        // vehicle.moving_entity.base_entity.m_vPos += vehicle.moving_entity.m_vVelocity.clone() * time_elapsed;
-
-        //update the heading if the vehicle has a non zero velocity
+        // update the heading if the vehicle has a non zero velocity
         if vehicle.borrow().moving_entity.m_vVelocity.length_squared() > 0.00000001 {
             let normalize = vehicle.borrow().moving_entity.m_vVelocity.normalize_or_zero();
             vehicle.borrow_mut().moving_entity.m_vHeading = normalize;
@@ -175,6 +158,7 @@ impl Vehicle {
             let smoothed_heading = vehicle.borrow_mut().m_pHeadingSmoother.update(heading);
             vehicle.borrow_mut().m_vSmoothedHeading = smoothed_heading;
         }
+
         old_pos
     }
 
@@ -293,6 +277,30 @@ impl Vehicle {
         // {
         //     Steering()->RenderAids();
         // }
+    }
+
+    pub fn set_max_speed(&mut self, speed: f32) {
+        self.moving_entity.m_dMaxSpeed = speed;
+    }
+
+    pub fn heading(&self) -> Vec2 {
+        self.moving_entity.m_vHeading
+    }
+    pub fn side(&self) -> Vec2 {
+        self.moving_entity.m_vSide
+    }
+
+    pub fn print(&self) {
+       println!("{:#?}\n{:#?}", // "{:#?}\n", // "{:#?}\n{:#?}\n{:#?}\n", // {:#?}\n{:#?}\n",
+                self.moving_entity,
+                // unsafe {self.m_pSteering.try_borrow_unguarded()},
+                // self.m_pHeadingSmoother,
+                // self.m_vSmoothedHeading,
+                // self.m_bSmoothingOn,
+                self.m_dTimeElapsed,
+                // self.m_vecVehicleVB,
+                // self.color
+       );
     }
 }
 

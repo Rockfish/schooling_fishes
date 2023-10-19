@@ -21,7 +21,6 @@ pub fn PointToWorldSpace(point: Vec2, AgentHeading: Vec2, AgentSide: Vec2, Agent
     let TransPoint = point;
 
     //create a transformation matrix
-    //C2DMatrix
     let mut matTransform = C2DMatrix::identity();
 
     //rotate

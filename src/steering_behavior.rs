@@ -60,41 +60,37 @@ pub enum BehaviorType {
 
 #[derive(Debug)]
 pub struct SteeringBehavior {
-    //a pointer to the owner of this instance
-    vehicle: Rc<RefCell<Vehicle>>,
+    // the steering force created by the combined effect of all the selected behaviors
+    pub m_vSteeringForce: Vec2,
 
-    //the steering force created by the combined effect of all
-    //the selected behaviors
-    m_vSteeringForce: Vec2,
-
-    //these can be used to keep track of friends, pursuers, or prey
+    // these can be used to keep track of friends, pursuers, or prey
     m_pTargetAgent1: Option<Rc<RefCell<Vehicle>>>,
     m_pTargetAgent2: Option<Rc<RefCell<Vehicle>>>,
 
-    //the current target
-    m_vTarget: Vec2,
+    // the current target
+    pub m_vTarget: Vec2,
 
-    //length of the 'detection box' utilized in obstacle avoidance
+    // length of the 'detection box' utilized in obstacle avoidance
     m_dDBoxLength: f32,
 
-    //a vertex buffer to contain the feelers rqd for wall avoidance
+    // a vertex buffer to contain the feelers rqd for wall avoidance
     m_Feelers: Vec<Vec2>,
 
-    //the length of the 'feeler/s' used in wall detection
+    // the length of the 'feeler/s' used in wall detection
     m_dWallDetectionFeelerLength: f32,
 
-    //the current position on the wander circle the agent is
-    //attempting to steer towards
-    m_vWanderTarget: Vec2,
+    // the current position on the wander circle the agent is
+    // attempting to steer towards
+    pub m_vWanderTarget: Vec2,
 
-    //explained above
+    // explained above
     m_dWanderJitter: f32,
     m_dWanderRadius: f32,
     m_dWanderDistance: f32,
 
-    //multipliers. These can be adjusted to effect strength of the
-    //appropriate behavior. Useful to get flocking the way you require
-    //for example.
+    // multipliers. These can be adjusted to effect strength of the
+    //  appropriate behavior. Useful to get flocking the way you require
+    // for example.
     m_dWeightSeparation: f32,
     m_dWeightCohesion: f32,
     m_dWeightAlignment: f32,
@@ -111,36 +107,36 @@ pub struct SteeringBehavior {
     m_dWeightEvade: f32,
     m_dWeightFollowPath: f32,
 
-    //how far the agent can 'see'
+    // how far the agent can 'see'
     m_dViewDistance: f32,
 
-    //pointer to any current path
+    // pointer to any current path
     m_pPath: Path,
 
-    //the distance (squared) a vehicle has to be from a path waypoint before
-    //it starts seeking to the next waypoint
+    // the distance (squared) a vehicle has to be from a path waypoint before
+    // it starts seeking to the next waypoint
     m_dWaypointSeekDistSq: f32,
 
-    //any offset used for formations or offset pursuit
+    // any offset used for formations or offset pursuit
     m_vOffset: Vec2,
 
-    //binary flags to indicate whether or not a behavior should be active
+    // binary flags to indicate whether or not a behavior should be active
     m_iFlags: i32,
 
-    //Arrive makes use of these to determine how quickly a vehicle
-    //should decelerate to its target
-    //default
+    // Arrive makes use of these to determine how quickly a vehicle
+    // should decelerate to its target
+    // default
     m_Deceleration: Deceleration,
 
-    //is cell space partitioning to be used or not?
-    pub(crate) m_bCellSpaceOn: bool,
+    // is cell space partitioning to be used or not?
+    pub m_bCellSpaceOn: bool,
 
-    //what type of method is used to sum any active behavior
+    // what type of method is used to sum any active behavior
     m_SummingMethod: SummingMethod,
 }
 
 impl SteeringBehavior {
-    pub fn new(vehicle: Rc<RefCell<Vehicle>>) -> Self {
+    pub fn new() -> Self {
         let wander_radius = WANDER_RAD;
         let theta = RandFloat() * TAU;
         let wander_target = vec2(wander_radius * theta.cos(), wander_radius * theta.sin());
@@ -149,7 +145,6 @@ impl SteeringBehavior {
         path.LoopOn();
 
         SteeringBehavior {
-            vehicle,
             m_iFlags: 0,
             m_dDBoxLength: PRM.MinDetectionBoxLength,
             m_dWeightCohesion: PRM.CohesionWeight,
@@ -194,9 +189,32 @@ impl SteeringBehavior {
         self.WanderOn();
     }
 
+    pub fn FlockingOff(&mut self) {
+        self.CohesionOff();
+        self.AlignmentOff();
+        self.SeparationOff();
+        self.WanderOff();
+    }
+
+    /*
+    void FleeOn(){m_iFlags |= flee;}
+	void SeekOn(){m_iFlags |= seek;}
+	void ArriveOn(){m_iFlags |= arrive;}
+     */
+
     pub fn WanderOn(&mut self) {
         self.m_iFlags |= BehaviorType::wander as i32;
     }
+    pub fn PursuitOn(&mut self, target: Rc<RefCell<Vehicle>>) {
+        self.m_iFlags |= BehaviorType::pursuit as i32;
+        self.m_pTargetAgent1 = Some(target);
+    }
+
+    pub fn EvadeOn(&mut self, target: Rc<RefCell<Vehicle>>) {
+        self.m_iFlags |= BehaviorType::evade as i32;
+        self.m_pTargetAgent1 = Some(target);
+    }
+
     pub fn CohesionOn(&mut self) {
         self.m_iFlags |= BehaviorType::cohesion as i32;
     }
@@ -205,6 +223,19 @@ impl SteeringBehavior {
     }
     pub fn AlignmentOn(&mut self) {
         self.m_iFlags |= BehaviorType::alignment as i32;
+    }
+
+    pub fn CohesionOff(&mut self) {
+        self.m_iFlags ^= BehaviorType::cohesion as i32;
+    }
+    pub fn SeparationOff(&mut self) {
+        self.m_iFlags ^= BehaviorType::separation as i32;
+    }
+    pub fn AlignmentOff(&mut self) {
+        self.m_iFlags ^= BehaviorType::alignment as i32;
+    }
+    pub fn WanderOff(&mut self) {
+        self.m_iFlags ^= BehaviorType::wander as i32;
     }
 
     pub fn isSpacePartitioningOn(&self) -> bool {
@@ -217,7 +248,7 @@ impl SteeringBehavior {
     }
 
     pub fn Calculate(&mut self, vehicle: &Rc<RefCell<Vehicle>>) -> Vec2 {
-        //reset the steering force
+        // reset the steering force
         self.m_vSteeringForce.x = 0.0;
         self.m_vSteeringForce.y = 0.0;
 
@@ -225,13 +256,13 @@ impl SteeringBehavior {
             if self.On(BehaviorType::separation) || self.On(BehaviorType::alignment) || self.On(BehaviorType::cohesion) {
                 let world = vehicle.borrow().m_pWorld.clone();
 
-                world.borrow_mut().TagVehiclesWithinViewRange(&self.vehicle, self.m_dViewDistance);
+                world.borrow_mut().TagVehiclesWithinViewRange(vehicle, self.m_dViewDistance);
             }
         } else {
-            //calculate neighbours in cell-space if any of the following 3 group
-            //behaviors are switched on
+            // calculate neighbours in cell-space if any of the following 3 group
+            // behaviors are switched on
             if self.On(BehaviorType::separation) || self.On(BehaviorType::alignment) || self.On(BehaviorType::cohesion) {
-                let pos = self.vehicle.borrow().position();
+                let position = vehicle.borrow().position();
 
                 vehicle
                     .borrow()
@@ -239,7 +270,7 @@ impl SteeringBehavior {
                     .borrow()
                     .m_pCellSpace
                     .borrow_mut()
-                    .CalculateNeighbors(pos, self.m_dViewDistance);
+                    .CalculateNeighbors(position, self.m_dViewDistance);
             }
         }
 
@@ -248,10 +279,6 @@ impl SteeringBehavior {
             SummingMethod::prioritized => self.CalculatePrioritized(vehicle),
             SummingMethod::dithered => self.CalculateDithered(),
         };
-
-        if new_steering_force.x.is_nan() {
-            println!("Steering force is nan");
-        }
 
         self.m_vSteeringForce = new_steering_force;
 
@@ -264,30 +291,30 @@ impl SteeringBehavior {
     //  vehicle has left to apply and then applies that amount of the
     //  force to add.
     //------------------------------------------------------------------------
-    pub fn AccumulateForce(vehicle: &Rc<RefCell<Vehicle>>, RunningTot: &mut Vec2, ForceToAdd: Vec2) -> bool {
-        //calculate how much steering force the vehicle has used so far
-        let MagnitudeSoFar = RunningTot.length();
+    pub fn AccumulateForce(vehicle: &Rc<RefCell<Vehicle>>, running_total: &mut Vec2, force_to_add: Vec2) -> bool {
+        // calculate how much steering force the vehicle has used so far
+        let magnitude_so_far = running_total.length();
 
-        //calculate how much steering force remains to be used by this vehicle
-        let MagnitudeRemaining = vehicle.borrow().moving_entity.MaxForce() - MagnitudeSoFar;
+        // calculate how much steering force remains to be used by this vehicle
+        let magnitude_remaining = vehicle.borrow().moving_entity.MaxForce() - magnitude_so_far;
 
-        //return false if there is no more force left to use
-        if MagnitudeRemaining <= 0.0 {
+        // return false if there is no more force left to use
+        if magnitude_remaining <= 0.0 {
            return false;
         }
 
-        //calculate the magnitude of the force we want to add
-        let MagnitudeToAdd = ForceToAdd.length();
+        // calculate the magnitude of the force we want to add
+        let magnitude_to_add = force_to_add.length();
 
-        //if the magnitude of the sum of ForceToAdd and the running total
-        //does not exceed the maximum force available to this vehicle, just
-        //add together. Otherwise add as much of the ForceToAdd vector is
-        //possible without going over the max.
-        if MagnitudeToAdd < MagnitudeRemaining {
-            *RunningTot += ForceToAdd;
+        // if the magnitude of the sum of ForceToAdd and the running total
+        // does not exceed the maximum force available to this vehicle, just
+        // add together. Otherwise add as much of the ForceToAdd vector is
+        // possible without going over the max.
+        if magnitude_to_add < magnitude_remaining {
+            *running_total += force_to_add;
         } else {
-            //add it to the steering force
-            *RunningTot += ForceToAdd.normalize_or_zero() * MagnitudeRemaining;
+            // add it to the steering force
+            *running_total += force_to_add.normalize_or_zero() * magnitude_remaining;
         }
 
         return true;
@@ -343,8 +370,8 @@ impl SteeringBehavior {
             }
         }
 
-        //these next three can be combined for flocking behavior (wander is
-        //also a good behavior to add into this mix)
+        // these next three can be combined for flocking behavior (wander is
+        // also a good behavior to add into this mix)
         if !self.isSpacePartitioningOn() {
             // if self.On(BehaviorType::separation)
             // {
@@ -530,24 +557,24 @@ impl SteeringBehavior {
     pub fn Arrive(vehicle: Vehicle, TargetPos: Vec2, deceleration: Deceleration) -> Vec2 {
         let ToTarget = TargetPos - vehicle.position();
 
-        //calculate the distance to the target
+        // calculate the distance to the target
         let dist = ToTarget.length();
 
         if dist > 0.0 {
-            //because Deceleration is enumerated as an int, this value is required
-            //to provide fine tweaking of the deceleration..
+            // because Deceleration is enumerated as an int, this value is required
+            // to provide fine tweaking of the deceleration..
             let DecelerationTweaker: f32 = 0.3;
 
-            //calculate the speed required to reach the target given the desired
-            //deceleration
+            // calculate the speed required to reach the target given the desired
+            // deceleration
             let mut speed: f32 = dist / ((deceleration as i32) as f32 * DecelerationTweaker);
 
-            //make sure the velocity does not exceed the max
+            // make sure the velocity does not exceed the max
             speed = min(speed, vehicle.moving_entity.MaxSpeed());
 
-            //from here proceed just like Seek except we don't need to normalize
-            //the ToTarget vector because we have already gone to the trouble
-            //of calculating its length: dist.
+            // from here proceed just like Seek except we don't need to normalize
+            // the ToTarget vector because we have already gone to the trouble
+            // of calculating its length: dist.
             let desired_velocity = ToTarget * speed / dist;
 
             return desired_velocity - vehicle.moving_entity.Velocity();
@@ -562,8 +589,8 @@ impl SteeringBehavior {
     //  evader
     //------------------------------------------------------------------------
     pub fn Pursuit(&self, vehicle: &Rc<RefCell<Vehicle>>, evader: Vehicle) -> Vec2 {
-        //if the evader is ahead and facing the agent then we can just seek
-        //for the evader's current position.
+        // if the evader is ahead and facing the agent then we can just seek
+        // for the evader's current position.
         let ToEvader = evader.position() - vehicle.borrow().position();
 
         let RelativeHeading = vehicle.borrow().moving_entity.Heading().dot(evader.moving_entity.Heading());
@@ -574,14 +601,14 @@ impl SteeringBehavior {
             return SteeringBehavior::Seek(vehicle, evader.position());
         }
 
-        //Not considered ahead so we predict where the evader will be.
+        // Not considered ahead so we predict where the evader will be.
 
-        //the lookahead time is proportional to the distance between the evader
-        //and the pursuer; and is inversely proportional to the sum of the
-        //agent's velocities
+        // the lookahead time is proportional to the distance between the evader
+        // and the pursuer; and is inversely proportional to the sum of the
+        // agent's velocities
         let LookAheadTime = ToEvader.length() / (vehicle.borrow().moving_entity.MaxSpeed() + evader.moving_entity.Speed());
 
-        //now seek to the predicted future position of the evader
+        // now seek to the predicted future position of the evader
         return SteeringBehavior::Seek(vehicle, evader.position() + evader.moving_entity.Velocity() * LookAheadTime);
     }
 
@@ -595,19 +622,19 @@ impl SteeringBehavior {
 
         let ToPursuer = pursuer.position() - vehicle.borrow().position();
 
-        //uncomment the following two lines to have Evade only consider pursuers
-        //within a 'threat range'
+        // uncomment the following two lines to have Evade only consider pursuers
+        // within a 'threat range'
         let ThreatRange: f32 = 100.0;
         if ToPursuer.length_squared() > ThreatRange * ThreatRange {
             return Vec2::default();
         }
 
-        //the lookahead time is proportional to the distance between the pursuer
-        //and the pursuer; and is inversely proportional to the sum of the
-        //agents' velocities
+        // the lookahead time is proportional to the distance between the pursuer
+        // and the pursuer; and is inversely proportional to the sum of the
+        // agents' velocities
         let LookAheadTime = ToPursuer.length() / (vehicle.borrow().moving_entity.MaxSpeed() + pursuer.moving_entity.Speed());
 
-        //now flee away from predicted future position of the pursuer
+        // now flee away from predicted future position of the pursuer
         return SteeringBehavior::Flee(vehicle, pursuer.position() + pursuer.moving_entity.Velocity() * LookAheadTime);
     }
 
@@ -616,6 +643,9 @@ impl SteeringBehavior {
     //  This behavior makes the agent wander about randomly
     //------------------------------------------------------------------------
     pub fn Wander(&mut self, vehicle: &Rc<RefCell<Vehicle>>) -> Vec2 {
+        // if vehicle.borrow().id() == 0 {
+        //     println!("0")
+        // }
         // this behavior is dependent on the update rate, so this line must
         // be included when using time independent framerate.
         let jitter_this_time_slice = self.m_dWanderJitter * vehicle.borrow().m_dTimeElapsed;
@@ -635,18 +665,28 @@ impl SteeringBehavior {
         self.m_vWanderTarget *= self.m_dWanderRadius;
 
         // move the target into a position WanderDist in front of the agent
-        let target = self.m_vWanderTarget + vec2(self.m_dWanderDistance, 0.0);
+        let wander_target = self.m_vWanderTarget + vec2(self.m_dWanderDistance, 0.0);
 
         // project the target into world space
-        let target = PointToWorldSpace(
-            target,
+        let world_target = PointToWorldSpace(
+            wander_target,
             vehicle.borrow().moving_entity.m_vHeading,
             vehicle.borrow().moving_entity.m_vSide,
             vehicle.borrow().position(),
         );
 
         //and steer towards it
-        return target - vehicle.borrow().position();
+        let mut steer_force = world_target - vehicle.borrow().position();
+
+        // if vehicle.borrow().id() == 0 {
+        //     steer_force *= 70.0;
+        //     println!("self.m_vWanderTarget: {:?}", self.m_vWanderTarget);
+        //     println!("wander_target: {:?}", wander_target);
+        //     println!("world_target: {:?}", world_target);
+        //     println!("steer_force: {:?}", steer_force);
+        // }
+
+        steer_force
     }
 
     //---------------------- ObstacleAvoidance -------------------------------
@@ -931,7 +971,7 @@ impl SteeringBehavior {
         m_pTargetAgent1: &Option<Rc<RefCell<Vehicle>>>,
         neighbors: &Vec<Rc<RefCell<Vehicle>>>,
     ) -> Vec2 {
-        //first find the center of mass of all the agents
+        // first find the center of mass of all the agents
         let mut center_of_mass: Vec2 = Default::default();
         let mut SteeringForce: Vec2 = Default::default();
 
@@ -939,9 +979,9 @@ impl SteeringBehavior {
 
         //iterate through the neighbors and sum up all the position vectors
         for neighbor in neighbors {
-            //make sure *this* agent isn't included in the calculations and that
-            //the agent being examined is close enough ***also make sure it doesn't
-            //include the evade target ***
+            // make sure *this* agent isn't included in the calculations and that
+            // the agent being examined is close enough ***also make sure it doesn't
+            // include the evade target ***
             let is_target_agent = if let Some(agent) = m_pTargetAgent1 {
                 agent.borrow().id() == neighbor.borrow().id()
             } else {
@@ -956,15 +996,15 @@ impl SteeringBehavior {
         }
 
         if NeighborCount > 0 {
-            //the center of mass is the average of the sum of positions
+            // the center of mass is the average of the sum of positions
             center_of_mass = center_of_mass.div(NeighborCount as f32);
 
-            //now seek towards that position
+            // now seek towards that position
             SteeringForce = SteeringBehavior::Seek(vehicle, center_of_mass);
         }
 
-        //the magnitude of cohesion is usually much larger than separation or
-        //alignment so it usually helps to normalize it.
+        // the magnitude of cohesion is usually much larger than separation or
+        // alignment so it usually helps to normalize it.
         return SteeringForce.normalize_or_zero();
     }
 
@@ -981,7 +1021,7 @@ impl SteeringBehavior {
     pub fn SeparationPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<Vehicle>>>) -> Vec2 {
         let mut SteeringForce = Vec2::default();
 
-        //iterate through the neighbors and sum up all the position vectors
+        // iterate through the neighbors and sum up all the position vectors
         for pv in vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors.iter() {
             if pv.borrow().id() != vehicle.borrow().id() {
                 let to_agent = vehicle.borrow().position() - pv.borrow().position();
@@ -1000,10 +1040,10 @@ impl SteeringBehavior {
     //  USES SPACIAL PARTITIONING
     //------------------------------------------------------------------------
     pub fn AlignmentPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<Vehicle>>>) -> Vec2 {
-        //This will record the average heading of the neighbors
+        // This will record the average heading of the neighbors
         let mut AverageHeading = Vec2::default();
 
-        //This count the number of vehicles in the neighborhood
+        // This count the number of vehicles in the neighborhood
         let mut NeighborCount: f32 = 0.0;
 
         for pv in vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors.iter() {
@@ -1029,13 +1069,13 @@ impl SteeringBehavior {
     //  USES SPACIAL PARTITIONING
     //------------------------------------------------------------------------
     pub fn CohesionPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<Vehicle>>>) -> Vec2 {
-        //first find the center of mass of all the agents
+        // first find the center of mass of all the agents
         let mut CenterOfMass = Vec2::default();
         let mut SteeringForce = Vec2::default();
 
         let mut NeighborCount = 0;
 
-        //iterate through the neighbors and sum up all the position vectors
+        // iterate through the neighbors and sum up all the position vectors
         for pv in vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors.iter() {
             //make sure *this* agent isn't included in the calculations and that
             //the agent being examined is close enough

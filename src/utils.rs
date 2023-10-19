@@ -60,19 +60,19 @@ pub fn Truncate(v: Vec2, max: f32) -> Vec2 {
 
 pub fn WrapAround(pos: &mut Vec2, MaxX: i32, MaxY: i32) {
     if pos.x > MaxX as f32 {
-        pos.x = 0.0;
+        pos.x -= MaxX as f32;
     }
 
     if pos.x < 0.0 {
-        pos.x = MaxX as f32;
+        pos.x += MaxX as f32;
     }
 
     if pos.y < 0.0 {
-        pos.y = MaxY as f32;
+        pos.y += MaxY as f32;
     }
 
     if pos.y > MaxY as f32 {
-        pos.y = 0.0;
+        pos.y -= MaxY as f32
     }
 }
 

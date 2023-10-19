@@ -27,12 +27,15 @@ impl C2DMatrix {
 
     pub fn identity() -> Self {
         C2DMatrix {
+            // first
             _11: 1.0,
             _12: 0.0,
             _13: 0.0,
+            // second
             _21: 0.0,
             _22: 1.0,
             _23: 0.0,
+            // third
             _31: 0.0,
             _32: 0.0,
             _33: 1.0,

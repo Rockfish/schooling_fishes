@@ -1,4 +1,4 @@
-use crate::base_entity::BaseGameEntity;
+use crate::base_entity::{BaseGameEntity, EntityBase};
 use crate::cell_space_partition::CellSpacePartition;
 use crate::entity_functions::TagNeighbors;
 use crate::param_loader::PRM;
@@ -111,10 +111,7 @@ impl GameWorld {
                     PRM.VehicleScale,
                 );
 
-                // vehicle.borrow_mut().m_pSteering.as_mut().unwrap().FlockingOn();
-                if let Some(steering) = &vehicle.borrow().m_pSteering {
-                    steering.borrow_mut().FlockingOn();
-                }
+                vehicle.borrow().m_pSteering.borrow_mut().FlockingOn();
 
                 game_world.borrow_mut().m_Vehicles.push(vehicle.clone());
                 game_world.borrow().m_pCellSpace.borrow_mut().AddEntity(vehicle.clone());
@@ -123,19 +120,23 @@ impl GameWorld {
             game_world.borrow_mut().ToggleSpacePartition();
         }
 
-        /* SHOAL
-        #ifdef SHOAL
-        m_Vehicles[Prm.NumAgents-1]->Steering()->FlockingOff();
-        m_Vehicles[Prm.NumAgents-1]->SetScale(Vector2D(10, 10));
-        m_Vehicles[Prm.NumAgents-1]->Steering()->WanderOn();
-        m_Vehicles[Prm.NumAgents-1]->SetMaxSpeed(70);
+        // The "shark"
 
-        for (int i=0; i<Prm.NumAgents-1; ++i)
-        {
-            m_Vehicles[i]->Steering()->EvadeOn(m_Vehicles[Prm.NumAgents-1]);
+        // let idx = (PRM.NumAgents - 1) as usize;
+        let idx = 0usize;
+
+        game_world.borrow().m_Vehicles[idx].borrow().m_pSteering.borrow_mut().FlockingOff();
+        game_world.borrow().m_Vehicles[idx].borrow().m_pSteering.borrow_mut().WanderOn();
+
+        game_world.borrow().m_Vehicles[idx].borrow_mut().set_scale_vec(vec2(10.0, 10.0));
+        game_world.borrow().m_Vehicles[idx].borrow_mut().set_max_speed(70.0);
+
+        for (i, vehicle) in game_world.borrow().m_Vehicles.iter().enumerate() {
+            if i != idx {
+                let target = game_world.borrow().m_Vehicles[idx].clone();
+                vehicle.borrow().m_pSteering.borrow_mut().EvadeOn(target);
+            }
         }
-        #endif
-         */
 
         // TODO: the way cell space partitioning is controlled doesn't make sense
         // since CellSpacePartition object is owned by the GameWorld and not by the
@@ -183,9 +184,7 @@ impl GameWorld {
         self.m_bCellSpaceOn = !self.m_bCellSpaceOn;
 
         for vehicle in &self.m_Vehicles {
-            if let Some(steering) = &vehicle.borrow().m_pSteering {
-                steering.borrow_mut().m_bCellSpaceOn = self.m_bCellSpaceOn;
-            }
+            vehicle.borrow().m_pSteering.borrow_mut().m_bCellSpaceOn = self.m_bCellSpaceOn;
         }
 
         if self.m_bCellSpaceOn {
