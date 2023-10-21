@@ -31,9 +31,9 @@ use std::rc::Rc;
 //  tags any entities contained in a std container that are within the
 //  radius of the single entity parameter
 //------------------------------------------------------------------------
-pub fn TagNeighbors<E1: EntityBase, E2: EntityBase>(entity: &Rc<RefCell<E1>>, ContainerOfEntities: &mut Vec<E2>, radius: f32) {
+pub fn TagNeighbors<E1: EntityBase, E2: EntityBase>(entity: &Rc<RefCell<E1>>, vec_of_entities: &RefCell<Vec<E2>>, radius: f32) {
     // iterate through all entities checking for range
-    for curEntity in ContainerOfEntities {
+    for curEntity in vec_of_entities.borrow_mut().iter_mut() {
         // first clear any current tag
         curEntity.untag();
 

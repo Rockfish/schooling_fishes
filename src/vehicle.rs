@@ -1,4 +1,4 @@
-use crate::base_entity::EntityBase;
+use crate::base_entity::{BaseGameEntity, EntityBase};
 use crate::game_world::GameWorld;
 use crate::moving_entity::MovingEntity;
 use crate::param_loader::PRM;
@@ -14,6 +14,11 @@ use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct Vehicle {
+
+    pub base_entity: BaseGameEntity,
+
+    pub moving_entity: MovingEntity,
+
     //a pointer to the world data. So a vehicle can access any obstacle,
     //path, wall or agent data
     pub m_pWorld: Rc<RefCell<GameWorld>>,
@@ -39,8 +44,6 @@ pub struct Vehicle {
     //buffer for the vehicle shape
     m_vecVehicleVB: Vec<Vec2>,
 
-    pub moving_entity: MovingEntity,
-
     color: Vec3,
 }
 
@@ -57,14 +60,14 @@ impl Vehicle {
         max_turn_rate: f32,
         scale: f32,
     ) -> Rc<RefCell<Vehicle>> {
+        let mut base_entity = BaseGameEntity::with_type_and_position(0, position, scale);
+        base_entity.m_vScale = vec2(scale, scale);
+
         let moving_entity = MovingEntity::new(
-            position,
-            scale,
             velocity,
             max_speed,
             vec2(rotation.sin(), -rotation.cos()),
             mass,
-            vec2(scale, scale),
             max_turn_rate,
             max_force,
         );
@@ -78,6 +81,7 @@ impl Vehicle {
         );
 
         let vehicle = Rc::new(RefCell::new(Vehicle {
+            base_entity,
             m_pWorld: world,
             m_pSteering: RefCell::new(SteeringBehavior::new()),
             m_pHeadingSmoother: heading_smoother,
@@ -129,7 +133,7 @@ impl Vehicle {
 
         // update the position
         let travel_distance = vehicle.borrow().moving_entity.m_vVelocity * time_elapsed;
-        vehicle.borrow_mut().moving_entity.base_entity.m_vPos += travel_distance;
+        vehicle.borrow_mut().base_entity.m_vPos += travel_distance;
 
         // update the heading if the vehicle has a non zero velocity
         if vehicle.borrow().moving_entity.m_vVelocity.length_squared() > 0.00000001 {
@@ -145,7 +149,7 @@ impl Vehicle {
         //treat the screen as a toroid
         let cx = vehicle.borrow().m_pWorld.borrow().cxClient();
         let cy = vehicle.borrow().m_pWorld.borrow().cyClient();
-        WrapAround(&mut vehicle.borrow_mut().moving_entity.base_entity.m_vPos, cx, cy);
+        WrapAround(&mut vehicle.borrow_mut().base_entity.m_vPos, cx, cy);
 
         // TODO: Note, this moved this to gameworld object
         //update the vehicle's current cell if space partitioning is turned on
@@ -186,8 +190,8 @@ impl Vehicle {
             angle = 360.0 - angle;
         }
 
-        let position = vec3(self.moving_entity.base_entity.m_vPos.x, self.moving_entity.base_entity.m_vPos.y, 0.0);
-        let scale = vec3(self.moving_entity.base_entity.m_vScale.x, self.moving_entity.base_entity.m_vScale.y, 1.0);
+        let position = vec3(self.base_entity.m_vPos.x, self.base_entity.m_vPos.y, 0.0);
+        let scale = vec3(self.base_entity.m_vScale.x, self.base_entity.m_vScale.y, 1.0);
 
         let mut model_transform = Mat4::from_translation(position);
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle.to_radians());
@@ -306,46 +310,46 @@ impl Vehicle {
 
 impl EntityBase for Vehicle {
     fn id(&self) -> i32 {
-        self.moving_entity.base_entity.m_ID
+        self.base_entity.m_ID
     }
 
     fn position(&self) -> Vec2 {
-        self.moving_entity.base_entity.m_vPos
+        self.base_entity.m_vPos
     }
 
     fn bounding_radius(&self) -> f32 {
-        self.moving_entity.base_entity.m_dBoundingRadius
+        self.base_entity.m_dBoundingRadius
     }
 
     fn tag(&mut self) {
-        self.moving_entity.base_entity.tag();
+        self.base_entity.tag();
     }
 
     fn untag(&mut self) {
-        self.moving_entity.base_entity.untag();
+        self.base_entity.untag();
     }
 
     fn is_tagged(&self) -> bool {
-        self.moving_entity.base_entity.is_tagged()
+        self.base_entity.is_tagged()
     }
 
     fn scale(&self) -> Vec2 {
-        self.moving_entity.base_entity.m_vScale
+        self.base_entity.m_vScale
     }
 
     fn set_scale_vec(&mut self, val: Vec2) {
-        self.moving_entity.base_entity.set_scale_vec(val);
+        self.base_entity.set_scale_vec(val);
     }
 
     fn set_scale_float(&mut self, val: f32) {
-        self.moving_entity.base_entity.set_scale_float(val);
+        self.base_entity.set_scale_float(val);
     }
 
     fn entity_type(&self) -> i32 {
-        self.moving_entity.base_entity.entity_type()
+        self.base_entity.entity_type()
     }
 
     fn set_entity_type(&mut self, new_type: i32) {
-        self.moving_entity.base_entity.set_entity_type(new_type);
+        self.base_entity.set_entity_type(new_type);
     }
 }

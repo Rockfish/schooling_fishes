@@ -19,7 +19,7 @@ pub struct GameWorld {
     pub(crate) m_Vehicles: Vec<Rc<RefCell<Vehicle>>>,
 
     //any obstacles
-    m_Obstacles: Vec<BaseGameEntity>,
+    m_Obstacles: RefCell<Vec<BaseGameEntity>>,
 
     //container containing any walls in the environment
     m_Walls: Vec<Wall2D>,
@@ -66,7 +66,7 @@ impl GameWorld {
 
         let game_world = GameWorld {
             m_Vehicles: vec![],
-            m_Obstacles: vec![],
+            m_Obstacles: RefCell::new(vec![]),
             m_Walls: vec![],
             m_pCellSpace: cell_space.into(),
             m_bCellSpaceOn: false,
@@ -90,39 +90,37 @@ impl GameWorld {
         };
 
         let game_world = Rc::new(RefCell::new(game_world));
-        {
-            // setup the agents
-            for _a in 0..PRM.NumAgents {
-                //determine a random starting position
-                let spawn_pos = vec2(
-                    cx as f32 / 2.0 + RandomClamped() * cx as f32 / 2.0,
-                    cy as f32 / 2.0 + RandomClamped() * cy as f32 / 2.0,
-                );
 
-                let vehicle = Vehicle::new(
-                    game_world.clone(),
-                    spawn_pos,
-                    RandFloat() * TAU,
-                    vec2(0.0, 0.0),
-                    PRM.VehicleMass,
-                    PRM.MaxSteeringForce,
-                    PRM.MaxSpeed,
-                    PRM.MaxTurnRatePerSecond,
-                    PRM.VehicleScale,
-                );
+        // setup the agents
+        for _a in 0..PRM.NumAgents {
+            //determine a random starting position
+            let spawn_pos = vec2(
+                cx as f32 / 2.0 + RandomClamped() * cx as f32 / 2.0,
+                cy as f32 / 2.0 + RandomClamped() * cy as f32 / 2.0,
+            );
 
-                vehicle.borrow().m_pSteering.borrow_mut().FlockingOn();
+            let vehicle = Vehicle::new(
+                game_world.clone(),
+                spawn_pos,
+                RandFloat() * TAU,
+                vec2(0.0, 0.0),
+                PRM.VehicleMass,
+                PRM.MaxSteeringForce,
+                PRM.MaxSpeed,
+                PRM.MaxTurnRatePerSecond,
+                PRM.VehicleScale,
+            );
 
-                game_world.borrow_mut().m_Vehicles.push(vehicle.clone());
-                game_world.borrow().m_pCellSpace.borrow_mut().AddEntity(vehicle.clone());
-            }
+            vehicle.borrow().m_pSteering.borrow_mut().FlockingOn();
 
-            game_world.borrow_mut().ToggleSpacePartition();
+            game_world.borrow_mut().m_Vehicles.push(vehicle.clone());
+            game_world.borrow().m_pCellSpace.borrow_mut().AddEntity(vehicle.clone());
         }
+
+        game_world.borrow_mut().ToggleSpacePartition();
 
         // The "shark"
 
-        // let idx = (PRM.NumAgents - 1) as usize;
         let idx = 0usize;
 
         game_world.borrow().m_Vehicles[idx].borrow().m_pSteering.borrow_mut().FlockingOff();
@@ -143,7 +141,7 @@ impl GameWorld {
         // vehicles. The cpp code checks the vehicles to find out if partition is on
         // and then has the vehicles change the gameworld's CellSpacePartition object
         // instead of just having the gameworld do it itself.
-        //ToggleSpacePartition();
+        //game_world.borrow_mut().ToggleSpacePartition();
 
         //create any obstacles or walls
         //CreateObstacles();
@@ -198,8 +196,8 @@ impl GameWorld {
         }
     }
 
-    pub fn TagVehiclesWithinViewRange(&mut self, pVehicle: &Rc<RefCell<Vehicle>>, range: f32) {
-        TagNeighbors(pVehicle, &mut self.m_Obstacles, range);
+    pub fn TagVehiclesWithinViewRange(&self, pVehicle: &Rc<RefCell<Vehicle>>, range: f32) {
+        TagNeighbors(pVehicle, &self.m_Obstacles, range);
     }
 
     pub fn Render(&self, shader: &Shader, VAO: GLuint) {

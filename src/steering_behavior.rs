@@ -4,7 +4,7 @@ use crate::base_entity::EntityBase;
 use crate::param_loader::PRM;
 use crate::path::Path;
 use crate::transformations::PointToWorldSpace;
-use crate::utils::{min, RandFloat, RandomClamped};
+use crate::utils::{min, RandFloat, RandInRange, RandomClamped};
 use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
 use glam::{vec2, Vec2};
@@ -87,6 +87,7 @@ pub struct SteeringBehavior {
     m_dWanderJitter: f32,
     m_dWanderRadius: f32,
     m_dWanderDistance: f32,
+    wander_direction_time: f32,
 
     // multipliers. These can be adjusted to effect strength of the
     //  appropriate behavior. Useful to get flocking the way you require
@@ -162,6 +163,7 @@ impl SteeringBehavior {
             m_dWanderDistance: WANDER_DIST,
             m_dWanderJitter: WANDER_JITTER_PER_SEC,
             m_dWanderRadius: wander_radius,
+            wander_direction_time: 0.0,
             m_dWaypointSeekDistSq: WAYPOINT_SEEK_DIST * WAYPOINT_SEEK_DIST,
             m_dWeightSeek: PRM.SeekWeight,
             m_dWeightFlee: PRM.FleeWeight,
@@ -256,7 +258,7 @@ impl SteeringBehavior {
             if self.On(BehaviorType::separation) || self.On(BehaviorType::alignment) || self.On(BehaviorType::cohesion) {
                 let world = vehicle.borrow().m_pWorld.clone();
 
-                world.borrow_mut().TagVehiclesWithinViewRange(vehicle, self.m_dViewDistance);
+                world.borrow().TagVehiclesWithinViewRange(vehicle, self.m_dViewDistance);
             }
         } else {
             // calculate neighbours in cell-space if any of the following 3 group
@@ -643,19 +645,24 @@ impl SteeringBehavior {
     //  This behavior makes the agent wander about randomly
     //------------------------------------------------------------------------
     pub fn Wander(&mut self, vehicle: &Rc<RefCell<Vehicle>>) -> Vec2 {
-        // if vehicle.borrow().id() == 0 {
-        //     println!("0")
-        // }
-        // this behavior is dependent on the update rate, so this line must
-        // be included when using time independent framerate.
-        let jitter_this_time_slice = self.m_dWanderJitter * vehicle.borrow().m_dTimeElapsed;
 
-        // first, add a small random vector to the target's position
+        // use a timer to slow down the frequency of direction changes
+        self.wander_direction_time -= vehicle.borrow().m_dTimeElapsed;
 
-        self.m_vWanderTarget += vec2(
-            RandomClamped() * jitter_this_time_slice,
-            RandomClamped() * jitter_this_time_slice,
-        );
+        if self.wander_direction_time < 0.0 {
+            self.wander_direction_time = RandInRange(0.25, 1.5);
+
+            // this behavior is dependent on the update rate, so this line must
+            // be included when using time independent framerate.
+            let jitter_this_time_slice = self.m_dWanderJitter * vehicle.borrow().m_dTimeElapsed;
+
+            // first, add a small random vector to the target's position
+
+            self.m_vWanderTarget += vec2(
+                RandomClamped() * jitter_this_time_slice,
+                RandomClamped() * jitter_this_time_slice,
+            );
+        }
 
         // reproject this new vector back on to a unit circle
         self.m_vWanderTarget = self.m_vWanderTarget.normalize_or_zero();

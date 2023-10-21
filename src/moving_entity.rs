@@ -22,25 +22,18 @@ pub struct MovingEntity {
 
     //the maximum rate (radians per second)this vehicle can rotate
     pub m_dMaxTurnRate: f32,
-
-    pub base_entity: BaseGameEntity,
 }
 
 impl MovingEntity {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        position: Vec2,
-        radius: f32,
         velocity: Vec2,
         max_speed: f32,
         heading: Vec2,
         mass: f32,
-        scale: Vec2,
         turn_rate: f32,
         max_force: f32,
     ) -> Self {
-        let mut base_entity = BaseGameEntity::with_type_and_position(0, position, radius);
-        base_entity.m_vScale = scale;
 
         MovingEntity {
             m_vVelocity: velocity,
@@ -50,7 +43,6 @@ impl MovingEntity {
             m_dMaxSpeed: max_speed,
             m_dMaxForce: max_force,
             m_dMaxTurnRate: turn_rate,
-            base_entity,
         }
     }
 
