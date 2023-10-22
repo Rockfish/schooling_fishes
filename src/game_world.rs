@@ -3,12 +3,12 @@ use crate::cell_space_partition::CellSpacePartition;
 use crate::entity_functions::TagNeighbors;
 use crate::param_loader::PRM;
 use crate::path::Path;
+use crate::support::shader::Shader;
 use crate::utils::*;
 use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
 use glad_gl::gl::GLuint;
 use glam::{vec2, Vec2};
-use crate::support::shader::Shader;
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
@@ -114,7 +114,7 @@ impl GameWorld {
             vehicle.borrow().m_pSteering.borrow_mut().FlockingOn();
 
             game_world.borrow_mut().m_Vehicles.push(vehicle.clone());
-            game_world.borrow().m_pCellSpace.borrow_mut().AddEntity(vehicle.clone());
+            game_world.borrow().m_pCellSpace.borrow_mut().add_entity(vehicle.clone());
         }
 
         game_world.borrow_mut().ToggleSpacePartition();
@@ -189,7 +189,7 @@ impl GameWorld {
             self.m_pCellSpace.borrow_mut().EmptyCells();
 
             for vehicle in &self.m_Vehicles {
-                self.m_pCellSpace.borrow_mut().AddEntity(vehicle.clone());
+                self.m_pCellSpace.borrow_mut().add_entity(vehicle.clone());
             }
         } else {
             self.m_bShowCellSpaceInfo = false;

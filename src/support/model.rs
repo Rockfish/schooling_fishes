@@ -4,6 +4,7 @@
 #![allow(unused_assignments)]
 #![allow(unused_variables)]
 
+use crate::support::aiscene::*;
 use crate::support::mesh::{Mesh, Texture, Vertex};
 use crate::support::ShaderId;
 use glad_gl::gl;
@@ -15,7 +16,6 @@ use russimp::sys::*;
 use std::os::raw::c_uint;
 use std::path::{Path, PathBuf};
 use std::ptr::*;
-use crate::support::aiscene::*;
 
 // model data
 #[derive(Debug)]

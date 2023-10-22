@@ -4,17 +4,16 @@ use crate::moving_entity::MovingEntity;
 use crate::param_loader::PRM;
 use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
+use crate::support::shader::Shader;
 use crate::utils::{RandInRange, Truncate, WrapAround};
 use glad_gl::gl;
 use glad_gl::gl::GLuint;
 use glam::{vec2, vec3, Mat4, Vec2, Vec3};
-use crate::support::shader::Shader;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct Vehicle {
-
     pub base_entity: BaseGameEntity,
 
     pub moving_entity: MovingEntity,
@@ -63,22 +62,11 @@ impl Vehicle {
         let mut base_entity = BaseGameEntity::with_type_and_position(0, position, scale);
         base_entity.m_vScale = vec2(scale, scale);
 
-        let moving_entity = MovingEntity::new(
-            velocity,
-            max_speed,
-            vec2(rotation.sin(), -rotation.cos()),
-            mass,
-            max_turn_rate,
-            max_force,
-        );
+        let moving_entity = MovingEntity::new(velocity, max_speed, vec2(rotation.sin(), -rotation.cos()), mass, max_turn_rate, max_force);
 
         let heading_smoother = Smoother::new(PRM.NumSamplesForSmoothing, vec2(0.0, 0.0));
 
-        let color = vec3(
-            RandInRange(0.2,1.0),
-            RandInRange(0.2,1.0),
-            RandInRange(0.2,1.0),
-        );
+        let color = vec3(RandInRange(0.2, 1.0), RandInRange(0.2, 1.0), RandInRange(0.2, 1.0));
 
         let vehicle = Rc::new(RefCell::new(Vehicle {
             base_entity,
@@ -90,7 +78,7 @@ impl Vehicle {
             m_dTimeElapsed: 0.0,
             m_vecVehicleVB: vec![],
             moving_entity,
-            color
+            color,
         }));
 
         vehicle
@@ -295,16 +283,17 @@ impl Vehicle {
     }
 
     pub fn print(&self) {
-       println!("{:#?}\n{:#?}", // "{:#?}\n", // "{:#?}\n{:#?}\n{:#?}\n", // {:#?}\n{:#?}\n",
-                self.moving_entity,
-                // unsafe {self.m_pSteering.try_borrow_unguarded()},
-                // self.m_pHeadingSmoother,
-                // self.m_vSmoothedHeading,
-                // self.m_bSmoothingOn,
-                self.m_dTimeElapsed,
-                // self.m_vecVehicleVB,
-                // self.color
-       );
+        println!(
+            "{:#?}\n{:#?}", // "{:#?}\n", // "{:#?}\n{:#?}\n{:#?}\n", // {:#?}\n{:#?}\n",
+            self.moving_entity,
+            // unsafe {self.m_pSteering.try_borrow_unguarded()},
+            // self.m_pHeadingSmoother,
+            // self.m_vSmoothedHeading,
+            // self.m_bSmoothingOn,
+            self.m_dTimeElapsed,
+            // self.m_vecVehicleVB,
+            // self.color
+        );
     }
 }
 

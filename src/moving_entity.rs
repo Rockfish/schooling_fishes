@@ -26,15 +26,7 @@ pub struct MovingEntity {
 
 impl MovingEntity {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        velocity: Vec2,
-        max_speed: f32,
-        heading: Vec2,
-        mass: f32,
-        turn_rate: f32,
-        max_force: f32,
-    ) -> Self {
-
+    pub fn new(velocity: Vec2, max_speed: f32, heading: Vec2, mass: f32, turn_rate: f32, max_force: f32) -> Self {
         MovingEntity {
             m_vVelocity: velocity,
             m_vHeading: heading,

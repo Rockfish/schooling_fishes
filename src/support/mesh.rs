@@ -4,13 +4,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_assignments)]
 
+use crate::support::ShaderId;
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use glam::*;
 use std::ffi::CString;
 use std::mem;
 use std::ops::Add;
-use crate::support::ShaderId;
 
 const MAX_BONE_INFLUENCE: usize = 4;
 

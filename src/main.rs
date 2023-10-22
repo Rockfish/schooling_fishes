@@ -20,24 +20,24 @@ mod param_loader;
 mod path;
 mod smoother;
 mod steering_behavior;
+mod support;
 mod transformations;
 mod utils;
 mod vehicle;
 mod wall_2d;
-mod support;
 
 extern crate glfw;
 
 use crate::game_world::GameWorld;
+use crate::support::camera::{Camera, CameraMovement};
+use crate::support::shader::Shader;
+use crate::support::SIZE_OF_FLOAT;
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use glam::{vec3, Mat4, Vec3};
 use glfw::{Action, Context, Key};
 use log::error;
 use std::ptr;
-use crate::support::camera::{Camera, CameraMovement};
-use crate::support::shader::Shader;
-use crate::support::SIZE_OF_FLOAT;
 
 const SCR_WIDTH: f32 = 800.0;
 const SCR_HEIGHT: f32 = 800.0;
@@ -122,6 +122,8 @@ fn main() {
         gl::BindVertexArray(0);
     }
 
+    let view = state.camera.get_view_matrix();
+
     // render loop
     while !window.should_close() {
         let currentFrame = glfw.get_time() as f32;
@@ -138,25 +140,23 @@ fn main() {
             gl::ClearColor(0.1, 0.1, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT); //  | gl::DEPTH_BUFFER_BIT);
 
+            shader.setMat4("view", &view);
+
             // let projection = Mat4::perspective_rh_gl(state.camera.Zoom.to_radians(), SCR_WIDTH / SCR_HEIGHT, 0.1, 1000.0);
             let projection = Mat4::orthographic_rh_gl(0.0, 600.0, 0.0, 600.0, 0.1, 100.0);
             shader.setMat4("projection", &projection);
 
-            // camera/view transformation
-            let view = state.camera.get_view_matrix();
-            shader.setMat4("view", &view);
-
-            let mut model_transform = Mat4::from_translation(Vec3::new(300.0, 300.0, 0.0));
-            model_transform *= Mat4::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), glfw.get_time() as f32);
-            model_transform *= Mat4::from_scale(Vec3::new(10.0, 10.0, 1.0));
-
-            shader.setMat4("model", &model_transform);
-
-            shader.use_shader();
-            shader.setVec3("color", &vec3(1.0, 0.5, 0.2));
-
-            gl::BindVertexArray(VAO);
-            gl::DrawArrays(gl::TRIANGLES, 0, 3);
+            // let mut model_transform = Mat4::from_translation(Vec3::new(300.0, 300.0, 0.0));
+            // model_transform *= Mat4::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), glfw.get_time() as f32);
+            // model_transform *= Mat4::from_scale(Vec3::new(10.0, 10.0, 1.0));
+            //
+            // shader.setMat4("model", &model_transform);
+            //
+            // shader.use_shader();
+            // shader.setVec3("color", &vec3(1.0, 0.5, 0.2));
+            //
+            // gl::BindVertexArray(VAO);
+            // gl::DrawArrays(gl::TRIANGLES, 0, 3);
 
             GameWorld::Update(&game_world, state.deltaTime);
 

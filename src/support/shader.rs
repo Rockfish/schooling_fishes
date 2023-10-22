@@ -13,8 +13,8 @@ use std::io::Error;
 use std::path::Path;
 use std::ptr;
 
-use crate::*;
 use crate::support::ShaderId;
+use crate::*;
 
 pub struct Shader {
     pub id: ShaderId,

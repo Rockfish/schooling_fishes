@@ -1,5 +1,5 @@
 use glam::Vec2;
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 use std::cmp::Ordering;
 use std::ops::Mul;
 

@@ -24,7 +24,6 @@ pub struct C2DMatrix {
 }
 
 impl C2DMatrix {
-
     pub fn identity() -> Self {
         C2DMatrix {
             // first

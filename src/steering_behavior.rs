@@ -200,8 +200,8 @@ impl SteeringBehavior {
 
     /*
     void FleeOn(){m_iFlags |= flee;}
-	void SeekOn(){m_iFlags |= seek;}
-	void ArriveOn(){m_iFlags |= arrive;}
+    void SeekOn(){m_iFlags |= seek;}
+    void ArriveOn(){m_iFlags |= arrive;}
      */
 
     pub fn WanderOn(&mut self) {
@@ -302,7 +302,7 @@ impl SteeringBehavior {
 
         // return false if there is no more force left to use
         if magnitude_remaining <= 0.0 {
-           return false;
+            return false;
         }
 
         // calculate the magnitude of the force we want to add
@@ -645,7 +645,6 @@ impl SteeringBehavior {
     //  This behavior makes the agent wander about randomly
     //------------------------------------------------------------------------
     pub fn Wander(&mut self, vehicle: &Rc<RefCell<Vehicle>>) -> Vec2 {
-
         // use a timer to slow down the frequency of direction changes
         self.wander_direction_time -= vehicle.borrow().m_dTimeElapsed;
 
@@ -658,10 +657,7 @@ impl SteeringBehavior {
 
             // first, add a small random vector to the target's position
 
-            self.m_vWanderTarget += vec2(
-                RandomClamped() * jitter_this_time_slice,
-                RandomClamped() * jitter_this_time_slice,
-            );
+            self.m_vWanderTarget += vec2(RandomClamped() * jitter_this_time_slice, RandomClamped() * jitter_this_time_slice);
         }
 
         // reproject this new vector back on to a unit circle
