@@ -3,6 +3,7 @@ use crate::cell_space_partition::CellSpacePartition;
 use crate::entity_functions::TagNeighbors;
 use crate::param_loader::PRM;
 use crate::path::Path;
+use crate::shapes::triangle::Triangle;
 use crate::support::shader::Shader;
 use crate::utils::*;
 use crate::vehicle::Vehicle;
@@ -200,7 +201,7 @@ impl GameWorld {
         TagNeighbors(pVehicle, &self.m_Obstacles, range);
     }
 
-    pub fn Render(&self, shader: &Shader, VAO: GLuint) {
+    pub fn render(&self, shader: &Shader, triangle: &Triangle) {
         for wall in &self.m_Walls {
             wall.Render(true);
         }
@@ -212,7 +213,7 @@ impl GameWorld {
         let mut first = true;
         //render the agents
         for vehicle in &self.m_Vehicles {
-            vehicle.borrow_mut().Render(shader, VAO);
+            vehicle.borrow_mut().render(shader, triangle);
 
             //render cell partitioning stuff
             if self.m_bShowCellSpaceInfo && first {
@@ -246,7 +247,7 @@ impl GameWorld {
         // }
 
         if self.m_bShowCellSpaceInfo {
-            self.m_pCellSpace.borrow().RenderCells();
+            self.m_pCellSpace.borrow().render_cells();
         }
     }
 }

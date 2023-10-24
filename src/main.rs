@@ -18,6 +18,7 @@ mod inverted_aab_box_2d;
 mod moving_entity;
 mod param_loader;
 mod path;
+mod shapes;
 mod smoother;
 mod steering_behavior;
 mod support;
@@ -29,6 +30,9 @@ mod wall_2d;
 extern crate glfw;
 
 use crate::game_world::GameWorld;
+use crate::shapes::line_box::LineBox;
+use crate::shapes::small_fish::SmallFish;
+use crate::shapes::triangle::Triangle;
 use crate::support::camera::{Camera, CameraMovement};
 use crate::support::shader::Shader;
 use crate::support::SIZE_OF_FLOAT;
@@ -38,6 +42,7 @@ use glam::{vec3, Mat4, Vec3};
 use glfw::{Action, Context, Key};
 use log::error;
 use std::ptr;
+use crate::support::texture::load_texture;
 
 const SCR_WIDTH: f32 = 800.0;
 const SCR_HEIGHT: f32 = 800.0;
@@ -92,9 +97,18 @@ fn main() {
     let game_world = GameWorld::new(600, 600);
 
     let shader = Shader::new("assets/shaders/camera.vert", "assets/shaders/camera.frag", None).unwrap();
+    let shader_texture = Shader::new("assets/shaders/camera_texture.vert", "assets/shaders/camera_texture.frag", None).unwrap();
+
+    let fish_texture = load_texture("assets/images/fish_3.png", false, true);
+
+    let line_box = LineBox::new();
+    let triangle = Triangle::new();
+    let fish = SmallFish::new();
 
     let mut VAO: GLuint = 0;
     let mut VBO: GLuint = 0;
+    let mut line_VAO: GLuint = 0;
+    let mut line_VBO: GLuint = 0;
 
     #[rustfmt::skip]
     let vertices: [f32; 9] = [
@@ -109,6 +123,7 @@ fn main() {
         gl::GenVertexArrays(1, &mut VAO);
         gl::GenBuffers(1, &mut VBO);
         gl::BindVertexArray(VAO);
+
         gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
         gl::BufferData(
             gl::ARRAY_BUFFER,
@@ -116,8 +131,10 @@ fn main() {
             vertices.as_ptr() as *const GLvoid,
             gl::STATIC_DRAW,
         );
+
         gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (3 * SIZE_OF_FLOAT) as GLsizei, ptr::null());
         gl::EnableVertexAttribArray(0);
+
         gl::BindBuffer(gl::ARRAY_BUFFER, 0);
         gl::BindVertexArray(0);
     }
@@ -150,17 +167,20 @@ fn main() {
             // model_transform *= Mat4::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), glfw.get_time() as f32);
             // model_transform *= Mat4::from_scale(Vec3::new(10.0, 10.0, 1.0));
             //
-            // shader.setMat4("model", &model_transform);
-            //
             // shader.use_shader();
+            // shader.setMat4("model", &model_transform);
             // shader.setVec3("color", &vec3(1.0, 0.5, 0.2));
             //
             // gl::BindVertexArray(VAO);
             // gl::DrawArrays(gl::TRIANGLES, 0, 3);
 
-            GameWorld::Update(&game_world, state.deltaTime);
+            // line_box.render(&shader);
+            gl::BindTexture(gl::TEXTURE_2D, fish_texture);
+            fish.render(&shader_texture, vec3(300.0, 300.0, 0.0), 0.0, vec3(50.0, 50.0, 1.0), &vec3(1.0, 1.0, 1.0));
 
-            game_world.borrow().Render(&shader, VAO);
+            GameWorld::Update(&game_world, state.deltaTime);
+            game_world.borrow().render(&shader_texture, &triangle);
+
         }
 
         window.swap_buffers();

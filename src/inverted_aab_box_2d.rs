@@ -1,3 +1,4 @@
+use glad_gl::gl;
 use glam::Vec2;
 
 #[derive(Debug)]
@@ -42,12 +43,35 @@ impl InvertedAABBox2D {
 
     pub fn render(&self) {
         let _box_verts = [
-            self.left(), self.top(), self.right(), self.top(),
-            self.left(), self.bottom(), self.right(), self.bottom(),
-            self.left(), self.top(), self.left(), self.bottom(),
-            self.right(), self.top(), self.right(), self.bottom()
+            self.left(),
+            self.top(),
+            self.right(),
+            self.top(),
+            self.left(),
+            self.bottom(),
+            self.right(),
+            self.bottom(),
+            self.left(),
+            self.top(),
+            self.left(),
+            self.bottom(),
+            self.right(),
+            self.top(),
+            self.right(),
+            self.bottom(),
         ];
 
-        todo!();
+        let color = vec![0.5, 0.5, 0.5];
+        let start = vec![0.0, 0.0, 0.0];
+        let end = vec![50.0, 50.0, 0.0];
+
+        unsafe {
+            gl::LineWidth(1.0);
+            gl::Begin(gl::LINES);
+            gl::Color3fv(color.as_ptr());
+            gl::Vertex3fv(start.as_ptr());
+            gl::Vertex3fv(end.as_ptr());
+            gl::End();
+        }
     }
 }

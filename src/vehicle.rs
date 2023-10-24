@@ -2,6 +2,7 @@ use crate::base_entity::{BaseGameEntity, EntityBase};
 use crate::game_world::GameWorld;
 use crate::moving_entity::MovingEntity;
 use crate::param_loader::PRM;
+use crate::shapes::triangle::Triangle;
 use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
 use crate::support::shader::Shader;
@@ -169,7 +170,7 @@ impl Vehicle {
 
      */
 
-    pub fn Render(&mut self, shader: &Shader, VAO: GLuint) {
+    pub fn render(&mut self, shader: &Shader, triangle: &Triangle) {
         //float angle = (acos(forward.x)/(2*M_PI))*360;
         //let angle = acos(self.moving_entity.m_vHeading.x) * RADTODEG; // RadToDeg(acos(m_vHeading.x));
         let mut angle = self.moving_entity.m_vHeading.x.acos().to_degrees();
@@ -181,18 +182,7 @@ impl Vehicle {
         let position = vec3(self.base_entity.m_vPos.x, self.base_entity.m_vPos.y, 0.0);
         let scale = vec3(self.base_entity.m_vScale.x, self.base_entity.m_vScale.y, 1.0);
 
-        let mut model_transform = Mat4::from_translation(position);
-        model_transform *= Mat4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle.to_radians());
-        model_transform *= Mat4::from_scale(scale);
-
-        shader.use_shader();
-        shader.setMat4("model", &model_transform);
-        shader.setVec3("color", &self.color);
-
-        unsafe {
-            gl::BindVertexArray(VAO);
-            gl::DrawArrays(gl::TRIANGLES, 0, 3);
-        }
+        triangle.render(shader, position, angle, scale, &self.color);
 
         // println!("fish id: {}   position: {}", self.ID(), position);
 

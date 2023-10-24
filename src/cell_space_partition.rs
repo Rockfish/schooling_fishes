@@ -3,19 +3,18 @@ use crate::inverted_aab_box_2d::InvertedAABBox2D;
 use glam::{vec2, Vec2};
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::vec::ExtractIf;
 
 #[derive(Debug)]
 pub struct Cell<Entity: EntityBase> {
     pub members: Vec<Rc<RefCell<Entity>>>,
-    pub BBox: InvertedAABBox2D,
+    pub bounding_box: InvertedAABBox2D,
 }
 
 impl<Entity: EntityBase> Cell<Entity> {
     pub fn new(top_left: Vec2, bottom_right: Vec2) -> Cell<Entity> {
         Cell {
             members: vec![],
-            BBox: InvertedAABBox2D::new(top_left, bottom_right),
+            bounding_box: InvertedAABBox2D::new(top_left, bottom_right),
         }
     }
 }
@@ -44,12 +43,6 @@ pub struct CellSpacePartition<Entity: EntityBase> {
 
     m_dCellSizeX: f32,
     m_dCellSizeY: f32,
-}
-
-impl<Entity: EntityBase> CellSpacePartition<Entity> {
-    pub(crate) fn RenderCells(&self) {
-        todo!()
-    }
 }
 
 impl<Entity: EntityBase> CellSpacePartition<Entity> {
@@ -134,7 +127,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
         let query_radius_squared = query_radius * query_radius;
 
         for cur_cell in &self.m_Cells {
-            if cur_cell.BBox.isOverlappedWith(&query_box) && !cur_cell.members.is_empty() {
+            if cur_cell.bounding_box.isOverlappedWith(&query_box) && !cur_cell.members.is_empty() {
                 for entity in &cur_cell.members {
                     if entity.borrow().position().distance_squared(target_pos) < query_radius_squared {
                         self.m_Neighbors.push(entity.clone());
@@ -174,7 +167,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
 
     pub fn render_cells(&self) {
         for cell in &self.m_Cells {
-            cell.BBox.render();
+            cell.bounding_box.render();
         }
     }
 }
