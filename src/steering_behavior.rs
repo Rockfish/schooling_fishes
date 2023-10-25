@@ -4,7 +4,7 @@ use crate::base_entity::EntityBase;
 use crate::param_loader::PRM;
 use crate::path::Path;
 use crate::transformations::PointToWorldSpace;
-use crate::utils::{min, RandFloat, RandInRange, RandomClamped};
+use crate::utils::{min, rand_normal_distribution, RandFloat, RandInRange, RandomClamped};
 use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
 use glam::{vec2, Vec2};
@@ -649,15 +649,21 @@ impl SteeringBehavior {
         self.wander_direction_time -= vehicle.borrow().m_dTimeElapsed;
 
         if self.wander_direction_time < 0.0 {
-            self.wander_direction_time = RandInRange(0.25, 1.5);
+            self.wander_direction_time = RandInRange(0.05, 0.3);
 
             // this behavior is dependent on the update rate, so this line must
             // be included when using time independent framerate.
             let jitter_this_time_slice = self.m_dWanderJitter * vehicle.borrow().m_dTimeElapsed;
 
             // first, add a small random vector to the target's position
+            // let x_rand = RandomClamped() * jitter_this_time_slice;
+            // let y_rand = RandomClamped() * jitter_this_time_slice;
 
-            self.m_vWanderTarget += vec2(RandomClamped() * jitter_this_time_slice, RandomClamped() * jitter_this_time_slice);
+            // use a normal distribution for turns
+            let x_rand = (rand_normal_distribution() - 2.0) * jitter_this_time_slice;
+            let y_rand = (rand_normal_distribution() - 2.0) * jitter_this_time_slice;
+
+            self.m_vWanderTarget += vec2(x_rand, y_rand);
         }
 
         // reproject this new vector back on to a unit circle

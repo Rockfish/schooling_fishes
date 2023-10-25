@@ -106,18 +106,18 @@ fn main() {
     let triangle = Triangle::new();
     let fish = SmallFish::new(fish_texture);
 
-    let mut VAO: GLuint = 0;
-    let mut VBO: GLuint = 0;
-    let mut line_VAO: GLuint = 0;
-    let mut line_VBO: GLuint = 0;
-
-    #[rustfmt::skip]
-    let vertices: [f32; 9] = [
-        -1.0,  0.6,  0.0,
-         1.0,  0.0,  0.0,
-        -1.0, -0.6,  0.0
-    ];
-
+    // let mut VAO: GLuint = 0;
+    // let mut VBO: GLuint = 0;
+    // let mut line_VAO: GLuint = 0;
+    // let mut line_VBO: GLuint = 0;
+    //
+    // #[rustfmt::skip]
+    // let vertices: [f32; 9] = [
+    //     -1.0,  0.6,  0.0,
+    //      1.0,  0.0,  0.0,
+    //     -1.0, -0.6,  0.0
+    // ];
+    //
     // unsafe {
     //     // gl::Enable(gl::DEPTH_TEST);
     //

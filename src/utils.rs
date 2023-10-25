@@ -2,6 +2,7 @@ use glam::Vec2;
 use rand::{thread_rng, Rng};
 use std::cmp::Ordering;
 use std::ops::Mul;
+use rand_distr::{Normal, Distribution};
 
 #[inline]
 pub fn min<T: PartialOrd>(a: T, b: T) -> T {
@@ -50,6 +51,12 @@ pub fn RandomClamped() -> f32 {
     thread_rng().gen_range(-1.0..=1.0)
 }
 
+pub fn rand_normal_distribution() -> f32 {
+    let normal: Normal<f32> = Normal::new(2.0, 0.2).unwrap();
+    let v = normal.sample(&mut thread_rng());
+    v
+}
+
 pub fn Truncate(v: Vec2, max: f32) -> Vec2 {
     if v.length() > max {
         let v = v.normalize_or_zero();
@@ -78,7 +85,7 @@ pub fn WrapAround(pos: &mut Vec2, MaxX: i32, MaxY: i32) {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::{Truncate, WrapAround};
+    use crate::utils::{rand_normal_distribution, Truncate, WrapAround};
     use glam::vec2;
 
     #[test]
@@ -98,5 +105,13 @@ mod tests {
         let mut v = vec2(10.0, 10.0);
         WrapAround(&mut v, 10, 11);
         println!("{:?}", v);
+    }
+
+    #[test]
+    pub fn test_distribution() {
+        for i in 0..1000 {
+            let x = rand_normal_distribution() - 2.0;
+            println!("{x}");
+        }
     }
 }
