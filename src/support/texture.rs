@@ -59,6 +59,8 @@ pub fn load_texture(path: &str, gammaCorrection: bool, flipv: bool) -> GLuint {
             _ => panic!("no mapping for color type"),
         };
 
+        // println!("texture format: {:#02x}",dataFormat);
+
         gl::GenTextures(1, &mut texture_id);
         gl::BindTexture(gl::TEXTURE_2D, texture_id);
         gl::TexImage2D(

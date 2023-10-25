@@ -13,6 +13,7 @@ use glam::{vec2, Vec2};
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
+use crate::shapes::small_fish::SmallFish;
 
 #[derive(Debug)]
 pub struct GameWorld {
@@ -201,7 +202,7 @@ impl GameWorld {
         TagNeighbors(pVehicle, &self.m_Obstacles, range);
     }
 
-    pub fn render(&self, shader: &Shader, triangle: &Triangle) {
+    pub fn render(&self, shader: &Shader, triangle: &SmallFish) {
         for wall in &self.m_Walls {
             wall.Render(true);
         }

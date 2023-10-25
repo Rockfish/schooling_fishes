@@ -109,6 +109,14 @@ impl Shader {
         }
     }
 
+    pub fn use_shader_with(&self, projection: &Mat4, view: &Mat4) {
+        unsafe {
+            gl::UseProgram(self.id);
+        }
+        self.setMat4("projection", projection);
+        self.setMat4("view", view);
+    }
+
     // utility uniform functions
     // ------------------------------------------------------------------------
     pub fn setBool(&self, name: &str, value: bool) {

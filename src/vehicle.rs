@@ -12,6 +12,7 @@ use glad_gl::gl::GLuint;
 use glam::{vec2, vec3, Mat4, Vec2, Vec3};
 use std::cell::RefCell;
 use std::rc::Rc;
+use crate::shapes::small_fish::SmallFish;
 
 #[derive(Debug)]
 pub struct Vehicle {
@@ -170,7 +171,7 @@ impl Vehicle {
 
      */
 
-    pub fn render(&mut self, shader: &Shader, triangle: &Triangle) {
+    pub fn render(&mut self, shader: &Shader, triangle: &SmallFish) {
         //float angle = (acos(forward.x)/(2*M_PI))*360;
         //let angle = acos(self.moving_entity.m_vHeading.x) * RADTODEG; // RadToDeg(acos(m_vHeading.x));
         let mut angle = self.moving_entity.m_vHeading.x.acos().to_degrees();
@@ -182,7 +183,7 @@ impl Vehicle {
         let position = vec3(self.base_entity.m_vPos.x, self.base_entity.m_vPos.y, 0.0);
         let scale = vec3(self.base_entity.m_vScale.x, self.base_entity.m_vScale.y, 1.0);
 
-        triangle.render(shader, position, angle, scale, &self.color);
+        triangle.render(shader, position, angle - 90.0, scale, &self.color);
 
         // println!("fish id: {}   position: {}", self.ID(), position);
 

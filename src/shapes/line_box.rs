@@ -2,7 +2,7 @@ use crate::support::shader::Shader;
 use crate::support::SIZE_OF_FLOAT;
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
-use glam::{vec3, Mat4};
+use glam::{vec3, Mat4, Vec3};
 use std::ptr;
 
 pub struct LineBox {
@@ -47,13 +47,12 @@ impl LineBox {
         LineBox { line_VAO, line_VBO }
     }
 
-    pub fn render(&self, shader: &Shader) {
+    pub fn render(&self, shader: &Shader, position: Vec3, scale: Vec3, color: &Vec3) {
         unsafe {
-            let color = vec3(1.0, 1.0, 1.0);
 
-            shader.use_shader();
-            let mut model_transform = Mat4::from_translation(vec3(300.0, 300.0, 0.0));
-            model_transform *= Mat4::from_scale(vec3(10.0, 10.0, 1.0));
+            // shader.use_shader();
+            let mut model_transform = Mat4::from_translation(position);
+            model_transform *= Mat4::from_scale(scale);
             shader.setMat4("model", &model_transform);
             shader.setVec3("color", &color);
 

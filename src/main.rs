@@ -100,10 +100,11 @@ fn main() {
     let shader_texture = Shader::new("assets/shaders/camera_texture.vert", "assets/shaders/camera_texture.frag", None).unwrap();
 
     let fish_texture = load_texture("assets/images/fish_3.png", false, true);
+    // let fish_texture = load_texture("/Users/john/Dev_Rust/Dev/learn_opengl_with_rust/resources/textures/grass.png", false, false);
 
     let line_box = LineBox::new();
     let triangle = Triangle::new();
-    let fish = SmallFish::new();
+    let fish = SmallFish::new(fish_texture);
 
     let mut VAO: GLuint = 0;
     let mut VBO: GLuint = 0;
@@ -117,27 +118,27 @@ fn main() {
         -1.0, -0.6,  0.0
     ];
 
-    unsafe {
-        // gl::Enable(gl::DEPTH_TEST);
-
-        gl::GenVertexArrays(1, &mut VAO);
-        gl::GenBuffers(1, &mut VBO);
-        gl::BindVertexArray(VAO);
-
-        gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
-        gl::BufferData(
-            gl::ARRAY_BUFFER,
-            (vertices.len() * SIZE_OF_FLOAT) as GLsizeiptr,
-            vertices.as_ptr() as *const GLvoid,
-            gl::STATIC_DRAW,
-        );
-
-        gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (3 * SIZE_OF_FLOAT) as GLsizei, ptr::null());
-        gl::EnableVertexAttribArray(0);
-
-        gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-        gl::BindVertexArray(0);
-    }
+    // unsafe {
+    //     // gl::Enable(gl::DEPTH_TEST);
+    //
+    //     gl::GenVertexArrays(1, &mut VAO);
+    //     gl::GenBuffers(1, &mut VBO);
+    //     gl::BindVertexArray(VAO);
+    //
+    //     gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
+    //     gl::BufferData(
+    //         gl::ARRAY_BUFFER,
+    //         (vertices.len() * SIZE_OF_FLOAT) as GLsizeiptr,
+    //         vertices.as_ptr() as *const GLvoid,
+    //         gl::STATIC_DRAW,
+    //     );
+    //
+    //     gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (3 * SIZE_OF_FLOAT) as GLsizei, ptr::null());
+    //     gl::EnableVertexAttribArray(0);
+    //
+    //     gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+    //     gl::BindVertexArray(0);
+    // }
 
     let view = state.camera.get_view_matrix();
 
@@ -157,29 +158,28 @@ fn main() {
             gl::ClearColor(0.1, 0.1, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT); //  | gl::DEPTH_BUFFER_BIT);
 
-            shader.setMat4("view", &view);
-
             // let projection = Mat4::perspective_rh_gl(state.camera.Zoom.to_radians(), SCR_WIDTH / SCR_HEIGHT, 0.1, 1000.0);
             let projection = Mat4::orthographic_rh_gl(0.0, 600.0, 0.0, 600.0, 0.1, 100.0);
-            shader.setMat4("projection", &projection);
 
-            // let mut model_transform = Mat4::from_translation(Vec3::new(300.0, 300.0, 0.0));
+            // let mut model_transform = Mat4::from_translation(Vec3::new(400.0, 400.0, 0.0));
             // model_transform *= Mat4::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), glfw.get_time() as f32);
             // model_transform *= Mat4::from_scale(Vec3::new(10.0, 10.0, 1.0));
-            //
-            // shader.use_shader();
+
+
             // shader.setMat4("model", &model_transform);
             // shader.setVec3("color", &vec3(1.0, 0.5, 0.2));
-            //
             // gl::BindVertexArray(VAO);
             // gl::DrawArrays(gl::TRIANGLES, 0, 3);
-
-            // line_box.render(&shader);
-            gl::BindTexture(gl::TEXTURE_2D, fish_texture);
-            fish.render(&shader_texture, vec3(300.0, 300.0, 0.0), 0.0, vec3(50.0, 50.0, 1.0), &vec3(1.0, 1.0, 1.0));
+            // gl::BindVertexArray(0);
 
             GameWorld::Update(&game_world, state.deltaTime);
-            game_world.borrow().render(&shader_texture, &triangle);
+
+            shader_texture.use_shader_with(&projection, &view);
+            // fish.render(&shader_texture, vec3(300.0, 300.0, 0.0), 0.0, vec3(20.0, 20.0, 1.0), &vec3(1.0, 1.0, 1.0));
+
+            // shader.use_shader_with(&projection, &view);
+            game_world.borrow().render(&shader_texture, &fish);
+            // line_box.render(&shader, vec3(200.0, 200.0, 0.0), vec3(50.0, 50.0, 1.0), &vec3(1.0, 1.0, 1.0));
 
         }
 
