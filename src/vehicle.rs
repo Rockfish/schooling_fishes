@@ -83,6 +83,11 @@ impl Vehicle {
             color,
         }));
 
+        let id = vehicle.borrow().id();
+        if id == 0 {
+            vehicle.borrow().m_pSteering.borrow_mut().m_vWanderTarget = vec2(0.0, 0.0);
+        }
+
         vehicle
     }
 
@@ -171,7 +176,7 @@ impl Vehicle {
 
      */
 
-    pub fn render(&mut self, shader: &Shader, triangle: &SmallFish) {
+    pub fn render(&mut self, shader: &Shader, shape: &SmallFish) {
         //float angle = (acos(forward.x)/(2*M_PI))*360;
         //let angle = acos(self.moving_entity.m_vHeading.x) * RADTODEG; // RadToDeg(acos(m_vHeading.x));
         let mut angle = self.moving_entity.m_vHeading.x.acos().to_degrees();
@@ -183,7 +188,7 @@ impl Vehicle {
         let position = vec3(self.base_entity.m_vPos.x, self.base_entity.m_vPos.y, 0.0);
         let scale = vec3(self.base_entity.m_vScale.x, self.base_entity.m_vScale.y, 1.0);
 
-        triangle.render(shader, position, angle - 90.0, scale, &self.color);
+        shape.render(shader, position, angle - 90.0, scale);
 
         // println!("fish id: {}   position: {}", self.ID(), position);
 

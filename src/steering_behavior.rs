@@ -12,6 +12,9 @@ use std::cell::{Ref, RefCell};
 use std::f32::consts::TAU;
 use std::ops::Div;
 use std::rc::Rc;
+use rand::prelude::Distribution;
+use rand::thread_rng;
+use rand_distr::Normal;
 
 //the radius of the constraining circle for the wander behavior
 const WANDER_RAD: f32 = 1.2;
@@ -648,7 +651,7 @@ impl SteeringBehavior {
         // use a timer to slow down the frequency of direction changes
         self.wander_direction_time -= vehicle.borrow().m_dTimeElapsed;
 
-        if self.wander_direction_time < 0.0 {
+        // if self.wander_direction_time < 0.0 {
             self.wander_direction_time = RandInRange(0.05, 0.3);
 
             // this behavior is dependent on the update rate, so this line must
@@ -656,22 +659,30 @@ impl SteeringBehavior {
             let jitter_this_time_slice = self.m_dWanderJitter * vehicle.borrow().m_dTimeElapsed;
 
             // first, add a small random vector to the target's position
-            // let x_rand = RandomClamped() * jitter_this_time_slice;
-            // let y_rand = RandomClamped() * jitter_this_time_slice;
+            let x_rand = RandomClamped() * jitter_this_time_slice;
+            let y_rand = RandomClamped() * jitter_this_time_slice;
 
             // use a normal distribution for turns
-            let x_rand = (rand_normal_distribution() - 2.0) * jitter_this_time_slice;
-            let y_rand = (rand_normal_distribution() - 2.0) * jitter_this_time_slice;
+            // let normal: Normal<f32> = Normal::new(0.0, 0.1).unwrap();
+            // let x_rand = normal.sample(&mut thread_rng()) * jitter_this_time_slice;
+            // let y_rand = normal.sample(&mut thread_rng()) * jitter_this_time_slice;
+            let mut rand_vec = vec2(x_rand, y_rand);
 
-            self.m_vWanderTarget += vec2(x_rand, y_rand);
-        }
+        // if vehicle.borrow().id() == 0 {
+        //     rand_vec = vec2(0.0, 0.0);
+        //     self.m_vWanderTarget = rand_vec;
+        // } else {
+            self.m_vWanderTarget += rand_vec;
+        // }
 
-        // reproject this new vector back on to a unit circle
-        self.m_vWanderTarget = self.m_vWanderTarget.normalize_or_zero();
 
-        // increase the length of the vector to the same as the radius
-        // of the wander circle
-        self.m_vWanderTarget *= self.m_dWanderRadius;
+            // reproject this new vector back on to a unit circle
+            self.m_vWanderTarget = self.m_vWanderTarget.normalize_or_zero();
+
+            // increase the length of the vector to the same as the radius
+            // of the wander circle
+            self.m_vWanderTarget *= self.m_dWanderRadius;
+        // }
 
         // move the target into a position WanderDist in front of the agent
         let wander_target = self.m_vWanderTarget + vec2(self.m_dWanderDistance, 0.0);
@@ -688,7 +699,8 @@ impl SteeringBehavior {
         let mut steer_force = world_target - vehicle.borrow().position();
 
         // if vehicle.borrow().id() == 0 {
-        //     steer_force *= 70.0;
+        //     // steer_force *= 70.0;
+        //     println!("\nrand_vec: {:?}", rand_vec);
         //     println!("self.m_vWanderTarget: {:?}", self.m_vWanderTarget);
         //     println!("wander_target: {:?}", wander_target);
         //     println!("world_target: {:?}", world_target);

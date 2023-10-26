@@ -42,6 +42,7 @@ use glam::{vec3, Mat4, Vec3};
 use glfw::{Action, Context, Key};
 use log::error;
 use std::ptr;
+use crate::shapes::plane::Plane;
 use crate::support::texture::load_texture;
 
 const SCR_WIDTH: f32 = 800.0;
@@ -100,11 +101,12 @@ fn main() {
     let shader_texture = Shader::new("assets/shaders/camera_texture.vert", "assets/shaders/camera_texture.frag", None).unwrap();
 
     let fish_texture = load_texture("assets/images/fish_3.png", false, true);
-    // let fish_texture = load_texture("/Users/john/Dev_Rust/Dev/learn_opengl_with_rust/resources/textures/grass.png", false, false);
+    let plane_texture = load_texture("assets/images/water_texture.png", false, false);
 
     let line_box = LineBox::new();
     let triangle = Triangle::new();
     let fish = SmallFish::new(fish_texture);
+    let plane = Plane::new(plane_texture);
 
     // let mut VAO: GLuint = 0;
     // let mut VBO: GLuint = 0;
@@ -175,11 +177,16 @@ fn main() {
             GameWorld::Update(&game_world, state.deltaTime);
 
             shader_texture.use_shader_with(&projection, &view);
-            // fish.render(&shader_texture, vec3(300.0, 300.0, 0.0), 0.0, vec3(20.0, 20.0, 1.0), &vec3(1.0, 1.0, 1.0));
+            shader_texture.setInt("texture1", 0);
 
-            // shader.use_shader_with(&projection, &view);
+            // fish.render(&shader_texture, vec3(300.0, 300.0, 0.0), 0.0, vec3(20.0, 20.0, 1.0));
+            //
+            // // shader.use_shader_with(&projection, &view);
+            plane.render(&shader_texture, vec3(300.0, 300.0, 0.0), 0.0, vec3(300.0, 300.0, 1.0));
+
             game_world.borrow().render(&shader_texture, &fish);
-            // line_box.render(&shader, vec3(200.0, 200.0, 0.0), vec3(50.0, 50.0, 1.0), &vec3(1.0, 1.0, 1.0));
+            // // line_box.render(&shader, vec3(200.0, 200.0, 0.0), vec3(50.0, 50.0, 1.0), &vec3(1.0, 1.0, 1.0));
+
 
         }
 
