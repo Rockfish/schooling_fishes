@@ -198,7 +198,7 @@ fn main() {
             tile_shader.use_shader_with(&projection, &view);
 
             if tile_time <= 0.0 {
-                tile_time = 0.1;
+                tile_time = 1.0; //0.1;
                 tile_count += tile_increment;
                 if tile_count > 2.0 {
                     tile_count = 1.0;

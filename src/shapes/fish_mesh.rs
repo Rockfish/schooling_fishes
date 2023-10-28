@@ -32,8 +32,8 @@ pub fn new_fish_mesh(texture: &Texture) -> Mesh {
     ];
 
     let indices= vec![
-        1, 2, 3,
-        2, 4, 3
+        0, 1, 2, //1, 2, 3,
+        1, 3, 2,//  2, 4, 3
     ];
 
     Mesh::new(verts, indices, texture)
