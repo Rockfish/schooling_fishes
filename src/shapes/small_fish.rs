@@ -16,33 +16,21 @@ impl SmallFish {
         let mut VAO: GLuint = 0;
         let mut VBO: GLuint = 0;
 
-        let x = 384.0f32;
-        let y = 256f32;
+        // let x = 1.0f32;
+        // let y = 1.0f32;
 
         // Drawing as triangles.
         #[rustfmt::skip]
         let vertices: [f32; 30] = [
             // first
-            -1.0,  -2.0,  0.0,   (8.0 + 32.0)/x,  2.0/y,
-             1.0,  -2.0,  0.0,  (24.0 + 32.0)/x,  2.0/y,
-            -1.0,   2.0,  0.0,  ( 8.0 + 32.0)/x, 30.0/y,
+            -1.0,  -2.0,  0.0,   8.0,  2.0,
+             1.0,  -2.0,  0.0,  24.0,  2.0,
+            -1.0,   2.0,  0.0,   8.0, 30.0,
             // second
-             1.0,  -2.0,  0.0,  (24.0 + 32.0)/x,  2.0/y,
-             1.0,   2.0,  0.0,  (24.0 + 32.0)/x, 30.0/y,
-            -1.0,   2.0,  0.0,  ( 8.0 + 32.0)/x, 30.0/y,
+             1.0,  -2.0,  0.0,  24.0,  2.0,
+             1.0,   2.0,  0.0,  24.0, 30.0,
+            -1.0,   2.0,  0.0,   8.0, 30.0,
         ];
-
-        // #[rustfmt::skip]
-        // let vertices: [f32; 30] = [
-        //     // first
-        //     -0.5,  -2.0,  0.0,   0.0,   0.0,
-        //      0.5,  -2.0,  0.0,   1.0,   0.0,
-        //     -0.5,   2.0,  0.0,   0.0,   1.0,
-        //     // second
-        //      0.5,  -2.0,  0.0,   1.0,   0.0,
-        //      0.5,   2.0,  0.0,   1.0,   1.0,
-        //     -0.5,   2.0,  0.0,   0.0,   1.0,
-        // ];
 
         unsafe {
             gl::GenVertexArrays(1, &mut VAO);
@@ -58,14 +46,7 @@ impl SmallFish {
             );
 
             // 0: position
-            gl::VertexAttribPointer(
-                0,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                (5 * SIZE_OF_FLOAT) as GLsizei,
-                ptr::null()
-            );
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (5 * SIZE_OF_FLOAT) as GLsizei, ptr::null());
             gl::EnableVertexAttribArray(0);
 
             // 1: texture
@@ -87,7 +68,6 @@ impl SmallFish {
     }
 
     pub fn render(&self, shader: &Shader, position: Vec3, angle: f32, scale: Vec3) {
-
         let mut model_transform = Mat4::from_translation(position);
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);

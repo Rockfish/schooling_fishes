@@ -1,8 +1,10 @@
-pub mod aiscene;
+pub mod ai_scene;
 pub mod camera;
+pub mod error;
 pub mod macros;
 pub mod mesh;
 pub mod model;
+pub mod model_mesh;
 pub mod shader;
 pub mod texture;
 

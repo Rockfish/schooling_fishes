@@ -1,7 +1,8 @@
 use crate::base_entity::{BaseGameEntity, EntityBase};
+use crate::config_loader::CONFIG;
 use crate::game_world::GameWorld;
 use crate::moving_entity::MovingEntity;
-use crate::param_loader::PRM;
+use crate::shapes::small_fish::SmallFish;
 use crate::shapes::triangle::Triangle;
 use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
@@ -12,7 +13,6 @@ use glad_gl::gl::GLuint;
 use glam::{vec2, vec3, Mat4, Vec2, Vec3};
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::shapes::small_fish::SmallFish;
 
 #[derive(Debug)]
 pub struct Vehicle {
@@ -66,7 +66,7 @@ impl Vehicle {
 
         let moving_entity = MovingEntity::new(velocity, max_speed, vec2(rotation.sin(), -rotation.cos()), mass, max_turn_rate, max_force);
 
-        let heading_smoother = Smoother::new(PRM.NumSamplesForSmoothing, vec2(0.0, 0.0));
+        let heading_smoother = Smoother::new(CONFIG.NumSamplesForSmoothing, vec2(0.0, 0.0));
 
         let color = vec3(RandInRange(0.2, 1.0), RandInRange(0.2, 1.0), RandInRange(0.2, 1.0));
 

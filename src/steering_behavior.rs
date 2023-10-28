@@ -1,20 +1,20 @@
 //--------------------------- Constants ----------------------------------
 
 use crate::base_entity::EntityBase;
-use crate::param_loader::PRM;
+use crate::config_loader::CONFIG;
 use crate::path::Path;
 use crate::transformations::PointToWorldSpace;
 use crate::utils::{min, rand_normal_distribution, RandFloat, RandInRange, RandomClamped};
 use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
 use glam::{vec2, Vec2};
+use rand::prelude::Distribution;
+use rand::thread_rng;
+use rand_distr::Normal;
 use std::cell::{Ref, RefCell};
 use std::f32::consts::TAU;
 use std::ops::Div;
 use std::rc::Rc;
-use rand::prelude::Distribution;
-use rand::thread_rng;
-use rand_distr::Normal;
 
 //the radius of the constraining circle for the wander behavior
 const WANDER_RAD: f32 = 1.2;
@@ -150,15 +150,15 @@ impl SteeringBehavior {
 
         SteeringBehavior {
             m_iFlags: 0,
-            m_dDBoxLength: PRM.MinDetectionBoxLength,
-            m_dWeightCohesion: PRM.CohesionWeight,
-            m_dWeightAlignment: PRM.AlignmentWeight,
-            m_dWeightSeparation: PRM.SeparationWeight,
-            m_dWeightObstacleAvoidance: PRM.ObstacleAvoidanceWeight,
-            m_dWeightWander: PRM.WanderWeight,
-            m_dWeightWallAvoidance: PRM.WallAvoidanceWeight,
-            m_dViewDistance: PRM.ViewDistance,
-            m_dWallDetectionFeelerLength: PRM.WallDetectionFeelerLength,
+            m_dDBoxLength: CONFIG.MinDetectionBoxLength,
+            m_dWeightCohesion: CONFIG.CohesionWeight,
+            m_dWeightAlignment: CONFIG.AlignmentWeight,
+            m_dWeightSeparation: CONFIG.SeparationWeight,
+            m_dWeightObstacleAvoidance: CONFIG.ObstacleAvoidanceWeight,
+            m_dWeightWander: CONFIG.WanderWeight,
+            m_dWeightWallAvoidance: CONFIG.WallAvoidanceWeight,
+            m_dViewDistance: CONFIG.ViewDistance,
+            m_dWallDetectionFeelerLength: CONFIG.WallDetectionFeelerLength,
             m_Feelers: vec![], // 3, ?
             m_Deceleration: Deceleration::normal,
             m_pTargetAgent1: None,
@@ -168,15 +168,15 @@ impl SteeringBehavior {
             m_dWanderRadius: wander_radius,
             wander_direction_time: 0.0,
             m_dWaypointSeekDistSq: WAYPOINT_SEEK_DIST * WAYPOINT_SEEK_DIST,
-            m_dWeightSeek: PRM.SeekWeight,
-            m_dWeightFlee: PRM.FleeWeight,
-            m_dWeightArrive: PRM.ArriveWeight,
-            m_dWeightPursuit: PRM.PursuitWeight,
-            m_dWeightOffsetPursuit: PRM.OffsetPursuitWeight,
-            m_dWeightInterpose: PRM.InterposeWeight,
-            m_dWeightHide: PRM.HideWeight,
-            m_dWeightEvade: PRM.EvadeWeight,
-            m_dWeightFollowPath: PRM.FollowPathWeight,
+            m_dWeightSeek: CONFIG.SeekWeight,
+            m_dWeightFlee: CONFIG.FleeWeight,
+            m_dWeightArrive: CONFIG.ArriveWeight,
+            m_dWeightPursuit: CONFIG.PursuitWeight,
+            m_dWeightOffsetPursuit: CONFIG.OffsetPursuitWeight,
+            m_dWeightInterpose: CONFIG.InterposeWeight,
+            m_dWeightHide: CONFIG.HideWeight,
+            m_dWeightEvade: CONFIG.EvadeWeight,
+            m_dWeightFollowPath: CONFIG.FollowPathWeight,
             m_bCellSpaceOn: false,
             m_SummingMethod: SummingMethod::prioritized,
             m_vWanderTarget: wander_target,
@@ -652,36 +652,35 @@ impl SteeringBehavior {
         self.wander_direction_time -= vehicle.borrow().m_dTimeElapsed;
 
         // if self.wander_direction_time < 0.0 {
-            self.wander_direction_time = RandInRange(0.05, 0.3);
+        self.wander_direction_time = RandInRange(0.05, 0.3);
 
-            // this behavior is dependent on the update rate, so this line must
-            // be included when using time independent framerate.
-            let jitter_this_time_slice = self.m_dWanderJitter * vehicle.borrow().m_dTimeElapsed;
+        // this behavior is dependent on the update rate, so this line must
+        // be included when using time independent framerate.
+        let jitter_this_time_slice = self.m_dWanderJitter * vehicle.borrow().m_dTimeElapsed;
 
-            // first, add a small random vector to the target's position
-            let x_rand = RandomClamped() * jitter_this_time_slice;
-            let y_rand = RandomClamped() * jitter_this_time_slice;
+        // first, add a small random vector to the target's position
+        let x_rand = RandomClamped() * jitter_this_time_slice;
+        let y_rand = RandomClamped() * jitter_this_time_slice;
 
-            // use a normal distribution for turns
-            // let normal: Normal<f32> = Normal::new(0.0, 0.1).unwrap();
-            // let x_rand = normal.sample(&mut thread_rng()) * jitter_this_time_slice;
-            // let y_rand = normal.sample(&mut thread_rng()) * jitter_this_time_slice;
-            let mut rand_vec = vec2(x_rand, y_rand);
+        // use a normal distribution for turns
+        // let normal: Normal<f32> = Normal::new(0.0, 0.1).unwrap();
+        // let x_rand = normal.sample(&mut thread_rng()) * jitter_this_time_slice;
+        // let y_rand = normal.sample(&mut thread_rng()) * jitter_this_time_slice;
+        let mut rand_vec = vec2(x_rand, y_rand);
 
         // if vehicle.borrow().id() == 0 {
         //     rand_vec = vec2(0.0, 0.0);
         //     self.m_vWanderTarget = rand_vec;
         // } else {
-            self.m_vWanderTarget += rand_vec;
+        self.m_vWanderTarget += rand_vec;
         // }
 
+        // reproject this new vector back on to a unit circle
+        self.m_vWanderTarget = self.m_vWanderTarget.normalize_or_zero();
 
-            // reproject this new vector back on to a unit circle
-            self.m_vWanderTarget = self.m_vWanderTarget.normalize_or_zero();
-
-            // increase the length of the vector to the same as the radius
-            // of the wander circle
-            self.m_vWanderTarget *= self.m_dWanderRadius;
+        // increase the length of the vector to the same as the radius
+        // of the wander circle
+        self.m_vWanderTarget *= self.m_dWanderRadius;
         // }
 
         // move the target into a position WanderDist in front of the agent

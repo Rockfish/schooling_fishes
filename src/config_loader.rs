@@ -2,7 +2,7 @@ use std::f32::consts::PI;
 
 const STEERING_FORCE_TWEAKER: f32 = 200.0;
 
-pub struct ParamLoader {
+pub struct ConfigLoader {
     pub NumAgents: i32,
     pub NumObstacles: i32,
     pub MinObstacleRadius: f32,
@@ -69,7 +69,7 @@ pub struct ParamLoader {
     pub prArrive: f32,
 }
 
-pub const PRM: ParamLoader = ParamLoader {
+pub const CONFIG: ConfigLoader = ConfigLoader {
     NumAgents: 250,
     NumObstacles: 7,
     MinObstacleRadius: 10.0,
@@ -83,8 +83,9 @@ pub const PRM: ParamLoader = ParamLoader {
     SteeringForceTweaker: STEERING_FORCE_TWEAKER,
     MaxSteeringForce: 2.0 * STEERING_FORCE_TWEAKER,
     MaxSpeed: 150.0,
+
     VehicleMass: 1.0,
-    VehicleScale: 3.0,
+    VehicleScale: 3.5,
 
     SeparationWeight: 1.0 * STEERING_FORCE_TWEAKER,
     AlignmentWeight: 1.0 * STEERING_FORCE_TWEAKER,

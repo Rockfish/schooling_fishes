@@ -1,8 +1,8 @@
 use glam::Vec2;
 use rand::{thread_rng, Rng};
+use rand_distr::{Distribution, Normal};
 use std::cmp::Ordering;
 use std::ops::Mul;
-use rand_distr::{Normal, Distribution};
 
 #[inline]
 pub fn min<T: PartialOrd>(a: T, b: T) -> T {

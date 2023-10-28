@@ -1,8 +1,9 @@
 use crate::base_entity::{BaseGameEntity, EntityBase};
 use crate::cell_space_partition::CellSpacePartition;
+use crate::config_loader::CONFIG;
 use crate::entity_functions::TagNeighbors;
-use crate::param_loader::PRM;
 use crate::path::Path;
+use crate::shapes::small_fish::SmallFish;
 use crate::shapes::triangle::Triangle;
 use crate::support::shader::Shader;
 use crate::utils::*;
@@ -13,7 +14,6 @@ use glam::{vec2, Vec2};
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
-use crate::shapes::small_fish::SmallFish;
 
 #[derive(Debug)]
 pub struct GameWorld {
@@ -64,7 +64,7 @@ impl GameWorld {
     pub fn new(cx: i32, cy: i32) -> Rc<RefCell<GameWorld>> {
         let border = 30f32;
         let path = Path::new(5, border, border, cx as f32 - border, cy as f32 - border, true);
-        let cell_space = CellSpacePartition::<Vehicle>::new(cx as f32, cy as f32, PRM.NumCellsX, PRM.NumCellsY, PRM.NumAgents);
+        let cell_space = CellSpacePartition::<Vehicle>::new(cx as f32, cy as f32, CONFIG.NumCellsX, CONFIG.NumCellsY, CONFIG.NumAgents);
 
         let game_world = GameWorld {
             m_Vehicles: vec![],
@@ -94,7 +94,7 @@ impl GameWorld {
         let game_world = Rc::new(RefCell::new(game_world));
 
         // setup the agents
-        for _a in 0..PRM.NumAgents {
+        for _a in 0..CONFIG.NumAgents {
             //determine a random starting position
             let spawn_pos = vec2(
                 cx as f32 / 2.0 + RandomClamped() * cx as f32 / 2.0,
@@ -106,14 +106,15 @@ impl GameWorld {
                 spawn_pos,
                 RandFloat() * TAU,
                 vec2(0.0, 0.0),
-                PRM.VehicleMass,
-                PRM.MaxSteeringForce,
-                PRM.MaxSpeed,
-                PRM.MaxTurnRatePerSecond,
-                PRM.VehicleScale,
+                CONFIG.VehicleMass,
+                CONFIG.MaxSteeringForce,
+                CONFIG.MaxSpeed,
+                CONFIG.MaxTurnRatePerSecond,
+                CONFIG.VehicleScale,
             );
 
             vehicle.borrow().m_pSteering.borrow_mut().FlockingOn();
+            // vehicle.borrow_mut().set_scale_vec(vec2(6.0, 6.0));
 
             game_world.borrow_mut().m_Vehicles.push(vehicle.clone());
             game_world.borrow().m_pCellSpace.borrow_mut().add_entity(vehicle.clone());
@@ -128,7 +129,7 @@ impl GameWorld {
         game_world.borrow().m_Vehicles[idx].borrow().m_pSteering.borrow_mut().FlockingOff();
         game_world.borrow().m_Vehicles[idx].borrow().m_pSteering.borrow_mut().WanderOn();
 
-        game_world.borrow().m_Vehicles[idx].borrow_mut().set_scale_vec(vec2(10.0, 10.0));
+        game_world.borrow().m_Vehicles[idx].borrow_mut().set_scale_vec(vec2(10.0, 12.0));
         game_world.borrow().m_Vehicles[idx].borrow_mut().set_max_speed(70.0);
 
         for (i, vehicle) in game_world.borrow().m_Vehicles.iter().enumerate() {

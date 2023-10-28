@@ -1,17 +1,23 @@
+use crate::support::error::Error;
 use glad_gl::gl;
+use glad_gl::gl::{GLint, GLsizei, GLuint, GLvoid};
 use image::ColorType;
 use std::ffi::c_uint;
-use glad_gl::gl::{GLint, GLsizei, GLuint, GLvoid};
+use std::path::Path;
 
-pub struct Gamma(pub bool);
-pub struct FlipV(pub bool);
+// pub struct Gamma(pub bool);
+// pub struct FlipV(pub bool);
 
 // utility function for loading a 2D texture from file
-// ---------------------------------------------------
-pub fn load_texture(path: &str, gammaCorrection: bool, flipv: bool) -> GLuint {
+
+pub fn load_texture_from_str(path: &str, gama_correction: bool, flipv: bool) -> Result<GLuint, Error> {
+    load_texture(Path::new(path), gama_correction, flipv)
+}
+
+pub fn load_texture(path: &Path, gama_correction: bool, flipv: bool) -> Result<GLuint, Error> {
     let mut texture_id: GLuint = 0;
 
-    let img = image::open(path).expect("Texture failed to load");
+    let img = image::open(path)?;
     let (width, height) = (img.width() as GLsizei, img.height() as GLsizei);
 
     let color_type = img.color();
@@ -20,21 +26,21 @@ pub fn load_texture(path: &str, gammaCorrection: bool, flipv: bool) -> GLuint {
     let img = if flipv { img.flipv() } else { img };
 
     unsafe {
-        let mut internalFormat: c_uint = 0;
-        let mut dataFormat: c_uint = 0;
+        let mut internal_format: c_uint = 0;
+        let mut data_format: c_uint = 0;
         match color_type {
             ColorType::L8 => {
-                internalFormat = gl::RED;
-                dataFormat = gl::RED;
+                internal_format = gl::RED;
+                data_format = gl::RED;
             }
             // ColorType::La8 => {}
             ColorType::Rgb8 => {
-                internalFormat = if gammaCorrection { gl::SRGB } else { gl::RGB };
-                dataFormat = gl::RGB;
+                internal_format = if gama_correction { gl::SRGB } else { gl::RGB };
+                data_format = gl::RGB;
             }
             ColorType::Rgba8 => {
-                internalFormat = if gammaCorrection { gl::SRGB_ALPHA } else { gl::RGBA };
-                dataFormat = gl::RGBA;
+                internal_format = if gama_correction { gl::SRGB_ALPHA } else { gl::RGBA };
+                data_format = gl::RGBA;
             }
             // ColorType::L16 => {}
             // ColorType::La16 => {}
@@ -66,18 +72,18 @@ pub fn load_texture(path: &str, gammaCorrection: bool, flipv: bool) -> GLuint {
         gl::TexImage2D(
             gl::TEXTURE_2D,
             0,
-            internalFormat as GLint,
+            internal_format as GLint,
             width,
             height,
             0,
-            dataFormat,
+            data_format,
             gl::UNSIGNED_BYTE,
             data.as_ptr() as *const GLvoid,
         );
         gl::GenerateMipmap(gl::TEXTURE_2D);
 
         // for this tutorial: use GL_CLAMP_TO_EDGE to prevent semi-transparent borders. Due to interpolation it takes texels from next repeat
-        let param = if dataFormat == gl::RGBA { gl::CLAMP_TO_EDGE } else { gl::REPEAT };
+        let param = if data_format == gl::RGBA { gl::CLAMP_TO_EDGE } else { gl::REPEAT };
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, param as GLint);
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, param as GLint);
 
@@ -85,5 +91,5 @@ pub fn load_texture(path: &str, gammaCorrection: bool, flipv: bool) -> GLuint {
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
     }
 
-    texture_id
+    Ok(texture_id)
 }

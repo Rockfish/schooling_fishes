@@ -43,14 +43,7 @@ impl Plane {
             );
 
             // 0: position
-            gl::VertexAttribPointer(
-                0,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                (5 * SIZE_OF_FLOAT) as GLsizei,
-                ptr::null()
-            );
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (5 * SIZE_OF_FLOAT) as GLsizei, ptr::null());
             gl::EnableVertexAttribArray(0);
 
             // 1: texture
@@ -72,7 +65,6 @@ impl Plane {
     }
 
     pub fn render(&self, shader: &Shader, position: Vec3, angle: f32, scale: Vec3) {
-
         let mut model_transform = Mat4::from_translation(position);
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);

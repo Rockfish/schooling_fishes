@@ -1,16 +1,10 @@
-#![allow(dead_code)]
-#![allow(non_snake_case)]
-#![allow(non_camel_case_types)]
-#![allow(unused_assignments)]
-#![allow(unused_variables)]
-
-use crate::support::aiscene::*;
-use crate::support::mesh::{Mesh, Texture, Vertex};
+use crate::support::ai_scene::*;
+use crate::support::error::Error;
+use crate::support::error::Error::ModelError;
+use crate::support::model_mesh::{ModelMesh, ModelTexture, ModelVertex};
+use crate::support::texture::load_texture;
 use crate::support::ShaderId;
-use glad_gl::gl;
-use glad_gl::gl::{GLint, GLsizei, GLuint, GLvoid};
 use glam::*;
-use image::ColorType;
 use russimp::scene::*;
 use russimp::sys::*;
 use std::os::raw::c_uint;
@@ -21,8 +15,8 @@ use std::ptr::*;
 #[derive(Debug)]
 pub struct Model {
     // stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-    pub textures_loaded: Vec<Texture>,
-    pub meshes: Vec<Mesh>,
+    pub textures_loaded: Vec<ModelTexture>,
+    pub meshes: Vec<ModelMesh>,
     pub directory: String,
     pub gammaCorrection: bool,
     pub flipv: bool,
@@ -32,7 +26,7 @@ pub struct Gamma(pub bool);
 pub struct FlipV(pub bool);
 
 impl Model {
-    pub fn new(path: &str, gamma: Gamma, flipv: FlipV) -> Model {
+    pub fn new(path: &str, gamma: Gamma, flipv: FlipV) -> Result<Model, Error> {
         let mut model = Model {
             textures_loaded: vec![],
             meshes: vec![],
@@ -40,8 +34,8 @@ impl Model {
             gammaCorrection: gamma.0,
             flipv: flipv.0,
         };
-        model.load_model(path);
-        model
+        model.load_model(path)?;
+        Ok(model)
     }
 
     pub fn Draw(&self, shader_id: ShaderId) {
@@ -51,7 +45,7 @@ impl Model {
     }
 
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    fn load_model(&mut self, path: &str) {
+    fn load_model(&mut self, path: &str) -> Result<(), Error> {
         let scene = AiScene::from_file(
             path,
             vec![
@@ -69,16 +63,16 @@ impl Model {
             Ok(scene) => {
                 self.directory = Path::new(path).parent().expect("path error").to_str().unwrap().to_string();
 
-                if let Some(aiscene) = scene.assimp_scene {
-                    self.process_node(aiscene.mRootNode, aiscene);
+                if let Some(ai_scene) = scene.assimp_scene {
+                    self.process_node(ai_scene.mRootNode, ai_scene)?;
                 }
+                Ok(())
             }
-            Err(err) => panic!("{}", err),
+            Err(err) => Err(ModelError(err)),
         }
-        // println!("Model:\n{:#?}", self);
     }
 
-    fn process_node(&mut self, node: *mut aiNode, scene: &aiScene) {
+    fn process_node(&mut self, node: *mut aiNode, scene: &aiScene) -> Result<(), Error> {
         // process each mesh located at the current node
         // println!("{:?}", unsafe { (*node).mName });
 
@@ -87,26 +81,27 @@ impl Model {
 
         for i in 0..ai_meshes.len() {
             let mesh = self.process_mesh(ai_meshes[i], scene);
-            self.meshes.push(mesh);
+            self.meshes.push(mesh?);
         }
 
-        // Process childern nodes
+        // Process children nodes
         let slice = unsafe { slice_from_raw_parts((*node).mChildren, (*node).mNumChildren as usize) };
 
         if let Some(child_nodes) = unsafe { slice.as_ref() } {
             for i in 0..child_nodes.len() {
                 // println!("{:#?}", unsafe { (*child_nodes[i]).mName });
-                self.process_node(child_nodes[i], scene);
+                self.process_node(child_nodes[i], scene)?;
             }
         }
+        Ok(())
     }
 
-    fn process_mesh(&mut self, scene_mesh: *mut aiMesh, scene: &aiScene) -> Mesh {
+    fn process_mesh(&mut self, scene_mesh: *mut aiMesh, scene: &aiScene) -> Result<ModelMesh, Error> {
         let scene_mesh = unsafe { *scene_mesh };
 
-        let mut vertices: Vec<Vertex> = vec![];
+        let mut vertices: Vec<ModelVertex> = vec![];
         let mut indices: Vec<u32> = vec![];
-        let mut textures: Vec<Texture> = vec![];
+        let mut textures: Vec<ModelTexture> = vec![];
 
         let ai_vertices = get_vec_from_parts(scene_mesh.mVertices, scene_mesh.mNumVertices);
         let ai_normals = get_vec_from_parts(scene_mesh.mNormals, scene_mesh.mNumVertices);
@@ -122,7 +117,7 @@ impl Model {
         };
 
         for i in 0..ai_vertices.len() {
-            let mut vertex = Vertex::new();
+            let mut vertex = ModelVertex::new();
 
             // positions
             vertex.Position = ai_vertices[i]; // Vec3 has Copy trait
@@ -147,6 +142,7 @@ impl Model {
         }
         // now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
         let ai_faces = unsafe { slice_from_raw_parts(scene_mesh.mFaces, scene_mesh.mNumFaces as usize).as_ref() }.unwrap();
+
         for i in 0..ai_faces.len() {
             let face = ai_faces[i];
             let ai_indices = unsafe { slice_from_raw_parts(face.mIndices, face.mNumIndices as usize).as_ref() }.unwrap();
@@ -166,24 +162,24 @@ impl Model {
         // normal: texture_normalN
 
         // 1. diffuse maps
-        let diffuseMaps = self.loadMaterialTextures(ai_material, aiTextureType_DIFFUSE, "texture_diffuse");
+        let diffuseMaps = self.load_material_textures(ai_material, aiTextureType_DIFFUSE, "texture_diffuse")?;
         textures.extend(diffuseMaps);
         // 2. specular maps
-        let specularMaps = self.loadMaterialTextures(ai_material, aiTextureType_SPECULAR, "texture_specular");
+        let specularMaps = self.load_material_textures(ai_material, aiTextureType_SPECULAR, "texture_specular")?;
         textures.extend(specularMaps);
         // 3. normal maps
-        let normalMaps = self.loadMaterialTextures(ai_material, aiTextureType_HEIGHT, "texture_normal");
+        let normalMaps = self.load_material_textures(ai_material, aiTextureType_HEIGHT, "texture_normal")?;
         textures.extend(normalMaps);
         // 4. height maps
-        let heightMaps = self.loadMaterialTextures(ai_material, aiTextureType_AMBIENT, "texture_height");
+        let heightMaps = self.load_material_textures(ai_material, aiTextureType_AMBIENT, "texture_height")?;
         textures.extend(heightMaps);
 
-        let mesh = Mesh::new(vertices, indices, textures);
-        mesh
+        let mesh = ModelMesh::new(vertices, indices, textures);
+        Ok(mesh)
     }
 
-    fn loadMaterialTextures(&mut self, ai_material: *mut aiMaterial, ai_texture_type: c_uint, typeName: &str) -> Vec<Texture> {
-        let mut textures: Vec<Texture> = vec![];
+    fn load_material_textures(&mut self, ai_material: *mut aiMaterial, ai_texture_type: c_uint, typeName: &str) -> Result<Vec<ModelTexture>, Error> {
+        let mut textures: Vec<ModelTexture> = vec![];
 
         let texture_count = unsafe { aiGetMaterialTextureCount(ai_material, ai_texture_type) };
 
@@ -196,8 +192,10 @@ impl Model {
                 } else {
                     let mut filepath = PathBuf::from(&self.directory);
                     filepath.push(&filename);
-                    let id = self.textureFromFile(&filepath);
-                    let texture = Texture {
+
+                    let id = load_texture(&filepath, false, self.flipv)?;
+
+                    let texture = ModelTexture {
                         id,
                         texture_type: typeName.to_string(),
                         path: filename,
@@ -207,72 +205,7 @@ impl Model {
                 }
             }
         }
-        textures
-    }
-
-    fn textureFromFile(&self, filepath: &Path) -> u32 {
-        let mut texture_id: GLuint = 0;
-
-        let img = image::open(filepath).expect("Texture failed to load");
-        let (width, height) = (img.width() as GLsizei, img.height() as GLsizei);
-
-        let color_type = img.color();
-
-        let img = if self.flipv { img.flipv() } else { img };
-
-        unsafe {
-            let format = match color_type {
-                ColorType::L8 => gl::RED,
-                // ColorType::La8 => {}
-                ColorType::Rgb8 => gl::RGB,
-                ColorType::Rgba8 => gl::RGBA,
-                // ColorType::L16 => {}
-                // ColorType::La16 => {}
-                // ColorType::Rgb16 => {}
-                // ColorType::Rgba16 => {}
-                // ColorType::Rgb32F => {}
-                // ColorType::Rgba32F => {}
-                _ => panic!("no mapping for color type"),
-            };
-
-            let data = match color_type {
-                ColorType::L8 => img.into_rgb8().into_raw(),
-                // ColorType::La8 => {}
-                ColorType::Rgb8 => img.into_rgb8().into_raw(),
-                ColorType::Rgba8 => img.into_rgba8().into_raw(),
-                // ColorType::L16 => {}
-                // ColorType::La16 => {}
-                // ColorType::Rgb16 => {}
-                // ColorType::Rgba16 => {}
-                // ColorType::Rgb32F => {}
-                // ColorType::Rgba32F => {}
-                _ => panic!("no mapping for color type"),
-            };
-
-            gl::GenTextures(1, &mut texture_id);
-            gl::BindTexture(gl::TEXTURE_2D, texture_id);
-
-            gl::TexImage2D(
-                gl::TEXTURE_2D,
-                0,
-                format as GLint,
-                width,
-                height,
-                0,
-                format,
-                gl::UNSIGNED_BYTE,
-                data.as_ptr() as *const GLvoid,
-            );
-            gl::GenerateMipmap(gl::TEXTURE_2D);
-
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as GLint);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as GLint);
-
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as GLint);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
-        }
-
-        texture_id
+        Ok(textures)
     }
 }
 

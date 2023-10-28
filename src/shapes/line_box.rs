@@ -49,7 +49,6 @@ impl LineBox {
 
     pub fn render(&self, shader: &Shader, position: Vec3, scale: Vec3, color: &Vec3) {
         unsafe {
-
             // shader.use_shader();
             let mut model_transform = Mat4::from_translation(position);
             model_transform *= Mat4::from_scale(scale);
