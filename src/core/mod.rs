@@ -1,4 +1,4 @@
-pub mod ai_scene;
+pub mod assimp_scene;
 pub mod camera;
 pub mod error;
 pub mod macros;

@@ -33,21 +33,21 @@ type aiTextureType = u32;
 
 // This is just a lightweight wrapper around aiScene
 #[derive(Debug)]
-pub struct AiScene<'a> {
+pub struct AssimpScene<'a> {
     pub assimp_scene: Option<&'a aiScene>,
 }
 
-impl AiScene<'_> {
-    pub fn from_file(file_path: &str, flags: PostProcessSteps) -> Russult<AiScene> {
+impl AssimpScene<'_> {
+    pub fn from_file(file_path: &str, flags: PostProcessSteps) -> Russult<AssimpScene> {
         let bitwise_flag = flags.into_iter().fold(0, |acc, x| acc | (x as u32));
         let file_path = CString::new(file_path).unwrap();
 
-        let raw_scene = AiScene::get_scene_from_file(file_path, bitwise_flag);
+        let raw_scene = AssimpScene::get_scene_from_file(file_path, bitwise_flag);
         if raw_scene.is_none() {
-            return Err(AiScene::get_error());
+            return Err(AssimpScene::get_error());
         }
 
-        Ok(AiScene { assimp_scene: raw_scene })
+        Ok(AssimpScene { assimp_scene: raw_scene })
     }
 
     #[inline]
@@ -71,9 +71,9 @@ impl AiScene<'_> {
     }
 }
 
-impl Drop for AiScene<'_> {
+impl Drop for AssimpScene<'_> {
     fn drop(&mut self) {
-        AiScene::drop_scene(self.assimp_scene);
+        AssimpScene::drop_scene(self.assimp_scene);
     }
 }
 

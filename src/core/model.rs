@@ -1,4 +1,4 @@
-use crate::core::ai_scene::*;
+use crate::core::assimp_scene::*;
 use crate::core::error::Error;
 use crate::core::error::Error::ModelError;
 use crate::core::model_mesh::{ModelMesh, ModelVertex};
@@ -45,7 +45,7 @@ impl Model {
 
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     fn load_model(&mut self, path: &str) -> Result<(), Error> {
-        let scene = AiScene::from_file(
+        let scene = AssimpScene::from_file(
             path,
             vec![
                 PostProcess::Triangulate,
@@ -62,8 +62,8 @@ impl Model {
             Ok(scene) => {
                 self.directory = Path::new(path).parent().expect("path error").to_str().unwrap().to_string();
 
-                if let Some(ai_scene) = scene.assimp_scene {
-                    self.process_node(ai_scene.mRootNode, ai_scene)?;
+                if let Some(assimp_scene) = scene.assimp_scene {
+                    self.process_node(assimp_scene.mRootNode, assimp_scene)?;
                 }
                 Ok(())
             }
@@ -76,10 +76,10 @@ impl Model {
         // println!("{:?}", unsafe { (*node).mName });
 
         let slice = slice_from_raw_parts(scene.mMeshes, scene.mNumMeshes as usize);
-        let ai_meshes = unsafe { slice.as_ref() }.unwrap();
+        let assimp_meshes = unsafe { slice.as_ref() }.unwrap();
 
-        for i in 0..ai_meshes.len() {
-            let mesh = self.process_mesh(ai_meshes[i], scene);
+        for i in 0..assimp_meshes.len() {
+            let mesh = self.process_mesh(assimp_meshes[i], scene);
             self.meshes.push(mesh?);
         }
 
@@ -88,7 +88,6 @@ impl Model {
 
         if let Some(child_nodes) = unsafe { slice.as_ref() } {
             for i in 0..child_nodes.len() {
-                // println!("{:#?}", unsafe { (*child_nodes[i]).mName });
                 self.process_node(child_nodes[i], scene)?;
             }
         }
@@ -102,28 +101,28 @@ impl Model {
         let mut indices: Vec<u32> = vec![];
         let mut textures: Vec<Rc<Texture>> = vec![];
 
-        let ai_vertices = get_vec_from_parts(scene_mesh.mVertices, scene_mesh.mNumVertices);
-        let ai_normals = get_vec_from_parts(scene_mesh.mNormals, scene_mesh.mNumVertices);
-        let ai_tangents = get_vec_from_parts(scene_mesh.mTangents, scene_mesh.mNumVertices);
-        let ai_bitangents = get_vec_from_parts(scene_mesh.mBitangents, scene_mesh.mNumVertices);
+        let assimp_vertices = get_vec_from_parts(scene_mesh.mVertices, scene_mesh.mNumVertices);
+        let assimp_normals = get_vec_from_parts(scene_mesh.mNormals, scene_mesh.mNumVertices);
+        let assimp_tangents = get_vec_from_parts(scene_mesh.mTangents, scene_mesh.mNumVertices);
+        let assimp_bitangents = get_vec_from_parts(scene_mesh.mBitangents, scene_mesh.mNumVertices);
 
         // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
         // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
         let texture_coords = if !scene_mesh.mTextureCoords.is_empty() {
-            get_vec_from_parts(scene_mesh.mTextureCoords[0], ai_vertices.len() as u32)
+            get_vec_from_parts(scene_mesh.mTextureCoords[0], assimp_vertices.len() as u32)
         } else {
             vec![]
         };
 
-        for i in 0..ai_vertices.len() {
+        for i in 0..assimp_vertices.len() {
             let mut vertex = ModelVertex::new();
 
             // positions
-            vertex.position = ai_vertices[i]; // Vec3 has Copy trait
+            vertex.position = assimp_vertices[i]; // Vec3 has Copy trait
 
             // normals
-            if !ai_normals.is_empty() {
-                vertex.normal = ai_normals[i];
+            if !assimp_normals.is_empty() {
+                vertex.normal = assimp_normals[i];
             }
 
             // texture coordinates
@@ -131,27 +130,27 @@ impl Model {
                 // texture coordinates
                 vertex.tex_coords = vec2(texture_coords[i].x, texture_coords[i].y);
                 // tangent
-                vertex.tangent = ai_tangents[i];
+                vertex.tangent = assimp_tangents[i];
                 // bitangent
-                vertex.bi_tangent = ai_bitangents[i];
+                vertex.bi_tangent = assimp_bitangents[i];
             } else {
                 vertex.tex_coords = vec2(0.0, 0.0);
             }
             vertices.push(vertex);
         }
         // now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-        let ai_faces = unsafe { slice_from_raw_parts(scene_mesh.mFaces, scene_mesh.mNumFaces as usize).as_ref() }.unwrap();
+        let assimp_faces = unsafe { slice_from_raw_parts(scene_mesh.mFaces, scene_mesh.mNumFaces as usize).as_ref() }.unwrap();
 
-        for i in 0..ai_faces.len() {
-            let face = ai_faces[i];
-            let ai_indices = unsafe { slice_from_raw_parts(face.mIndices, face.mNumIndices as usize).as_ref() }.unwrap();
-            indices.extend(ai_indices.iter());
+        for i in 0..assimp_faces.len() {
+            let face = assimp_faces[i];
+            let assimp_indices = unsafe { slice_from_raw_parts(face.mIndices, face.mNumIndices as usize).as_ref() }.unwrap();
+            indices.extend(assimp_indices.iter());
         }
 
         // process materials
-        let ai_materials = unsafe { slice_from_raw_parts((*scene).mMaterials, (*scene).mNumMaterials as usize).as_ref() }.unwrap();
+        let assimp_materials = unsafe { slice_from_raw_parts((*scene).mMaterials, (*scene).mNumMaterials as usize).as_ref() }.unwrap();
         let material_index = scene_mesh.mMaterialIndex as usize;
-        let ai_material = ai_materials[material_index];
+        let assimp_material = assimp_materials[material_index];
 
         // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
         // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER.
@@ -161,29 +160,29 @@ impl Model {
         // normal: texture_normalN
 
         // 1. diffuse maps
-        let diffuseMaps = self.load_material_textures(ai_material, TextureType::Diffuse)?;
+        let diffuseMaps = self.load_material_textures(assimp_material, TextureType::Diffuse)?;
         textures.extend(diffuseMaps);
         // 2. specular maps
-        let specularMaps = self.load_material_textures(ai_material, TextureType::Specular)?;
+        let specularMaps = self.load_material_textures(assimp_material, TextureType::Specular)?;
         textures.extend(specularMaps);
         // 3. normal maps
-        let normalMaps = self.load_material_textures(ai_material, TextureType::Height)?;
+        let normalMaps = self.load_material_textures(assimp_material, TextureType::Height)?;
         textures.extend(normalMaps);
         // 4. height maps
-        let heightMaps = self.load_material_textures(ai_material, TextureType::Ambient)?;
+        let heightMaps = self.load_material_textures(assimp_material, TextureType::Ambient)?;
         textures.extend(heightMaps);
 
         let mesh = ModelMesh::new(vertices, indices, textures);
         Ok(mesh)
     }
 
-    fn load_material_textures(&mut self, ai_material: *mut aiMaterial, texture_type: TextureType) -> Result<Vec<Rc<Texture>>, Error> {
+    fn load_material_textures(&mut self, assimp_material: *mut aiMaterial, texture_type: TextureType) -> Result<Vec<Rc<Texture>>, Error> {
         let mut textures: Vec<Rc<Texture>> = vec![];
 
-        let texture_count = unsafe { aiGetMaterialTextureCount(ai_material, texture_type.into()) };
+        let texture_count = unsafe { aiGetMaterialTextureCount(assimp_material, texture_type.into()) };
 
         for i in 0..texture_count {
-            let texture_filename = get_material_texture_filename(ai_material, texture_type, i as u32)?;
+            let texture_filename = get_material_texture_filename(assimp_material, texture_type, i as u32)?;
             let full_path = PathBuf::from(&self.directory).join(&texture_filename);
 
             let loaded_texture = self
