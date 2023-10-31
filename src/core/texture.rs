@@ -95,7 +95,11 @@ impl Texture {
                     data_format = gl::RGB;
                 }
                 ColorType::Rgba8 => {
-                    internal_format = if texture_config.gamma_correction { gl::SRGB_ALPHA } else { gl::RGBA };
+                    internal_format = if texture_config.gamma_correction {
+                        gl::SRGB_ALPHA
+                    } else {
+                        gl::RGBA
+                    };
                     data_format = gl::RGBA;
                 }
                 _ => panic!("no mapping for color type"),

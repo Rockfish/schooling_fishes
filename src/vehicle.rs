@@ -61,7 +61,14 @@ impl Vehicle {
         let mut base_entity = BaseGameEntity::with_type_and_position(0, position, scale);
         base_entity.m_vScale = vec2(scale, scale);
 
-        let moving_entity = MovingEntity::new(velocity, max_speed, vec2(rotation.sin(), -rotation.cos()), mass, max_turn_rate, max_force);
+        let moving_entity = MovingEntity::new(
+            velocity,
+            max_speed,
+            vec2(rotation.sin(), -rotation.cos()),
+            mass,
+            max_turn_rate,
+            max_force,
+        );
 
         let heading_smoother = Smoother::new(CONFIG.NumSamplesForSmoothing, vec2(0.0, 0.0));
 

@@ -4,47 +4,46 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_assignments)]
 
+use crate::core::shader::Shader;
 use crate::core::texture::{Texture, TextureType};
-use crate::core::ShaderId;
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use glam::u32;
 use glam::*;
-use std::ffi::CString;
 use std::mem;
 use std::ops::Add;
 use std::rc::Rc;
 
 const MAX_BONE_INFLUENCE: usize = 4;
-const OFFSET_OF_NORMAL: usize = mem::offset_of!(ModelVertex, Normal);
-const OFFSET_OF_TEXCOORDS: usize = mem::offset_of!(ModelVertex, TexCoords);
-const OFFSET_OF_TANGENT: usize = mem::offset_of!(ModelVertex, Tangent);
-const OFFSET_OF_BITANGENT: usize = mem::offset_of!(ModelVertex, Bitangent);
-const OFFSET_OF_BONE_IDS: usize = mem::offset_of!(ModelVertex, m_BoneIDs);
-const OFFSET_OF_WEIGHTS: usize = mem::offset_of!(ModelVertex, m_Weights);
+const OFFSET_OF_NORMAL: usize = mem::offset_of!(ModelVertex, normal);
+const OFFSET_OF_TEXCOORDS: usize = mem::offset_of!(ModelVertex, tex_coords);
+const OFFSET_OF_TANGENT: usize = mem::offset_of!(ModelVertex, tangent);
+const OFFSET_OF_BITANGENT: usize = mem::offset_of!(ModelVertex, bi_tangent);
+const OFFSET_OF_BONE_IDS: usize = mem::offset_of!(ModelVertex, bone_ids);
+const OFFSET_OF_WEIGHTS: usize = mem::offset_of!(ModelVertex, bone_weights);
 
 #[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct ModelVertex {
-    pub Position: Vec3,
-    pub Normal: Vec3,
-    pub TexCoords: Vec2,
-    pub Tangent: Vec3,
-    pub Bitangent: Vec3,
-    pub m_BoneIDs: [i32; MAX_BONE_INFLUENCE],
-    pub m_Weights: [f32; MAX_BONE_INFLUENCE],
+    pub position: Vec3,
+    pub normal: Vec3,
+    pub tex_coords: Vec2,
+    pub tangent: Vec3,
+    pub bi_tangent: Vec3,
+    pub bone_ids: [i32; MAX_BONE_INFLUENCE],
+    pub bone_weights: [f32; MAX_BONE_INFLUENCE],
 }
 
 impl ModelVertex {
     pub fn new() -> ModelVertex {
         ModelVertex {
-            Position: Vec3::default(),
-            Normal: Vec3::default(),
-            TexCoords: Vec2::default(),
-            Tangent: Vec3::default(),
-            Bitangent: Vec3::default(),
-            m_BoneIDs: [0; MAX_BONE_INFLUENCE],
-            m_Weights: [0.0; MAX_BONE_INFLUENCE],
+            position: Vec3::default(),
+            normal: Vec3::default(),
+            tex_coords: Vec2::default(),
+            tangent: Vec3::default(),
+            bi_tangent: Vec3::default(),
+            bone_ids: [0; MAX_BONE_INFLUENCE],
+            bone_weights: [0.0; MAX_BONE_INFLUENCE],
         }
     }
 }
@@ -78,43 +77,44 @@ impl ModelMesh {
         mesh
     }
 
-    pub fn Draw(&self, shader_id: ShaderId) {
+    pub fn Draw(&self, shader: &Shader) {
         // bind appropriate textures
-        let mut diffuseNr: u32 = 0;
-        let mut specularNr: u32 = 0;
-        let mut normalNr: u32 = 0;
-        let mut heightNr: u32 = 0;
+        let mut diffuse_count: u32 = 0;
+        let mut specular_count: u32 = 0;
+        let mut normal_count: u32 = 0;
+        let mut height_count: u32 = 0;
 
         unsafe {
-            for (i, texture) in self.textures.iter().enumerate() {
-                gl::ActiveTexture(gl::TEXTURE0 + i as u32); // active proper texture unit before binding
+            // set the location and binding for all the textures
+            for (location, texture) in self.textures.iter().enumerate() {
+                // active proper texture unit before binding
+                gl::ActiveTexture(gl::TEXTURE0 + location as u32);
 
                 // retrieve texture number (the N in diffuse_textureN)
                 let num = match texture.texture_type {
                     TextureType::Diffuse => {
-                        diffuseNr += 1;
-                        diffuseNr
+                        diffuse_count += 1;
+                        diffuse_count
                     }
                     TextureType::Specular => {
-                        specularNr += 1;
-                        specularNr
+                        specular_count += 1;
+                        specular_count
                     }
                     TextureType::Normals => {
-                        normalNr += 1;
-                        normalNr
+                        normal_count += 1;
+                        normal_count
                     }
                     TextureType::Height => {
-                        heightNr += 1;
-                        heightNr
+                        height_count += 1;
+                        height_count
                     }
                     _ => todo!(),
                 };
 
-                // now set the sampler to the correct texture unit
-                let name = texture.texture_type.to_string().clone().add(&num.to_string());
-                let c_name = CString::new(name).unwrap();
+                // now set the sampler to the correct texture unit (location)
+                let texture_name = texture.texture_type.to_string().clone().add(&num.to_string());
+                shader.setInt(&texture_name, location as i32);
 
-                gl::Uniform1i(gl::GetUniformLocation(shader_id, c_name.as_ptr()), i as i32);
                 gl::BindTexture(gl::TEXTURE_2D, texture.id);
             }
 
@@ -151,7 +151,14 @@ impl ModelMesh {
 
             // set the vertex attribute pointers vertex Positions
             gl::EnableVertexAttribArray(0);
-            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, mem::size_of::<ModelVertex>() as GLsizei, 0 as *const GLvoid);
+            gl::VertexAttribPointer(
+                0,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                mem::size_of::<ModelVertex>() as GLsizei,
+                0 as *const GLvoid,
+            );
 
             // vertex normals
             gl::EnableVertexAttribArray(1);
@@ -222,29 +229,39 @@ impl ModelMesh {
             gl::BindVertexArray(0);
         }
     }
+}
 
-    pub fn debug(&self) {
-        println!("mesh: {:#?}", self);
-
-        println!("size vertex: {}", mem::size_of::<ModelVertex>());
-        println!("OFFSET_OF_NORMAL: {}", mem::offset_of!(ModelVertex, Normal));
-        println!("OFFSET_OF_TEXCOORDS: {}", mem::offset_of!(ModelVertex, TexCoords));
-        println!("OFFSET_OF_TANGENT: {}", mem::offset_of!(ModelVertex, Tangent));
-        println!("OFFSET_OF_BITANGENT: {}", mem::offset_of!(ModelVertex, Bitangent));
-        println!("OFFSET_OF_BONE_IDS: {}", mem::offset_of!(ModelVertex, m_BoneIDs));
-        println!("OFFSET_OF_WEIGHTS: {}", mem::offset_of!(ModelVertex, m_Weights));
-
-        println!("size of Vec3: {}", mem::size_of::<Vec3>());
-        println!("size of Vec2: {}", mem::size_of::<Vec2>());
-        println!("size of [i32;4]: {}", mem::size_of::<[i32; MAX_BONE_INFLUENCE]>());
-        println!("size of [f32;4]: {}", mem::size_of::<[f32; MAX_BONE_INFLUENCE]>());
-
-        println!(
-            "size of vertex parts: {}",
-            mem::size_of::<Vec3>() * 4
-                + mem::size_of::<Vec2>()
-                + mem::size_of::<[i32; MAX_BONE_INFLUENCE]>()
-                + mem::size_of::<[f32; MAX_BONE_INFLUENCE]>()
-        );
+impl Drop for ModelMesh {
+    fn drop(&mut self) {
+        unsafe {
+            gl::DeleteVertexArrays(1, &self.VAO);
+            gl::DeleteBuffers(1, &self.VBO);
+            gl::DeleteBuffers(1, &self.EBO);
+        }
     }
+}
+
+pub fn print_model_mesh(mesh: &ModelMesh) {
+    println!("mesh: {:#?}", mesh);
+
+    println!("size vertex: {}", mem::size_of::<ModelVertex>());
+    println!("OFFSET_OF_NORMAL: {}", mem::offset_of!(ModelVertex, normal));
+    println!("OFFSET_OF_TEXCOORDS: {}", mem::offset_of!(ModelVertex, tex_coords));
+    println!("OFFSET_OF_TANGENT: {}", mem::offset_of!(ModelVertex, tangent));
+    println!("OFFSET_OF_BITANGENT: {}", mem::offset_of!(ModelVertex, bi_tangent));
+    println!("OFFSET_OF_BONE_IDS: {}", mem::offset_of!(ModelVertex, bone_ids));
+    println!("OFFSET_OF_WEIGHTS: {}", mem::offset_of!(ModelVertex, bone_weights));
+
+    println!("size of Vec3: {}", mem::size_of::<Vec3>());
+    println!("size of Vec2: {}", mem::size_of::<Vec2>());
+    println!("size of [i32;4]: {}", mem::size_of::<[i32; MAX_BONE_INFLUENCE]>());
+    println!("size of [f32;4]: {}", mem::size_of::<[f32; MAX_BONE_INFLUENCE]>());
+
+    println!(
+        "size of vertex parts: {}",
+        mem::size_of::<Vec3>() * 4
+            + mem::size_of::<Vec2>()
+            + mem::size_of::<[i32; MAX_BONE_INFLUENCE]>()
+            + mem::size_of::<[f32; MAX_BONE_INFLUENCE]>()
+    );
 }

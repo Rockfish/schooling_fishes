@@ -2,8 +2,8 @@ use crate::core::ai_scene::*;
 use crate::core::error::Error;
 use crate::core::error::Error::ModelError;
 use crate::core::model_mesh::{ModelMesh, ModelVertex};
+use crate::core::shader::Shader;
 use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
-use crate::core::ShaderId;
 use glam::*;
 use russimp::scene::*;
 use russimp::sys::*;
@@ -36,9 +36,10 @@ impl Model {
         Ok(model)
     }
 
-    pub fn Draw(&self, shader_id: ShaderId) {
+    pub fn Draw(&self, shader: &Shader) {
+        // draw each mesh in the model
         for mesh in &self.meshes {
-            mesh.Draw(shader_id);
+            mesh.Draw(shader);
         }
     }
 
@@ -118,23 +119,23 @@ impl Model {
             let mut vertex = ModelVertex::new();
 
             // positions
-            vertex.Position = ai_vertices[i]; // Vec3 has Copy trait
+            vertex.position = ai_vertices[i]; // Vec3 has Copy trait
 
             // normals
             if !ai_normals.is_empty() {
-                vertex.Normal = ai_normals[i];
+                vertex.normal = ai_normals[i];
             }
 
             // texture coordinates
             if !texture_coords.is_empty() {
                 // texture coordinates
-                vertex.TexCoords = vec2(texture_coords[i].x, texture_coords[i].y);
+                vertex.tex_coords = vec2(texture_coords[i].x, texture_coords[i].y);
                 // tangent
-                vertex.Tangent = ai_tangents[i];
+                vertex.tangent = ai_tangents[i];
                 // bitangent
-                vertex.Bitangent = ai_bitangents[i];
+                vertex.bi_tangent = ai_bitangents[i];
             } else {
-                vertex.TexCoords = vec2(0.0, 0.0);
+                vertex.tex_coords = vec2(0.0, 0.0);
             }
             vertices.push(vertex);
         }
@@ -185,7 +186,10 @@ impl Model {
             let texture_filename = get_material_texture_filename(ai_material, texture_type, i as u32)?;
             let full_path = PathBuf::from(&self.directory).join(&texture_filename);
 
-            let loaded_texture = self.textures_loaded.iter().find(|t| t.texture_path == full_path.clone().into_os_string());
+            let loaded_texture = self
+                .textures_loaded
+                .iter()
+                .find(|t| t.texture_path == full_path.clone().into_os_string());
 
             match loaded_texture {
                 None => {

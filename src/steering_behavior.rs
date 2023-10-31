@@ -397,7 +397,8 @@ impl SteeringBehavior {
             // }
 
             if self.On(BehaviorType::cohesion) {
-                force = self.Cohesion(vehicle, &self.m_pTargetAgent1, &vehicle.borrow().m_pWorld.borrow().m_Vehicles) * self.m_dWeightCohesion;
+                force =
+                    self.Cohesion(vehicle, &self.m_pTargetAgent1, &vehicle.borrow().m_pWorld.borrow().m_Vehicles) * self.m_dWeightCohesion;
 
                 if !SteeringBehavior::AccumulateForce(vehicle, &mut self.m_vSteeringForce, force) {
                     return self.m_vSteeringForce;
@@ -405,7 +406,8 @@ impl SteeringBehavior {
             }
         } else {
             if self.On(BehaviorType::separation) {
-                force = SteeringBehavior::SeparationPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_Vehicles) * self.m_dWeightSeparation;
+                force =
+                    SteeringBehavior::SeparationPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_Vehicles) * self.m_dWeightSeparation;
 
                 if !SteeringBehavior::AccumulateForce(vehicle, &mut self.m_vSteeringForce, force) {
                     return self.m_vSteeringForce;

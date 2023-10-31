@@ -36,7 +36,11 @@ pub struct Vertex {
 
 impl Vertex {
     pub fn new(position: Vec3, tex_coords: Vec2, color: Color) -> Vertex {
-        Vertex { position, tex_coords, color }
+        Vertex {
+            position,
+            tex_coords,
+            color,
+        }
     }
 }
 impl Default for Vertex {
@@ -132,9 +136,9 @@ impl Mesh {
         let mut model_transform = Mat4::from_translation(position);
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);
+        shader.setMat4("model", &model_transform);
 
         let texture_location = 0;
-        shader.setMat4("model", &model_transform);
         shader.setInt("texture_diffuse1", texture_location as i32);
 
         unsafe {
