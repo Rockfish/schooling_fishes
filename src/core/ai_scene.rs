@@ -9,6 +9,8 @@ use std::ffi::{CStr, CString};
 use std::mem::MaybeUninit;
 use std::os::raw::c_uint;
 
+use crate::core::error::Error;
+use crate::core::texture::TextureType;
 use russimp::scene::*;
 use russimp::sys::*;
 use russimp::*;
@@ -26,6 +28,8 @@ pub const aiTextureType_DISPLACEMENT: c_uint = 0x9;
 pub const aiTextureType_LIGHTMAP: c_uint = 0xA;
 pub const aiTextureType_REFLECTION: c_uint = 0xB;
 pub const aiTextureType_UNKNOWN: c_uint = 0xC;
+
+type aiTextureType = u32;
 
 // This is just a lightweight wrapper around aiScene
 #[derive(Debug)]
@@ -73,7 +77,7 @@ impl Drop for AiScene<'_> {
     }
 }
 
-pub fn get_material_texture_filename(material: *mut aiMaterial, texture_type: c_uint, index: u32) -> Result<String, String> {
+pub fn get_material_texture_filename(material: *mut aiMaterial, texture_type: TextureType, index: u32) -> Result<String, Error> {
     let mut path = MaybeUninit::uninit();
     let mut texture_mapping = MaybeUninit::uninit();
     let mut uv_index = MaybeUninit::uninit();
@@ -86,7 +90,7 @@ pub fn get_material_texture_filename(material: *mut aiMaterial, texture_type: c_
     if unsafe {
         aiGetMaterialTexture(
             material,
-            texture_type,
+            texture_type.into(),
             index,
             path.as_mut_ptr(),
             texture_mapping.as_mut_ptr(),
@@ -101,5 +105,25 @@ pub fn get_material_texture_filename(material: *mut aiMaterial, texture_type: c_
         let filename: String = unsafe { path.assume_init() }.into();
         return Ok(filename);
     }
-    Err("Texture not found".to_string())
+    Err(Error::TextureError("aiGetMaterialTexture Error: Texture not found".to_string()))
+}
+
+impl From<TextureType> for aiTextureType {
+    fn from(value: TextureType) -> Self {
+        match value {
+            TextureType::None => 0x0,
+            TextureType::Diffuse => 0x1,
+            TextureType::Specular => 0x2,
+            TextureType::Ambient => 0x3,
+            TextureType::Emissive => 0x4,
+            TextureType::Height => 0x5,
+            TextureType::Normals => 0x6,
+            TextureType::Shininess => 0x7,
+            TextureType::Opacity => 0x8,
+            TextureType::Displacement => 0x9,
+            TextureType::Lightmap => 0xA,
+            TextureType::Reflection => 0xB,
+            TextureType::Unknown => 0xC,
+        }
+    }
 }

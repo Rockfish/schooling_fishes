@@ -1,15 +1,13 @@
 use crate::base_entity::{BaseGameEntity, EntityBase};
 use crate::cell_space_partition::CellSpacePartition;
 use crate::config_loader::CONFIG;
+use crate::core::mesh::Mesh;
+use crate::core::shader::Shader;
 use crate::entity_functions::TagNeighbors;
 use crate::path::Path;
-use crate::shapes::small_fish::SmallFish;
-use crate::shapes::triangle::Triangle;
-use crate::support::shader::Shader;
 use crate::utils::*;
 use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
-use glad_gl::gl::GLuint;
 use glam::{vec2, Vec2};
 use std::cell::RefCell;
 use std::f32::consts::TAU;
@@ -203,7 +201,7 @@ impl GameWorld {
         TagNeighbors(pVehicle, &self.m_Obstacles, range);
     }
 
-    pub fn render(&self, shader: &Shader, triangle: &SmallFish) {
+    pub fn render(&self, shader: &Shader, mesh: &Mesh) {
         for wall in &self.m_Walls {
             wall.Render(true);
         }
@@ -215,7 +213,7 @@ impl GameWorld {
         let mut first = true;
         //render the agents
         for vehicle in &self.m_Vehicles {
-            vehicle.borrow_mut().render(shader, triangle);
+            vehicle.borrow_mut().render(shader, mesh);
 
             //render cell partitioning stuff
             if self.m_bShowCellSpaceInfo && first {

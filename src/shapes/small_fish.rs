@@ -1,5 +1,5 @@
-use crate::support::shader::Shader;
-use crate::support::SIZE_OF_FLOAT;
+use crate::core::shader::Shader;
+use crate::core::SIZE_OF_FLOAT;
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use glam::{vec3, Mat4, Vec3};

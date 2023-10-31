@@ -1,16 +1,19 @@
-#![allow(unused_variables)]
-#![allow(dead_code)]
+// #![allow(unused_variables)]
+// #![allow(dead_code)]
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 #![allow(unused_assignments)]
 
-use crate::support::ShaderId;
+use crate::core::texture::{Texture, TextureType};
+use crate::core::ShaderId;
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
+use glam::u32;
 use glam::*;
 use std::ffi::CString;
 use std::mem;
 use std::ops::Add;
+use std::rc::Rc;
 
 const MAX_BONE_INFLUENCE: usize = 4;
 const OFFSET_OF_NORMAL: usize = mem::offset_of!(ModelVertex, Normal);
@@ -52,37 +55,24 @@ impl Default for ModelVertex {
 }
 
 #[derive(Debug, Clone)]
-pub struct ModelTexture {
-    pub id: u32,
-    pub texture_type: String,
-    pub path: String,
-}
-
-impl ModelTexture {
-    pub fn new() -> ModelTexture {
-        ModelTexture {
-            id: 0,
-            texture_type: String::default(),
-            path: String::default(),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct ModelMesh {
     pub vertices: Vec<ModelVertex>,
     pub indices: Vec<u32>,
-    pub textures: Vec<ModelTexture>,
+    pub textures: Vec<Rc<Texture>>,
     pub VAO: u32,
+    pub VBO: u32,
+    pub EBO: u32,
 }
 
 impl ModelMesh {
-    pub fn new(vertices: Vec<ModelVertex>, indices: Vec<u32>, textures: Vec<ModelTexture>) -> ModelMesh {
+    pub fn new(vertices: Vec<ModelVertex>, indices: Vec<u32>, textures: Vec<Rc<Texture>>) -> ModelMesh {
         let mut mesh = ModelMesh {
             vertices,
             indices,
             textures,
-            VAO: 99999,
+            VAO: 0,
+            VBO: 0,
+            EBO: 0,
         };
         mesh.setupMesh();
         mesh
@@ -100,28 +90,28 @@ impl ModelMesh {
                 gl::ActiveTexture(gl::TEXTURE0 + i as u32); // active proper texture unit before binding
 
                 // retrieve texture number (the N in diffuse_textureN)
-                let num = match texture.texture_type.as_str() {
-                    "texture_diffuse" => {
+                let num = match texture.texture_type {
+                    TextureType::Diffuse => {
                         diffuseNr += 1;
                         diffuseNr
                     }
-                    "texture_specular" => {
+                    TextureType::Specular => {
                         specularNr += 1;
                         specularNr
                     }
-                    "texture_normal" => {
+                    TextureType::Normals => {
                         normalNr += 1;
                         normalNr
                     }
-                    "texture_height" => {
+                    TextureType::Height => {
                         heightNr += 1;
                         heightNr
                     }
-                    _ => panic!("Unknown texture type"),
+                    _ => todo!(),
                 };
 
                 // now set the sampler to the correct texture unit
-                let name = texture.texture_type.clone().add(&num.to_string());
+                let name = texture.texture_type.to_string().clone().add(&num.to_string());
                 let c_name = CString::new(name).unwrap();
 
                 gl::Uniform1i(gl::GetUniformLocation(shader_id, c_name.as_ptr()), i as i32);
@@ -135,17 +125,14 @@ impl ModelMesh {
     }
 
     fn setupMesh(&mut self) {
-        let mut VBO: GLuint = 0;
-        let mut EBO: GLuint = 0;
-
         unsafe {
             gl::GenVertexArrays(1, &mut self.VAO);
-            gl::GenBuffers(1, &mut VBO);
-            gl::GenBuffers(1, &mut EBO);
+            gl::GenBuffers(1, &mut self.VBO);
+            gl::GenBuffers(1, &mut self.EBO);
 
             // load vertex data into vertex buffers
             gl::BindVertexArray(self.VAO);
-            gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
+            gl::BindBuffer(gl::ARRAY_BUFFER, self.VBO);
             gl::BufferData(
                 gl::ARRAY_BUFFER,
                 (self.vertices.len() * mem::size_of::<ModelVertex>()) as GLsizeiptr,
@@ -154,7 +141,7 @@ impl ModelMesh {
             );
 
             // load index data into element buffer
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, EBO);
+            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.EBO);
             gl::BufferData(
                 gl::ELEMENT_ARRAY_BUFFER,
                 (self.indices.len() * mem::size_of::<u32>()) as GLsizeiptr,
@@ -164,14 +151,7 @@ impl ModelMesh {
 
             // set the vertex attribute pointers vertex Positions
             gl::EnableVertexAttribArray(0);
-            gl::VertexAttribPointer(
-                0,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                mem::size_of::<ModelVertex>() as GLsizei,
-                0 as *const GLvoid
-            );
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, mem::size_of::<ModelVertex>() as GLsizei, 0 as *const GLvoid);
 
             // vertex normals
             gl::EnableVertexAttribArray(1);

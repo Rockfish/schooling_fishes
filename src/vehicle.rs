@@ -1,15 +1,12 @@
 use crate::base_entity::{BaseGameEntity, EntityBase};
 use crate::config_loader::CONFIG;
+use crate::core::mesh::Mesh;
+use crate::core::shader::Shader;
 use crate::game_world::GameWorld;
 use crate::moving_entity::MovingEntity;
-use crate::shapes::small_fish::SmallFish;
-use crate::shapes::triangle::Triangle;
 use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
-use crate::support::shader::Shader;
 use crate::utils::{RandInRange, Truncate, WrapAround};
-use glad_gl::gl;
-use glad_gl::gl::GLuint;
 use glam::{vec2, vec3, Mat4, Vec2, Vec3};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -176,7 +173,7 @@ impl Vehicle {
 
      */
 
-    pub fn render(&mut self, shader: &Shader, shape: &SmallFish) {
+    pub fn render(&mut self, shader: &Shader, mesh: &Mesh) {
         //float angle = (acos(forward.x)/(2*M_PI))*360;
         //let angle = acos(self.moving_entity.m_vHeading.x) * RADTODEG; // RadToDeg(acos(m_vHeading.x));
         let mut angle = self.moving_entity.m_vHeading.x.acos().to_degrees();
@@ -188,7 +185,7 @@ impl Vehicle {
         let position = vec3(self.base_entity.m_vPos.x, self.base_entity.m_vPos.y, 0.0);
         let scale = vec3(self.base_entity.m_vScale.x, self.base_entity.m_vScale.y, 1.0);
 
-        shape.render(shader, position, angle - 90.0, scale);
+        mesh.render(shader, position, angle - 90.0, scale);
 
         // println!("fish id: {}   position: {}", self.ID(), position);
 

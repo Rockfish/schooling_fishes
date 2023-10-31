@@ -1,38 +1,36 @@
-use crate::support::ai_scene::*;
-use crate::support::error::Error;
-use crate::support::error::Error::ModelError;
-use crate::support::model_mesh::{ModelMesh, ModelTexture, ModelVertex};
-use crate::support::texture::load_texture;
-use crate::support::ShaderId;
+use crate::core::ai_scene::*;
+use crate::core::error::Error;
+use crate::core::error::Error::ModelError;
+use crate::core::model_mesh::{ModelMesh, ModelVertex};
+use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
+use crate::core::ShaderId;
 use glam::*;
 use russimp::scene::*;
 use russimp::sys::*;
 use std::os::raw::c_uint;
 use std::path::{Path, PathBuf};
 use std::ptr::*;
+use std::rc::Rc;
 
 // model data
 #[derive(Debug)]
 pub struct Model {
     // stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-    pub textures_loaded: Vec<ModelTexture>,
+    pub textures_loaded: Vec<Rc<Texture>>,
     pub meshes: Vec<ModelMesh>,
     pub directory: String,
     pub gammaCorrection: bool,
-    pub flipv: bool,
+    pub flip_v: bool,
 }
 
-pub struct Gamma(pub bool);
-pub struct FlipV(pub bool);
-
 impl Model {
-    pub fn new(path: &str, gamma: Gamma, flipv: FlipV) -> Result<Model, Error> {
+    pub fn new(path: &str, gamma: bool, flipv: bool) -> Result<Model, Error> {
         let mut model = Model {
             textures_loaded: vec![],
             meshes: vec![],
             directory: "".to_string(),
-            gammaCorrection: gamma.0,
-            flipv: flipv.0,
+            gammaCorrection: gamma,
+            flip_v: flipv,
         };
         model.load_model(path)?;
         Ok(model)
@@ -101,7 +99,7 @@ impl Model {
 
         let mut vertices: Vec<ModelVertex> = vec![];
         let mut indices: Vec<u32> = vec![];
-        let mut textures: Vec<ModelTexture> = vec![];
+        let mut textures: Vec<Rc<Texture>> = vec![];
 
         let ai_vertices = get_vec_from_parts(scene_mesh.mVertices, scene_mesh.mNumVertices);
         let ai_normals = get_vec_from_parts(scene_mesh.mNormals, scene_mesh.mNumVertices);
@@ -162,47 +160,48 @@ impl Model {
         // normal: texture_normalN
 
         // 1. diffuse maps
-        let diffuseMaps = self.load_material_textures(ai_material, aiTextureType_DIFFUSE, "texture_diffuse")?;
+        let diffuseMaps = self.load_material_textures(ai_material, TextureType::Diffuse)?;
         textures.extend(diffuseMaps);
         // 2. specular maps
-        let specularMaps = self.load_material_textures(ai_material, aiTextureType_SPECULAR, "texture_specular")?;
+        let specularMaps = self.load_material_textures(ai_material, TextureType::Specular)?;
         textures.extend(specularMaps);
         // 3. normal maps
-        let normalMaps = self.load_material_textures(ai_material, aiTextureType_HEIGHT, "texture_normal")?;
+        let normalMaps = self.load_material_textures(ai_material, TextureType::Height)?;
         textures.extend(normalMaps);
         // 4. height maps
-        let heightMaps = self.load_material_textures(ai_material, aiTextureType_AMBIENT, "texture_height")?;
+        let heightMaps = self.load_material_textures(ai_material, TextureType::Ambient)?;
         textures.extend(heightMaps);
 
         let mesh = ModelMesh::new(vertices, indices, textures);
         Ok(mesh)
     }
 
-    fn load_material_textures(&mut self, ai_material: *mut aiMaterial, ai_texture_type: c_uint, typeName: &str) -> Result<Vec<ModelTexture>, Error> {
-        let mut textures: Vec<ModelTexture> = vec![];
+    fn load_material_textures(&mut self, ai_material: *mut aiMaterial, texture_type: TextureType) -> Result<Vec<Rc<Texture>>, Error> {
+        let mut textures: Vec<Rc<Texture>> = vec![];
 
-        let texture_count = unsafe { aiGetMaterialTextureCount(ai_material, ai_texture_type) };
+        let texture_count = unsafe { aiGetMaterialTextureCount(ai_material, texture_type.into()) };
 
         for i in 0..texture_count {
-            let texture_file = get_material_texture_filename(ai_material, ai_texture_type, i as u32);
-            if let Ok(filename) = texture_file {
-                let loaded_texture = self.textures_loaded.iter().find(|t| t.path == filename);
-                if let Some(texture) = loaded_texture {
-                    textures.push(texture.clone());
-                } else {
-                    let mut filepath = PathBuf::from(&self.directory);
-                    filepath.push(&filename);
+            let texture_filename = get_material_texture_filename(ai_material, texture_type, i as u32)?;
+            let full_path = PathBuf::from(&self.directory).join(&texture_filename);
 
-                    let id = load_texture(&filepath, false, self.flipv)?;
+            let loaded_texture = self.textures_loaded.iter().find(|t| t.texture_path == full_path.clone().into_os_string());
 
-                    let texture = ModelTexture {
-                        id,
-                        texture_type: typeName.to_string(),
-                        path: filename,
-                    };
+            match loaded_texture {
+                None => {
+                    let texture = Rc::new(Texture::new(
+                        full_path,
+                        &TextureConfig {
+                            flip_v: self.flip_v,
+                            gamma_correction: self.gammaCorrection,
+                            filter: TextureFilter::Linear,
+                            texture_type,
+                        },
+                    )?);
+                    self.textures_loaded.push(texture.clone());
                     textures.push(texture.clone());
-                    self.textures_loaded.push(texture);
                 }
+                Some(texture) => textures.push(texture.clone()),
             }
         }
         Ok(textures)

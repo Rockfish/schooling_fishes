@@ -1,7 +1,9 @@
-use crate::support::mesh::{Color, Mesh, Texture, Vertex};
-use glam::{vec3, vec2};
+use crate::core::mesh::{Color, Mesh, Vertex};
+use crate::core::texture::Texture;
+use glam::{vec2, vec3};
+use std::rc::Rc;
 
-pub fn new_fish_mesh(texture: &Texture) -> Mesh {
+pub fn new_fish_mesh(texture: &Rc<Texture>) -> Mesh {
     // let x = 1.0f32;
     // let y = 1.0f32;
 
@@ -25,15 +27,15 @@ pub fn new_fish_mesh(texture: &Texture) -> Mesh {
     // let color = Color::default();
 
     let verts = vec![
-        Vertex::new(vec3(-1.0, -2.0, 0.0), vec2(8.0, 2.0), Color::default()),
-        Vertex::new(vec3(1.0, -2.0, 0.0), vec2(24.0, 2.0), Color::default()),
-        Vertex::new(vec3(-1.0, 2.0, 0.0), vec2(8.0, 30.0), Color::default()),
-        Vertex::new(vec3(1.0, 2.0, 0.0), vec2(24.0, 30.0), Color::default()),
+        Vertex::new(vec3(-1.0, -2.0, 0.0), vec2(8.0, 2.0), Color::white()),
+        Vertex::new(vec3(1.0, -2.0, 0.0), vec2(24.0, 2.0), Color::white()),
+        Vertex::new(vec3(-1.0, 2.0, 0.0), vec2(8.0, 31.0), Color::white()),
+        Vertex::new(vec3(1.0, 2.0, 0.0), vec2(24.0, 31.0), Color::white()),
     ];
 
-    let indices= vec![
+    let indices = vec![
         0, 1, 2, //1, 2, 3,
-        1, 3, 2,//  2, 4, 3
+        1, 3, 2, //  2, 4, 3
     ];
 
     Mesh::new(verts, indices, texture)

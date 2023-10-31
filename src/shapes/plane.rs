@@ -1,18 +1,20 @@
-use crate::support::shader::Shader;
-use crate::support::SIZE_OF_FLOAT;
+use crate::core::shader::Shader;
+use crate::core::texture::Texture;
+use crate::core::SIZE_OF_FLOAT;
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use glam::{vec3, Mat4, Vec3};
 use std::ptr;
+use std::rc::Rc;
 
 pub struct Plane {
     VAO: GLuint,
     VBO: GLuint,
-    texture: GLuint,
+    texture: Rc<Texture>,
 }
 
 impl Plane {
-    pub fn new(texture: GLuint) -> Self {
+    pub fn new(texture: Rc<Texture>) -> Self {
         let mut VAO: GLuint = 0;
         let mut VBO: GLuint = 0;
 
@@ -70,11 +72,12 @@ impl Plane {
         model_transform *= Mat4::from_scale(scale);
 
         shader.setMat4("model", &model_transform);
+        shader.setInt("texture_diffuse1", 0);
 
         unsafe {
             gl::BindVertexArray(self.VAO);
             gl::ActiveTexture(gl::TEXTURE0);
-            gl::BindTexture(gl::TEXTURE_2D, self.texture);
+            gl::BindTexture(gl::TEXTURE_2D, self.texture.id);
             gl::DrawArrays(gl::TRIANGLES, 0, 6);
             gl::BindVertexArray(0);
         }

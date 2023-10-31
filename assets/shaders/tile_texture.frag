@@ -4,7 +4,7 @@ out vec4 FragColor;
 in vec2 TexCoord;
 
 //uniform vec3 color;
-uniform sampler2D texture1;
+uniform sampler2D texture_diffuse1;
 
 uniform vec2 offset;
 
@@ -18,7 +18,7 @@ void main()
 
     vec2 tex_coord = vec2((TexCoord.x + offset.x) / fwidth, (TexCoord.y + offset.y) / fheight);
 
-    vec4 texColor = texture(texture1, tex_coord);
+    vec4 texColor = texture(texture_diffuse1, tex_coord);
 
     if(texColor.a < 0.1)
         discard;

@@ -4,6 +4,7 @@ pub enum Error {
     ShaderError(String),
     ImageError(image::ImageError),
     ModelError(russimp::RussimpError),
+    TextureError(String),
     UnknownError(&'static str),
 }
 

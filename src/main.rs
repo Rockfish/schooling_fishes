@@ -13,6 +13,7 @@ mod c2d_matrix;
 mod cell_space_partition;
 mod config_loader;
 mod constants;
+mod core;
 mod entity_functions;
 mod game_world;
 mod inverted_aab_box_2d;
@@ -21,7 +22,6 @@ mod path;
 mod shapes;
 mod smoother;
 mod steering_behavior;
-mod support;
 mod transformations;
 mod utils;
 mod vehicle;
@@ -29,25 +29,20 @@ mod wall_2d;
 
 extern crate glfw;
 
+use crate::core::camera::{Camera, CameraMovement};
+use crate::core::shader::Shader;
+use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
 use crate::game_world::GameWorld;
-use crate::shapes::line_box::LineBox;
+use crate::shapes::fish_mesh::new_fish_mesh;
 use crate::shapes::plane::Plane;
-use crate::shapes::small_fish::SmallFish;
-use crate::shapes::triangle::Triangle;
-use crate::support::camera::{Camera, CameraMovement};
-use crate::support::shader::Shader;
-use crate::support::texture::{load_texture, load_texture_from_str};
-use crate::support::SIZE_OF_FLOAT;
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use glam::{vec2, vec3, Mat4, Vec3};
 use glfw::{Action, Context, Key};
 use log::error;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::ptr;
-use crate::shapes::fish_mesh::new_fish_mesh;
-use crate::support::mesh::Texture;
-use crate::support::model::{FlipV, Gamma};
+use std::rc::Rc;
 
 const SCR_WIDTH: f32 = 800.0;
 const SCR_HEIGHT: f32 = 800.0;
@@ -105,16 +100,38 @@ fn main() {
     let shader_texture = Shader::new("assets/shaders/camera_texture.vert", "assets/shaders/camera_texture.frag", None).unwrap();
     let tile_shader = Shader::new("assets/shaders/tile_texture.vert", "assets/shaders/tile_texture.frag", None).unwrap();
 
-    // let fish_texture = load_texture_from_str("assets/images/fish_3.png", false, true);
-    let plane_texture = load_texture_from_str("assets/images/water_texture.png", false, false);
+    let plane_texture = Rc::new(
+        Texture::new(
+            PathBuf::from("assets/images/water_texture.png"),
+            &TextureConfig {
+                flip_v: true,
+                gamma_correction: false,
+                filter: TextureFilter::Linear,
+                texture_type: TextureType::Diffuse,
+            },
+        )
+        .unwrap(),
+    );
 
-    let texture = Texture::new("assets/images/fish_3.png", "texture1", FlipV(true), Gamma(false)).unwrap();
+    let texture = Rc::new(
+        Texture::new(
+            PathBuf::from("assets/images/fish_3.png"),
+            &TextureConfig {
+                flip_v: true,
+                gamma_correction: false,
+                filter: TextureFilter::Linear,
+                texture_type: TextureType::Diffuse,
+            },
+        )
+        .unwrap(),
+    );
+
     let fish_mesh = new_fish_mesh(&texture);
 
     // let line_box = LineBox::new();
     // let triangle = Triangle::new();
     // let fish = SmallFish::new(fish_texture.expect("texture id"));
-    let plane = Plane::new(plane_texture.expect("texture id"));
+    let plane = Plane::new(plane_texture);
 
     // let mut VAO: GLuint = 0;
     // let mut VBO: GLuint = 0;
@@ -169,7 +186,7 @@ fn main() {
 
         unsafe {
             // render
-            gl::ClearColor(0.1, 0.1, 0.1, 1.0);
+            gl::ClearColor(0.1, 0.5, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT); //  | gl::DEPTH_BUFFER_BIT);
 
             // let projection = Mat4::perspective_rh_gl(state.camera.Zoom.to_radians(), SCR_WIDTH / SCR_HEIGHT, 0.1, 1000.0);
@@ -188,17 +205,13 @@ fn main() {
             GameWorld::Update(&game_world, state.deltaTime);
 
             shader_texture.use_shader_with(&projection, &view);
-            shader_texture.setInt("texture1", 0);
 
-            // fish.render(&shader_texture, vec3(300.0, 300.0, 0.0), 0.0, vec3(20.0, 20.0, 1.0));
-            //
-            // // shader.use_shader_with(&projection, &view);
             plane.render(&shader_texture, vec3(300.0, 300.0, 0.0), 0.0, vec3(300.0, 300.0, 1.0));
 
             tile_shader.use_shader_with(&projection, &view);
 
             if tile_time <= 0.0 {
-                tile_time = 1.0; //0.1;
+                tile_time = 0.1;
                 tile_count += tile_increment;
                 if tile_count > 2.0 {
                     tile_count = 1.0;
@@ -214,9 +227,9 @@ fn main() {
 
             tile_shader.setVec2("offset", &vec2(32.0 * tile_count, 0.0));
 
-            fish_mesh.render(&tile_shader, vec3(300.0, 300.0, 0.0), 0.0, vec3(100.0, 100.0, 1.0));
+            // fish_mesh.render(&tile_shader, vec3(300.0, 300.0, 0.0), 0.0, vec3(100.0, 100.0, 1.0));
 
-            // game_world.borrow().render(&tile_shader, &fish);
+            game_world.borrow().render(&tile_shader, &fish_mesh);
             // // line_box.render(&shader, vec3(200.0, 200.0, 0.0), vec3(50.0, 50.0, 1.0), &vec3(1.0, 1.0, 1.0));
         }
 

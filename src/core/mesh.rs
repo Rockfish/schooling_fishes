@@ -1,12 +1,10 @@
-use std::mem;
-use crate::support::error::Error;
-use glam::{Mat4, Vec2, Vec3, vec3};
-use std::path::Path;
+use crate::core::shader::Shader;
+use crate::core::texture::Texture;
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
-use crate::support::model::{FlipV, Gamma};
-use crate::support::shader::Shader;
-use crate::support::texture::load_texture;
+use glam::{vec3, Mat4, Vec2, Vec3};
+use std::mem;
+use std::rc::Rc;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(C, packed)]
@@ -17,9 +15,14 @@ pub struct Color {
     pub a: f32,
 }
 
-impl Default for Color {
-    fn default() -> Self {
-        Color {r: 1.0, g: 1.0, b: 1.0, a: 1.0}
+impl Color {
+    pub(crate) fn white() -> Self {
+        Color {
+            r: 1.0,
+            g: 1.0,
+            b: 1.0,
+            a: 1.0,
+        }
     }
 }
 
@@ -33,11 +36,7 @@ pub struct Vertex {
 
 impl Vertex {
     pub fn new(position: Vec3, tex_coords: Vec2, color: Color) -> Vertex {
-        Vertex {
-            position,
-            tex_coords,
-            color,
-        }
+        Vertex { position, tex_coords, color }
     }
 }
 impl Default for Vertex {
@@ -45,28 +44,8 @@ impl Default for Vertex {
         Vertex {
             position: Default::default(),
             tex_coords: Default::default(),
-            color: Default::default(),
+            color: Color::white(),
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Texture {
-    pub id: u32,
-    pub texture_type: String, // texture uniform name
-    pub texture_path: String,
-}
-
-impl Texture {
-    pub fn new(texture_path: impl Into<String>, texture_type: impl Into<String>, flip_v: FlipV, gamma: Gamma) -> Result<Texture, Error> {
-        let texture_path= texture_path.into();
-        let id = load_texture(&Path::new(&texture_path), gamma.0, flip_v.0)?;
-        let texture = Texture {
-            id,
-            texture_type: texture_type.into(),
-            texture_path,
-        };
-        Ok(texture)
     }
 }
 
@@ -74,14 +53,14 @@ impl Texture {
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
-    pub texture: Texture,
+    pub texture: Rc<Texture>,
     pub VAO: u32,
     pub VBO: u32,
     pub EBO: u32,
 }
 
 impl Mesh {
-    pub fn new(vertices: Vec<Vertex>, indices: Vec<u32>, texture: &Texture) -> Mesh {
+    pub fn new(vertices: Vec<Vertex>, indices: Vec<u32>, texture: &Rc<Texture>) -> Mesh {
         let mut VAO: GLuint = 0;
         let mut VBO: GLuint = 0;
         let mut EBO: GLuint = 0;
@@ -110,15 +89,9 @@ impl Mesh {
                 gl::STATIC_DRAW,
             );
 
-            // set the vertex attribute pointers vertex Positions
+            // vertex positions
             gl::EnableVertexAttribArray(0);
-            gl::VertexAttribPointer(
-                0,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                mem::size_of::<Vertex>() as GLsizei,
-                0 as *const GLvoid);
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, mem::size_of::<Vertex>() as GLsizei, 0 as *const GLvoid);
 
             // vertex texture coordinates
             gl::EnableVertexAttribArray(1);
@@ -151,31 +124,22 @@ impl Mesh {
             texture: texture.clone(),
             VAO,
             VBO,
-            EBO
+            EBO,
         }
     }
-
-    // pub fn draw(&self, shader: &Shader) {
-    //     shader.setInt("texture1", 1);
-    //
-    //     unsafe {
-    //         gl::BindVertexArray(self.VAO);
-    //         gl::DrawElements(gl::TRIANGLES, self.indices.len() as i32, gl::UNSIGNED_INT, 0 as *const GLvoid);
-    //         gl::BindVertexArray(0);
-    //     }
-    // }
 
     pub fn render(&self, shader: &Shader, position: Vec3, angle: f32, scale: Vec3) {
         let mut model_transform = Mat4::from_translation(position);
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);
 
+        let texture_location = 0;
         shader.setMat4("model", &model_transform);
-        shader.setInt("texture1", 0);
+        shader.setInt("texture_diffuse1", texture_location as i32);
 
         unsafe {
+            gl::ActiveTexture(gl::TEXTURE0 + texture_location);
             gl::BindVertexArray(self.VAO);
-            gl::ActiveTexture(gl::TEXTURE0);
             gl::BindTexture(gl::TEXTURE_2D, self.texture.id);
             gl::DrawElements(gl::TRIANGLES, self.indices.len() as i32, gl::UNSIGNED_INT, 0 as *const GLvoid);
             gl::BindVertexArray(0);
