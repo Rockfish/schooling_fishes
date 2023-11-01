@@ -1,4 +1,4 @@
-use crate::base_entity::{BaseGameEntity, EntityBase};
+use crate::base_entity::{BaseEntity, EntityBase};
 use crate::cell_space_partition::CellSpacePartition;
 use crate::config_loader::CONFIG;
 use crate::core::mesh::Mesh;
@@ -12,21 +12,22 @@ use glam::{vec2, Vec2};
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
+use crate::core::tile_model::TileModel;
 
 #[derive(Debug)]
 pub struct GameWorld {
+
     //a container of all the moving entities
-    pub(crate) m_Vehicles: Vec<Rc<RefCell<Vehicle>>>,
+    pub m_Vehicles: Vec<Rc<RefCell<Vehicle>>>,
 
     //any obstacles
-    m_Obstacles: RefCell<Vec<BaseGameEntity>>,
+    m_Obstacles: RefCell<Vec<BaseEntity>>,
 
     //container containing any walls in the environment
     m_Walls: Vec<Wall2D>,
 
-    pub m_pCellSpace: RefCell<CellSpacePartition<Vehicle>>,
-    // flag for cell space partitioning
     m_bCellSpaceOn: bool,
+    pub m_pCellSpace: RefCell<CellSpacePartition<Vehicle>>,
 
     //any path we may create for the vehicles to follow
     m_pPath: Option<Path>,
@@ -39,7 +40,7 @@ pub struct GameWorld {
     m_cyClient: i32,
 
     //the position of the crosshair
-    pub(crate) m_vCrosshair: Vec2,
+    pub m_vCrosshair: Vec2,
 
     //keeps track of the average FPS
     m_dAvFrameTime: f32,
@@ -201,7 +202,7 @@ impl GameWorld {
         TagNeighbors(pVehicle, &self.m_Obstacles, range);
     }
 
-    pub fn render(&self, shader: &Shader, mesh: &Mesh) {
+    pub fn render(&self, mesh: &mut TileModel, delta_time: f32) {
         for wall in &self.m_Walls {
             wall.Render(true);
         }
@@ -213,7 +214,7 @@ impl GameWorld {
         let mut first = true;
         //render the agents
         for vehicle in &self.m_Vehicles {
-            vehicle.borrow_mut().render(shader, mesh);
+            vehicle.borrow_mut().render(mesh, delta_time);
 
             //render cell partitioning stuff
             if self.m_bShowCellSpaceInfo && first {

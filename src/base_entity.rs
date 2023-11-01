@@ -8,56 +8,56 @@ pub enum EntityType {
 }
 
 #[derive(Debug)]
-pub struct BaseGameEntity {
+pub struct BaseEntity {
     //each entity has a unique ID
-    pub m_ID: i32,
+    pub id: i32,
 
     //every entity has a type associated with it (health, troll, ammo etc)
-    pub m_EntityType: i32,
+    pub entity_type: i32,
 
     //this is a generic flag.
-    pub m_bTag: bool,
+    pub tag: bool,
 
     //its location in the environment
-    pub m_vPos: Vec2,
+    pub position: Vec2,
 
-    pub m_vScale: Vec2,
+    pub scale: Vec2,
 
     //the length of this object's bounding radius
-    pub m_dBoundingRadius: f32,
+    pub bounding_radius: f32,
 }
 
-impl BaseGameEntity {
+impl BaseEntity {
     pub fn new() -> Self {
-        BaseGameEntity {
-            m_ID: Self::next_valid_id(),
-            m_EntityType: EntityType::default_entity_type as i32,
-            m_bTag: false,
-            m_vPos: Default::default(),
-            m_vScale: Default::default(),
-            m_dBoundingRadius: 0.0,
+        BaseEntity {
+            id: Self::next_valid_id(),
+            entity_type: EntityType::default_entity_type as i32,
+            tag: false,
+            position: Default::default(),
+            scale: Default::default(),
+            bounding_radius: 0.0,
         }
     }
 
     pub fn with_type(entity_type: i32) -> Self {
-        BaseGameEntity {
-            m_ID: Self::next_valid_id(),
-            m_EntityType: entity_type,
-            m_bTag: false,
-            m_vPos: Default::default(),
-            m_vScale: Default::default(),
-            m_dBoundingRadius: 0.0,
+        BaseEntity {
+            id: Self::next_valid_id(),
+            entity_type: entity_type,
+            tag: false,
+            position: Default::default(),
+            scale: Default::default(),
+            bounding_radius: 0.0,
         }
     }
 
     pub fn with_type_and_position(entity_type: i32, pos: Vec2, r: f32) -> Self {
-        BaseGameEntity {
-            m_ID: Self::next_valid_id(),
-            m_EntityType: entity_type,
-            m_bTag: false,
-            m_vPos: pos,
-            m_vScale: Default::default(),
-            m_dBoundingRadius: r,
+        BaseEntity {
+            id: Self::next_valid_id(),
+            entity_type: entity_type,
+            tag: false,
+            position: pos,
+            scale: Default::default(),
+            bounding_radius: r,
         }
     }
 
@@ -67,13 +67,13 @@ impl BaseGameEntity {
     //in its undo/redo operations.
     //USE WITH CAUTION!
     pub fn with_forced_id(entity_type: i32, forced_id: i32) -> Self {
-        BaseGameEntity {
-            m_ID: forced_id,
-            m_EntityType: entity_type,
-            m_bTag: false,
-            m_vPos: Default::default(),
-            m_vScale: Default::default(),
-            m_dBoundingRadius: 0.0,
+        BaseEntity {
+            id: forced_id,
+            entity_type: entity_type,
+            tag: false,
+            position: Default::default(),
+            scale: Default::default(),
+            bounding_radius: 0.0,
         }
     }
 
@@ -85,51 +85,51 @@ impl BaseGameEntity {
     }
 }
 
-impl EntityBase for BaseGameEntity {
+impl EntityBase for BaseEntity {
     fn id(&self) -> i32 {
-        self.m_ID
+        self.id
     }
 
     fn position(&self) -> Vec2 {
-        self.m_vPos
+        self.position
     }
 
     fn bounding_radius(&self) -> f32 {
-        self.m_dBoundingRadius
+        self.bounding_radius
     }
 
     fn tag(&mut self) {
-        self.m_bTag = true;
+        self.tag = true;
     }
 
     fn untag(&mut self) {
-        self.m_bTag = false;
+        self.tag = false;
     }
 
     fn is_tagged(&self) -> bool {
-        self.m_bTag
+        self.tag
     }
 
     fn scale(&self) -> Vec2 {
-        self.m_vScale
+        self.scale
     }
 
     fn set_scale_vec(&mut self, val: Vec2) {
-        self.m_dBoundingRadius *= max(val.x, val.y) / max(self.m_vScale.x, self.m_vScale.y);
-        self.m_vScale = val;
+        self.bounding_radius *= max(val.x, val.y) / max(self.scale.x, self.scale.y);
+        self.scale = val;
     }
 
     fn set_scale_float(&mut self, val: f32) {
-        self.m_dBoundingRadius *= val / max(self.m_vScale.x, self.m_vScale.y);
-        self.m_vScale = vec2(val, val);
+        self.bounding_radius *= val / max(self.scale.x, self.scale.y);
+        self.scale = vec2(val, val);
     }
 
     fn entity_type(&self) -> i32 {
-        self.m_EntityType
+        self.entity_type
     }
 
     fn set_entity_type(&mut self, new_type: i32) {
-        self.m_EntityType = new_type;
+        self.entity_type = new_type;
     }
 }
 

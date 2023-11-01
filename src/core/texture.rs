@@ -59,20 +59,24 @@ pub struct Texture {
     pub id: u32,
     pub texture_path: OsString,
     pub texture_type: TextureType,
+    pub width: u32,
+    pub height: u32,
 }
 
 impl Texture {
     pub fn new(texture_path: PathBuf, texture_config: &TextureConfig) -> Result<Texture, Error> {
-        let id = Texture::load_texture(&texture_path, &texture_config)?;
+        let (id, width, height) = Texture::load_texture(&texture_path, &texture_config)?;
         let texture = Texture {
             id,
             texture_path: texture_path.into_os_string(),
             texture_type: texture_config.texture_type.clone(),
+            width,
+            height,
         };
         Ok(texture)
     }
 
-    pub fn load_texture(texture_path: &PathBuf, texture_config: &TextureConfig) -> Result<GLuint, Error> {
+    pub fn load_texture(texture_path: &PathBuf, texture_config: &TextureConfig) -> Result<(GLuint, u32, u32), Error> {
         let mut texture_id: GLuint = 0;
 
         let img = image::open(texture_path)?;
@@ -143,6 +147,6 @@ impl Texture {
                 }
             }
         }
-        Ok(texture_id)
+        Ok((texture_id, width as u32, height as u32))
     }
 }

@@ -77,7 +77,7 @@ impl ModelMesh {
         mesh
     }
 
-    pub fn Draw(&self, shader: &Shader) {
+    pub fn render(&self, shader: &Shader) {
         // bind appropriate textures
         let mut diffuse_count: u32 = 0;
         let mut specular_count: u32 = 0;
@@ -86,9 +86,9 @@ impl ModelMesh {
 
         unsafe {
             // set the location and binding for all the textures
-            for (location, texture) in self.textures.iter().enumerate() {
+            for (texture_unit, texture) in self.textures.iter().enumerate() {
                 // active proper texture unit before binding
-                gl::ActiveTexture(gl::TEXTURE0 + location as u32);
+                gl::ActiveTexture(gl::TEXTURE0 + texture_unit as u32);
 
                 // retrieve texture number (the N in diffuse_textureN)
                 let num = match texture.texture_type {
@@ -113,7 +113,7 @@ impl ModelMesh {
 
                 // now set the sampler to the correct texture unit (location)
                 let texture_name = texture.texture_type.to_string().clone().add(&num.to_string());
-                shader.setInt(&texture_name, location as i32);
+                shader.setInt(&texture_name, texture_unit as i32);
 
                 gl::BindTexture(gl::TEXTURE_2D, texture.id);
             }

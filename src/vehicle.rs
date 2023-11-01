@@ -1,4 +1,4 @@
-use crate::base_entity::{BaseGameEntity, EntityBase};
+use crate::base_entity::{BaseEntity, EntityBase};
 use crate::config_loader::CONFIG;
 use crate::core::mesh::Mesh;
 use crate::core::shader::Shader;
@@ -10,10 +10,11 @@ use crate::utils::{RandInRange, Truncate, WrapAround};
 use glam::{vec2, vec3, Mat4, Vec2, Vec3};
 use std::cell::RefCell;
 use std::rc::Rc;
+use crate::core::tile_model::TileModel;
 
 #[derive(Debug)]
 pub struct Vehicle {
-    pub base_entity: BaseGameEntity,
+    pub base_entity: BaseEntity,
 
     pub moving_entity: MovingEntity,
 
@@ -58,8 +59,8 @@ impl Vehicle {
         max_turn_rate: f32,
         scale: f32,
     ) -> Rc<RefCell<Vehicle>> {
-        let mut base_entity = BaseGameEntity::with_type_and_position(0, position, scale);
-        base_entity.m_vScale = vec2(scale, scale);
+        let mut base_entity = BaseEntity::with_type_and_position(0, position, scale);
+        base_entity.scale = vec2(scale, scale);
 
         let moving_entity = MovingEntity::new(
             velocity,
@@ -118,29 +119,29 @@ impl Vehicle {
         let steering_force = vehicle.borrow().m_pSteering.borrow_mut().Calculate(vehicle);
 
         // Acceleration = Force/Mass
-        let acceleration = steering_force / vehicle.borrow().moving_entity.m_dMass;
+        let acceleration = steering_force / vehicle.borrow().moving_entity.mass;
 
         // update velocity
-        vehicle.borrow_mut().moving_entity.m_vVelocity += acceleration * time_elapsed;
+        vehicle.borrow_mut().moving_entity.velocity += acceleration * time_elapsed;
 
         // make sure vehicle does not exceed maximum velocity
         // vehicle.moving_entity.m_vVelocity.Truncate(vehicle.moving_entity.m_dMaxSpeed);
-        let velocity = vehicle.borrow().moving_entity.m_vVelocity;
-        let max_speed = vehicle.borrow().moving_entity.m_dMaxSpeed;
+        let velocity = vehicle.borrow().moving_entity.velocity;
+        let max_speed = vehicle.borrow().moving_entity.max_speed;
         let truncated_velocity = Truncate(velocity, max_speed);
-        vehicle.borrow_mut().moving_entity.m_vVelocity = truncated_velocity;
+        vehicle.borrow_mut().moving_entity.velocity = truncated_velocity;
 
         // update the position
-        let travel_distance = vehicle.borrow().moving_entity.m_vVelocity * time_elapsed;
-        vehicle.borrow_mut().base_entity.m_vPos += travel_distance;
+        let travel_distance = vehicle.borrow().moving_entity.velocity * time_elapsed;
+        vehicle.borrow_mut().base_entity.position += travel_distance;
 
         // update the heading if the vehicle has a non zero velocity
-        if vehicle.borrow().moving_entity.m_vVelocity.length_squared() > 0.00000001 {
-            let normalize = vehicle.borrow().moving_entity.m_vVelocity.normalize_or_zero();
-            vehicle.borrow_mut().moving_entity.m_vHeading = normalize;
+        if vehicle.borrow().moving_entity.velocity.length_squared() > 0.00000001 {
+            let normalize = vehicle.borrow().moving_entity.velocity.normalize_or_zero();
+            vehicle.borrow_mut().moving_entity.heading = normalize;
 
-            let prep = vehicle.borrow().moving_entity.m_vHeading.perp();
-            vehicle.borrow_mut().moving_entity.m_vSide = prep;
+            let prep = vehicle.borrow().moving_entity.heading.perp();
+            vehicle.borrow_mut().moving_entity.side_vec = prep;
         }
 
         //EnforceNonPenetrationConstraint(this, World()->Agents());
@@ -148,7 +149,7 @@ impl Vehicle {
         //treat the screen as a toroid
         let cx = vehicle.borrow().m_pWorld.borrow().cxClient();
         let cy = vehicle.borrow().m_pWorld.borrow().cyClient();
-        WrapAround(&mut vehicle.borrow_mut().base_entity.m_vPos, cx, cy);
+        WrapAround(&mut vehicle.borrow_mut().base_entity.position, cx, cy);
 
         // TODO: Note, this moved this to gameworld object
         //update the vehicle's current cell if space partitioning is turned on
@@ -157,7 +158,7 @@ impl Vehicle {
         // }
 
         if vehicle.borrow().m_bSmoothingOn {
-            let heading = vehicle.borrow().moving_entity.m_vHeading;
+            let heading = vehicle.borrow().moving_entity.heading;
             let smoothed_heading = vehicle.borrow_mut().m_pHeadingSmoother.update(heading);
             vehicle.borrow_mut().m_vSmoothedHeading = smoothed_heading;
         }
@@ -165,34 +166,17 @@ impl Vehicle {
         old_pos
     }
 
-    /*-------------------------------------------accessor methods
-    // for reference only since accessors are more of a cpp pattern than rust
+    pub fn render(&mut self, mesh: &mut TileModel, delta_time: f32) {
+        let mut angle = self.moving_entity.heading.x.acos().to_degrees();
 
-    SteeringBehavior*const Steering(&self)const {return m_pSteering;}
-    GameWorld*const World()const {return m_pWorld;}
-    Vector2D SmoothedHeading()const {return m_vSmoothedHeading;}
-    bool isSmoothingOn()const {return m_bSmoothingOn;}
-    void SmoothingOn() {m_bSmoothingOn = true;}
-    void SmoothingOff() {m_bSmoothingOn = false;}
-    void ToggleSmoothing() {m_bSmoothingOn = !m_bSmoothingOn;}
-
-    float TimeElapsed()const {return m_dTimeElapsed;}
-
-     */
-
-    pub fn render(&mut self, shader: &Shader, mesh: &Mesh) {
-        //float angle = (acos(forward.x)/(2*M_PI))*360;
-        //let angle = acos(self.moving_entity.m_vHeading.x) * RADTODEG; // RadToDeg(acos(m_vHeading.x));
-        let mut angle = self.moving_entity.m_vHeading.x.acos().to_degrees();
-
-        if self.moving_entity.m_vHeading.y < 0.0 {
+        if self.moving_entity.heading.y < 0.0 {
             angle = 360.0 - angle;
         }
 
-        let position = vec3(self.base_entity.m_vPos.x, self.base_entity.m_vPos.y, 0.0);
-        let scale = vec3(self.base_entity.m_vScale.x, self.base_entity.m_vScale.y, 1.0);
+        let position = vec3(self.base_entity.position.x, self.base_entity.position.y, 0.0);
+        let scale = vec3(self.base_entity.scale.x, self.base_entity.scale.y, 1.0);
 
-        mesh.render(shader, position, angle - 90.0, scale);
+        mesh.render(position, angle - 90.0, scale, delta_time);
 
         // println!("fish id: {}   position: {}", self.ID(), position);
 
@@ -272,14 +256,14 @@ impl Vehicle {
     }
 
     pub fn set_max_speed(&mut self, speed: f32) {
-        self.moving_entity.m_dMaxSpeed = speed;
+        self.moving_entity.max_speed = speed;
     }
 
     pub fn heading(&self) -> Vec2 {
-        self.moving_entity.m_vHeading
+        self.moving_entity.heading
     }
     pub fn side(&self) -> Vec2 {
-        self.moving_entity.m_vSide
+        self.moving_entity.side_vec
     }
 
     pub fn print(&self) {
@@ -299,15 +283,15 @@ impl Vehicle {
 
 impl EntityBase for Vehicle {
     fn id(&self) -> i32 {
-        self.base_entity.m_ID
+        self.base_entity.id
     }
 
     fn position(&self) -> Vec2 {
-        self.base_entity.m_vPos
+        self.base_entity.position
     }
 
     fn bounding_radius(&self) -> f32 {
-        self.base_entity.m_dBoundingRadius
+        self.base_entity.bounding_radius
     }
 
     fn tag(&mut self) {
@@ -323,7 +307,7 @@ impl EntityBase for Vehicle {
     }
 
     fn scale(&self) -> Vec2 {
-        self.base_entity.m_vScale
+        self.base_entity.scale
     }
 
     fn set_scale_vec(&mut self, val: Vec2) {

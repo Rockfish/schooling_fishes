@@ -7,6 +7,7 @@ use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
 use glam::*;
 use russimp::scene::*;
 use russimp::sys::*;
+use russimp::Russult;
 use std::os::raw::c_uint;
 use std::path::{Path, PathBuf};
 use std::ptr::*;
@@ -16,7 +17,7 @@ use std::rc::Rc;
 #[derive(Debug)]
 pub struct Model {
     // stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-    pub textures_loaded: Vec<Rc<Texture>>,
+    pub textures_cache: Vec<Rc<Texture>>,
     pub meshes: Vec<ModelMesh>,
     pub directory: String,
     pub gammaCorrection: bool,
@@ -26,20 +27,29 @@ pub struct Model {
 impl Model {
     pub fn new(path: &str, gamma: bool, flipv: bool) -> Result<Model, Error> {
         let mut model = Model {
-            textures_loaded: vec![],
+            textures_cache: vec![],
             meshes: vec![],
             directory: "".to_string(),
             gammaCorrection: gamma,
             flip_v: flipv,
         };
+        model.directory = Path::new(path).parent().expect("path error").to_str().unwrap().to_string();
         model.load_model(path)?;
         Ok(model)
     }
 
-    pub fn Draw(&self, shader: &Shader) {
+    pub fn Draw(&self, shader: &Shader, position: Vec3, angle: f32, scale: Vec3) {
+
+        let mut model_transform = Mat4::from_translation(position);
+        model_transform *= Mat4::from_axis_angle(vec3(1.0, 0.0, 0.0), 90f32.to_radians());
+        model_transform *= Mat4::from_axis_angle(vec3(0.0, 1.0, 0.0), angle.to_radians());
+        model_transform *= Mat4::from_scale(scale);
+
+        shader.setMat4("model", &model_transform);
+
         // draw each mesh in the model
         for mesh in &self.meshes {
-            mesh.Draw(shader);
+            mesh.render(shader);
         }
     }
 
@@ -59,14 +69,7 @@ impl Model {
         );
 
         match scene {
-            Ok(scene) => {
-                self.directory = Path::new(path).parent().expect("path error").to_str().unwrap().to_string();
-
-                if let Some(assimp_scene) = scene.assimp_scene {
-                    self.process_node(assimp_scene.mRootNode, assimp_scene)?;
-                }
-                Ok(())
-            }
+            Ok(scene) => self.process_node(scene.assimp_scene.mRootNode, scene.assimp_scene),
             Err(err) => Err(ModelError(err)),
         }
     }
@@ -162,12 +165,15 @@ impl Model {
         // 1. diffuse maps
         let diffuseMaps = self.load_material_textures(assimp_material, TextureType::Diffuse)?;
         textures.extend(diffuseMaps);
+
         // 2. specular maps
         let specularMaps = self.load_material_textures(assimp_material, TextureType::Specular)?;
         textures.extend(specularMaps);
+
         // 3. normal maps
         let normalMaps = self.load_material_textures(assimp_material, TextureType::Height)?;
         textures.extend(normalMaps);
+
         // 4. height maps
         let heightMaps = self.load_material_textures(assimp_material, TextureType::Ambient)?;
         textures.extend(heightMaps);
@@ -185,12 +191,12 @@ impl Model {
             let texture_filename = get_material_texture_filename(assimp_material, texture_type, i as u32)?;
             let full_path = PathBuf::from(&self.directory).join(&texture_filename);
 
-            let loaded_texture = self
-                .textures_loaded
+            let cached_texture = self
+                .textures_cache
                 .iter()
                 .find(|t| t.texture_path == full_path.clone().into_os_string());
 
-            match loaded_texture {
+            match cached_texture {
                 None => {
                     let texture = Rc::new(Texture::new(
                         full_path,
@@ -201,7 +207,7 @@ impl Model {
                             texture_type,
                         },
                     )?);
-                    self.textures_loaded.push(texture.clone());
+                    self.textures_cache.push(texture.clone());
                     textures.push(texture.clone());
                 }
                 Some(texture) => textures.push(texture.clone()),

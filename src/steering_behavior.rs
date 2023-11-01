@@ -691,8 +691,8 @@ impl SteeringBehavior {
         // project the target into world space
         let world_target = PointToWorldSpace(
             wander_target,
-            vehicle.borrow().moving_entity.m_vHeading,
-            vehicle.borrow().moving_entity.m_vSide,
+            vehicle.borrow().moving_entity.heading,
+            vehicle.borrow().moving_entity.side_vec,
             vehicle.borrow().position(),
         );
 
@@ -1070,14 +1070,14 @@ impl SteeringBehavior {
 
         for pv in vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors.iter() {
             if pv.borrow().id() != vehicle.borrow().id() {
-                AverageHeading += pv.borrow().moving_entity.m_vHeading;
+                AverageHeading += pv.borrow().moving_entity.heading;
                 NeighborCount += 1.0;
             }
         }
 
         if NeighborCount > 0.0 {
             AverageHeading /= NeighborCount;
-            AverageHeading -= vehicle.borrow().moving_entity.m_vHeading;
+            AverageHeading -= vehicle.borrow().moving_entity.heading;
         }
 
         AverageHeading

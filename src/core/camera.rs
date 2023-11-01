@@ -5,7 +5,7 @@ use glam::*;
 // Default camera values
 pub const YAW: f32 = -90.0;
 pub const PITCH: f32 = 0.0;
-pub const SPEED: f32 = 2.5;
+pub const SPEED: f32 = 100.5;
 pub const SENSITIVITY: f32 = 0.1;
 pub const ZOOM: f32 = 45.0;
 
@@ -20,7 +20,7 @@ pub enum CameraMovement {
     Down,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Camera {
     // camera Attributes
     pub position: Vec3,
@@ -125,6 +125,8 @@ impl Camera {
 
         // update Front, Right and Up Vectors using the updated Euler angles
         self.updateCameraVectors();
+
+        println!("camera: {:#?}", self);
     }
 
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
