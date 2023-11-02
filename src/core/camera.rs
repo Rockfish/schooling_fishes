@@ -42,8 +42,8 @@ impl Camera {
         Camera {
             position: vec3(0.0, 0.0, 3.0),
             front: vec3(0.0, 0.0, -1.0),
-            world_up: vec3(0.0, 1.0, 0.0),
-            up: vec3(0.0, 1.0, 0.0),
+            world_up: vec3(0.0, 1.0, 1.0),
+            up: vec3(0.0, 0.0, 1.0),
             right: Default::default(),
             yaw: YAW,
             pitch: PITCH,
@@ -53,7 +53,6 @@ impl Camera {
         }
     }
 
-    // constructor with vectors
     pub fn camera_vec3(position: Vec3) -> Camera {
         let mut camera = Camera::new();
         camera.position = position;
@@ -71,7 +70,6 @@ impl Camera {
         camera
     }
 
-    // constructor with scalar values
     pub fn camera_scalar(pos_x: f32, pos_y: f32, pos_z: f32, up_x: f32, up_y: f32, up_z: f32, yaw: f32, pitch: f32) -> Camera {
         let mut camera = Camera::new();
         camera.position = vec3(pos_x, pos_y, pos_z);

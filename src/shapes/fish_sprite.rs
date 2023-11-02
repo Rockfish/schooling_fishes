@@ -1,6 +1,6 @@
 use crate::core::mesh::{Color, Mesh, Vertex};
 use crate::core::shader::Shader;
-use crate::core::sprite_model::{SpriteAnimationType, SpriteModel};
+use crate::core::sprite_model::{SpriteAnimationType, SpriteData, SpriteModel};
 use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
 use glam::{vec2, vec3, Vec3};
 use std::ops::Deref;
@@ -12,10 +12,10 @@ pub struct FishSprite(SpriteModel);
 impl FishSprite {
     pub fn new_fish_mesh(texture: &Rc<Texture>) -> Mesh {
         let verts = vec![
-            Vertex::new(vec3(-1.0, -2.0, 0.0), vec2(8.0, 2.0), Color::white()),
-            Vertex::new(vec3(1.0, -2.0, 0.0), vec2(24.0, 2.0), Color::white()),
-            Vertex::new(vec3(-1.0, 2.0, 0.0), vec2(8.0, 31.0), Color::white()),
-            Vertex::new(vec3(1.0, 2.0, 0.0), vec2(24.0, 31.0), Color::white()),
+            Vertex::new(vec3(-1.0, -2.0, 0.0), vec2(0.0, 0.0), Color::white()),
+            Vertex::new(vec3(1.0, -2.0, 0.0), vec2(16.0, 0.0), Color::white()),
+            Vertex::new(vec3(-1.0, 2.0, 0.0), vec2(0.0, 29.0), Color::white()),
+            Vertex::new(vec3(1.0, 2.0, 0.0), vec2(16.0, 29.0), Color::white()),
         ];
 
         let indices = vec![
@@ -42,19 +42,25 @@ impl FishSprite {
 
         let fish_mesh = FishSprite::new_fish_mesh(&file_tile_map);
 
-        let fish_model = SpriteModel {
-            name: Rc::from("Fish"),
+        let sprite_data = SpriteData {
             animation_type: SpriteAnimationType::BackAndForth,
-            shader: tile_shader.clone(),
-            mesh: Rc::new(fish_mesh),
-            x_offset: 0,
-            y_offset: 0,
-            x_step: 0,
-            y_step: 0,
+            texture_width: fish_mesh.texture.width as f32,
+            texture_height: fish_mesh.texture.height as f32,
+            x_offset: 8.0,
+            y_offset: 2.0,
+            x_step: 32.0,
+            y_step: 0.0,
             num_steps: 0,
             step_timer: 0.0,
             step_count: 0.0,
             step_increment: 1.0,
+        };
+
+        let fish_model = SpriteModel {
+            name: Rc::from("Fish"),
+            shader: tile_shader.clone(),
+            mesh: Rc::new(fish_mesh),
+            sprite_data,
         };
 
         fish_model

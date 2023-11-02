@@ -7,7 +7,6 @@ use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
 use glam::*;
 use russimp::scene::*;
 use russimp::sys::*;
-use russimp::Russult;
 use std::os::raw::c_uint;
 use std::path::{Path, PathBuf};
 use std::ptr::*;

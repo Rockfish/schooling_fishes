@@ -103,7 +103,7 @@ impl GameWorld {
             let mut sprite = sprite_model.clone();
             // let mut sprite = sprite_model.copy();
 
-            sprite.step_count = (i % 3) as f32;
+            sprite.sprite_data.step_count = (i % 3) as f32;
 
             let vehicle = Vehicle::new(
                 game_world.clone(),
