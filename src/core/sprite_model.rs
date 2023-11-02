@@ -1,6 +1,6 @@
 use crate::core::mesh::Mesh;
 use crate::core::shader::Shader;
-use glam::{vec2, Vec3};
+use glam::{vec2, Vec2, Vec3};
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -20,8 +20,7 @@ pub struct SpriteData {
     pub animation_type: SpriteAnimationType,
     pub texture_width: f32,
     pub texture_height: f32,
-    pub x_offset: f32, // x position of the first glyph
-    pub y_offset: f32, // x position of the first glyph
+    pub offset: Vec2, // position of the glyph in the texture
     pub x_step: f32, // horizontal offset between glyphs for the same sprite
     pub y_step: f32, // vertical offset between glyphs for the same sprite
     pub num_steps: u32,
@@ -57,8 +56,8 @@ impl SpriteModel {
         }
 
         self.shader.setVec2("offset", &vec2(
-            self.sprite_data.x_offset + self.sprite_data.x_step * self.sprite_data.step_count,
-            self.sprite_data.y_offset + self.sprite_data.y_step * self.sprite_data.step_count,
+            self.sprite_data.offset.x + self.sprite_data.x_step * self.sprite_data.step_count,
+            self.sprite_data.offset.y + self.sprite_data.y_step * self.sprite_data.step_count,
             )
         );
 

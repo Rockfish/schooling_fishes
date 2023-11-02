@@ -85,8 +85,19 @@ fn main() {
     gl::load(|e| glfw.get_proc_address_raw(e) as *const std::os::raw::c_void);
 
     // perspective setting
-    //let camera = Camera::camera_vec3(vec3(300.0, 300.0, 500.0));
-    let camera = Camera::camera_vec3_up_yaw_pitch(vec3(400.0, 400.0, 700.0), vec3(0.0, 1.0, 0.0), -90.0, 0.0);
+    // //let camera = Camera::camera_vec3(vec3(300.0, 300.0, 500.0));
+    let camera = Camera::camera_vec3_up_yaw_pitch(
+        vec3(400.0, 400.0, 700.0),
+        vec3(0.0, 1.0, 0.0),
+        -90.0, // seems camera starts by looking down the x-axis, so needs to turn left to see the plane
+        0.0);
+
+    // let camera = Camera::camera_vec3_up_yaw_pitch(
+    //     vec3(400.0, -200.0, 50.0),
+    //     vec3(0.0, 1.0, 0.0),
+    //     -90.0, // seems camera starts by looking down the x-axis, so needs to turn left to see the plane
+    //     90.0);
+
 
     // for ortho perspective
     // let camera = Camera::camera_vec3(vec3(0.0, 0.0, 55.0));
@@ -133,7 +144,7 @@ fn main() {
 
     let fish_sprite = FishSprite::new_sprite_model(tile_shader.clone());
 
-    let game_world = GameWorld::new(600, 600, fish_sprite);
+    let game_world = GameWorld::new(800, 800, fish_sprite);
 
     let plane = Plane::new(water_texture);
 
@@ -170,7 +181,10 @@ fn main() {
         GameWorld::Update(&game_world, state.deltaTime);
 
         shader_texture.use_shader_with(&projection, &view);
-        plane.render(&shader_texture, vec3(300.0, 300.0, -50.0), 0.0, vec3(300.0, 300.0, 1.0));
+        plane.render(&shader_texture,
+                     vec3(400.0, 400.0, -5.0),
+                     0.0,
+                     vec3(400.0, 400.0, 1.0));
 
         tile_shader.use_shader_with(&projection, &view);
         game_world.borrow().render(state.deltaTime);

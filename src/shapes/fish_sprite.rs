@@ -1,16 +1,18 @@
+use std::collections::HashMap;
 use crate::core::mesh::{Color, Mesh, Vertex};
 use crate::core::shader::Shader;
 use crate::core::sprite_model::{SpriteAnimationType, SpriteData, SpriteModel};
 use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
-use glam::{vec2, vec3, Vec3};
-use std::ops::Deref;
+use glam::{vec2, vec3};
 use std::path::PathBuf;
 use std::rc::Rc;
 
 pub struct FishSprite(SpriteModel);
 
 impl FishSprite {
+
     pub fn new_fish_mesh(texture: &Rc<Texture>) -> Mesh {
+
         let verts = vec![
             Vertex::new(vec3(-1.0, -2.0, 0.0), vec2(0.0, 0.0), Color::white()),
             Vertex::new(vec3(1.0, -2.0, 0.0), vec2(16.0, 0.0), Color::white()),
@@ -19,15 +21,16 @@ impl FishSprite {
         ];
 
         let indices = vec![
-            0, 1, 2, //1, 2, 3,
-            1, 3, 2, //  2, 4, 3
+            0, 1, 2,
+            1, 3, 2,
         ];
 
         Mesh::new(verts, indices, texture)
     }
 
     pub fn new_sprite_model(tile_shader: Rc<Shader>) -> SpriteModel {
-        let file_tile_map = Rc::new(
+
+        let tile_texture = Rc::new(
             Texture::new(
                 PathBuf::from("assets/images/fish_3.png"),
                 &TextureConfig {
@@ -40,14 +43,20 @@ impl FishSprite {
             .unwrap(),
         );
 
-        let fish_mesh = FishSprite::new_fish_mesh(&file_tile_map);
+        let fish_mesh = FishSprite::new_fish_mesh(&tile_texture);
 
-        let sprite_data = SpriteData {
+        // fish positions by color
+        let mut offsets = HashMap::new();
+        offsets.insert("gold", vec2(8.0, 2.0));
+        offsets.insert("grey", vec2(104.0, 2.0));
+        offsets.insert("blue", vec2(8.0, 130.0));
+
+
+        let fish_data = SpriteData {
             animation_type: SpriteAnimationType::BackAndForth,
             texture_width: fish_mesh.texture.width as f32,
             texture_height: fish_mesh.texture.height as f32,
-            x_offset: 8.0,
-            y_offset: 2.0,
+            offset: offsets["gold"],
             x_step: 32.0,
             y_step: 0.0,
             num_steps: 0,
@@ -60,7 +69,7 @@ impl FishSprite {
             name: Rc::from("Fish"),
             shader: tile_shader.clone(),
             mesh: Rc::new(fish_mesh),
-            sprite_data,
+            sprite_data: fish_data,
         };
 
         fish_model

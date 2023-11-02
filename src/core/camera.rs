@@ -42,8 +42,8 @@ impl Camera {
         Camera {
             position: vec3(0.0, 0.0, 3.0),
             front: vec3(0.0, 0.0, -1.0),
-            world_up: vec3(0.0, 1.0, 1.0),
-            up: vec3(0.0, 0.0, 1.0),
+            world_up: vec3(0.0, 1.0, 0.0),
+            up: vec3(0.0, 1.0, 0.0),
             right: Default::default(),
             yaw: YAW,
             pitch: PITCH,
@@ -60,10 +60,10 @@ impl Camera {
         camera
     }
 
-    pub fn camera_vec3_up_yaw_pitch(position: Vec3, up: Vec3, yaw: f32, pitch: f32) -> Camera {
+    pub fn camera_vec3_up_yaw_pitch(position: Vec3, world_up: Vec3, yaw: f32, pitch: f32) -> Camera {
         let mut camera = Camera::new();
         camera.position = position;
-        camera.up = up;
+        camera.world_up = world_up;
         camera.yaw = yaw;
         camera.pitch = pitch;
         camera.updateCameraVectors();
