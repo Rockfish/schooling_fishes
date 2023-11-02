@@ -64,7 +64,7 @@ impl Camera {
     pub fn camera_vec3_up_yaw_pitch(position: Vec3, up: Vec3, yaw: f32, pitch: f32) -> Camera {
         let mut camera = Camera::new();
         camera.position = position;
-        camera.world_up = up;
+        camera.up = up;
         camera.yaw = yaw;
         camera.pitch = pitch;
         camera.updateCameraVectors();

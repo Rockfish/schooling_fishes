@@ -3,8 +3,10 @@ use crate::cell_space_partition::CellSpacePartition;
 use crate::config_loader::CONFIG;
 use crate::core::mesh::Mesh;
 use crate::core::shader::Shader;
+use crate::core::sprite_model::SpriteModel;
 use crate::entity_functions::TagNeighbors;
 use crate::path::Path;
+use crate::shapes::fish_sprite::FishSprite;
 use crate::utils::*;
 use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
@@ -12,11 +14,9 @@ use glam::{vec2, Vec2};
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
-use crate::core::tile_model::TileModel;
 
 #[derive(Debug)]
 pub struct GameWorld {
-
     //a container of all the moving entities
     pub m_Vehicles: Vec<Rc<RefCell<Vehicle>>>,
 
@@ -60,7 +60,7 @@ pub struct GameWorld {
 }
 
 impl GameWorld {
-    pub fn new(cx: i32, cy: i32) -> Rc<RefCell<GameWorld>> {
+    pub fn new(cx: i32, cy: i32, sprite_model: SpriteModel) -> Rc<RefCell<GameWorld>> {
         let border = 30f32;
         let path = Path::new(5, border, border, cx as f32 - border, cy as f32 - border, true);
         let cell_space = CellSpacePartition::<Vehicle>::new(cx as f32, cy as f32, CONFIG.NumCellsX, CONFIG.NumCellsY, CONFIG.NumAgents);
@@ -93,12 +93,17 @@ impl GameWorld {
         let game_world = Rc::new(RefCell::new(game_world));
 
         // setup the agents
-        for _a in 0..CONFIG.NumAgents {
+        for i in 0..CONFIG.NumAgents {
             //determine a random starting position
             let spawn_pos = vec2(
                 cx as f32 / 2.0 + RandomClamped() * cx as f32 / 2.0,
                 cy as f32 / 2.0 + RandomClamped() * cy as f32 / 2.0,
             );
+
+            let mut sprite = sprite_model.clone();
+            // let mut sprite = sprite_model.copy();
+
+            sprite.step_count = (i % 3) as f32;
 
             let vehicle = Vehicle::new(
                 game_world.clone(),
@@ -109,7 +114,8 @@ impl GameWorld {
                 CONFIG.MaxSteeringForce,
                 CONFIG.MaxSpeed,
                 CONFIG.MaxTurnRatePerSecond,
-                CONFIG.VehicleScale,
+                CONFIG.Scale,
+                sprite,
             );
 
             vehicle.borrow().m_pSteering.borrow_mut().FlockingOn();
@@ -138,13 +144,6 @@ impl GameWorld {
             }
         }
 
-        // TODO: the way cell space partitioning is controlled doesn't make sense
-        // since CellSpacePartition object is owned by the GameWorld and not by the
-        // vehicles. The cpp code checks the vehicles to find out if partition is on
-        // and then has the vehicles change the gameworld's CellSpacePartition object
-        // instead of just having the gameworld do it itself.
-        //game_world.borrow_mut().ToggleSpacePartition();
-
         //create any obstacles or walls
         //CreateObstacles();
         //CreateWalls();
@@ -170,10 +169,7 @@ impl GameWorld {
         game_world.borrow_mut().m_dAvFrameTime = time_elapsed; // FrameRateSmoother.Update(time_elapsed);
 
         for vehicle in &game_world.borrow().m_Vehicles {
-            //vehicle.Update(time_elapsed);
             let old_position = Vehicle::Update(vehicle, time_elapsed);
-
-            // This bit was in vehicle, seem to make more sense to have it here.
             if game_world.borrow().m_bCellSpaceOn {
                 game_world.borrow().m_pCellSpace.borrow_mut().UpdateEntity(vehicle, &old_position);
             }
@@ -202,7 +198,7 @@ impl GameWorld {
         TagNeighbors(pVehicle, &self.m_Obstacles, range);
     }
 
-    pub fn render(&self, mesh: &mut TileModel, delta_time: f32) {
+    pub fn render(&self, delta_time: f32) {
         for wall in &self.m_Walls {
             wall.Render(true);
         }
@@ -214,7 +210,7 @@ impl GameWorld {
         let mut first = true;
         //render the agents
         for vehicle in &self.m_Vehicles {
-            vehicle.borrow_mut().render(mesh, delta_time);
+            vehicle.borrow_mut().render(delta_time);
 
             //render cell partitioning stuff
             if self.m_bShowCellSpaceInfo && first {

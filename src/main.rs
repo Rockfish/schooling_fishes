@@ -30,11 +30,13 @@ mod wall_2d;
 extern crate glfw;
 
 use crate::core::camera::{Camera, CameraMovement};
+use crate::core::mesh::Mesh;
 use crate::core::model::Model;
 use crate::core::shader::Shader;
+use crate::core::sprite_model::{SpriteAnimationType, SpriteModel};
 use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
 use crate::game_world::GameWorld;
-use crate::shapes::fish_mesh::new_fish_mesh;
+use crate::shapes::fish_sprite::FishSprite;
 use crate::shapes::plane::Plane;
 use glad_gl::gl;
 use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
@@ -44,8 +46,6 @@ use log::error;
 use std::path::{Path, PathBuf};
 use std::ptr;
 use std::rc::Rc;
-use crate::core::mesh::Mesh;
-use crate::core::tile_model::{TileAnimationType, TileModel};
 
 const SCR_WIDTH: f32 = 800.0;
 const SCR_HEIGHT: f32 = 800.0;
@@ -86,11 +86,7 @@ fn main() {
 
     // perspective setting
     //let camera = Camera::camera_vec3(vec3(300.0, 300.0, 500.0));
-    let camera = Camera::camera_vec3_up_yaw_pitch(
-        vec3(400.0, 0.0, 200.0),
-        vec3(0.0, 1.0, 0.0),
-        -90.0,
-        90.0);
+    let camera = Camera::camera_vec3_up_yaw_pitch(vec3(400.0, 400.0, 700.0), vec3(0.0, 1.0, 0.0), -90.0, 0.0);
 
     // for ortho perspective
     // let camera = Camera::camera_vec3(vec3(0.0, 0.0, 55.0));
@@ -105,14 +101,24 @@ fn main() {
         lastY: SCR_HEIGHT / 2.0,
     };
 
-    let game_world = GameWorld::new(600, 600);
-
     // let shader = Shader::new("assets/shaders/camera.vert", "assets/shaders/camera.frag", None).unwrap();
-    let shader_texture = Shader::new("assets/shaders/camera_texture.vert", "assets/shaders/camera_texture.frag", None).unwrap();
-    let tile_shader = Shader::new("assets/shaders/tile_texture.vert", "assets/shaders/tile_texture.frag", None).unwrap();
-    let basic_shader = Shader::new("assets/shaders/basic_model.vert", "assets/shaders/basic_model.frag", None).unwrap();
+    let shader_texture = Shader::new(
+        "assets/shaders/camera_texture.vert",
+        "assets/shaders/camera_texture.frag",
+        None::<String>,
+    )
+    .unwrap();
+    let tile_shader = Shader::new(
+        "assets/shaders/tile_texture.vert",
+        "assets/shaders/tile_texture.frag",
+        None::<String>,
+    )
+    .unwrap();
+    let basic_shader = Shader::new("assets/shaders/basic_model.vert", "assets/shaders/basic_model.frag", None::<String>).unwrap();
 
-    let plane_texture = Rc::new(
+    let tile_shader = Rc::new(tile_shader);
+
+    let water_texture = Rc::new(
         Texture::new(
             PathBuf::from("assets/images/water_texture.png"),
             &TextureConfig {
@@ -125,93 +131,20 @@ fn main() {
         .unwrap(),
     );
 
-    let texture = Rc::new(
-        Texture::new(
-            PathBuf::from("assets/images/fish_3.png"),
-            &TextureConfig {
-                flip_v: true,
-                gamma_correction: false,
-                filter: TextureFilter::Linear,
-                texture_type: TextureType::Diffuse,
-            },
-        )
-        .unwrap(),
-    );
+    let fish_sprite = FishSprite::new_sprite_model(tile_shader.clone());
 
-    let model_name: Rc<str> = Rc::from("Fish");
+    let game_world = GameWorld::new(600, 600, fish_sprite);
 
-    let tile_shader= Rc::new(tile_shader);
+    let plane = Plane::new(water_texture);
 
-    let fish_mesh = new_fish_mesh(&texture);
+    let pretty_fish = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/Duck/glTF/Duck.gltf";
+    let large_model = Model::new(pretty_fish, false, false).unwrap();
 
-    let mut tile_model = TileModel {
-        name: model_name.clone(),
-        animation_type: TileAnimationType::BackAndForth,
-        shader: tile_shader.clone(),
-        mesh: Rc::new(fish_mesh),
-        x_offset: 0,
-        y_offset: 0,
-        x_step: 0,
-        y_step: 0,
-        num_steps: 0,
-        step_time: 0.0,
-        step_count: 0.0,
-        step_increment: 1.0,
-    };
-
-    // let line_box = LineBox::new();
-    // let triangle = Triangle::new();
-    // let fish = SmallFish::new(fish_texture.expect("texture id"));
-    let plane = Plane::new(plane_texture);
-
-    let pretty_fish = "/Users/John/Dev_Assets/models/Oyanirami0.3ds";
-    let pretty_fish = "/Users/john/Dev_Rust/Dev/learn_opengl_with_rust/resources/objects/cyborg/cyborg.obj";
-    let pretty_fish= "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/Duck/glTF/Duck.gltf";
-
-    let pretty_fish_model = Model::new(pretty_fish, false, false).unwrap();
-
-    // let mut VAO: GLuint = 0;
-    // let mut VBO: GLuint = 0;
-    // let mut line_VAO: GLuint = 0;
-    // let mut line_VBO: GLuint = 0;
-    //
-    // #[rustfmt::skip]
-    // let vertices: [f32; 9] = [
-    //     -1.0,  0.6,  0.0,
-    //      1.0,  0.0,  0.0,
-    //     -1.0, -0.6,  0.0
-    // ];
-    //
-    // unsafe {
-    //     // gl::Enable(gl::DEPTH_TEST);
-    //
-    //     gl::GenVertexArrays(1, &mut VAO);
-    //     gl::GenBuffers(1, &mut VBO);
-    //     gl::BindVertexArray(VAO);
-    //
-    //     gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
-    //     gl::BufferData(
-    //         gl::ARRAY_BUFFER,
-    //         (vertices.len() * SIZE_OF_FLOAT) as GLsizeiptr,
-    //         vertices.as_ptr() as *const GLvoid,
-    //         gl::STATIC_DRAW,
-    //     );
-    //
-    //     gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, (3 * SIZE_OF_FLOAT) as GLsizei, ptr::null());
-    //     gl::EnableVertexAttribArray(0);
-    //
-    //     gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-    //     gl::BindVertexArray(0);
-    // }
     unsafe {
         gl::Enable(gl::DEPTH_TEST);
     }
 
     let view = state.camera.get_view_matrix();
-
-    let mut tile_time = 0f32;
-    let mut tile_count = 0.0f32;
-    let mut tile_increment = 1.0f32;
 
     // render loop
     while !window.should_close() {
@@ -224,60 +157,31 @@ fn main() {
             handle_window_event(&mut window, event, &mut state);
         }
 
-        let view = state.camera.get_view_matrix();
-
         unsafe {
             // render
             gl::ClearColor(0.1, 0.5, 0.1, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-
-            let projection = Mat4::perspective_rh_gl(state.camera.zoom.to_radians(), SCR_WIDTH / SCR_HEIGHT, 0.1, 2000.0);
-            // let projection = Mat4::orthographic_rh_gl(0.0, 600.0, 0.0, 600.0, 0.1, 100.0);
-
-            // let mut model_transform = Mat4::from_translation(Vec3::new(400.0, 400.0, 0.0));
-            // model_transform *= Mat4::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), glfw.get_time() as f32);
-            // model_transform *= Mat4::from_scale(Vec3::new(10.0, 10.0, 1.0));
-
-            // shader.setMat4("model", &model_transform);
-            // shader.setVec3("color", &vec3(1.0, 0.5, 0.2));
-            // gl::BindVertexArray(VAO);
-            // gl::DrawArrays(gl::TRIANGLES, 0, 3);
-            // gl::BindVertexArray(0);
-
-            GameWorld::Update(&game_world, state.deltaTime);
-
-            shader_texture.use_shader_with(&projection, &view);
-
-            plane.render(&shader_texture, vec3(300.0, 300.0, -50.0), 0.0, vec3(300.0, 300.0, 1.0));
-
-
-            tile_shader.use_shader_with(&projection, &view);
-
-            // if tile_time <= 0.0 {
-            //     tile_time = 0.1;
-            //     tile_count += tile_increment;
-            //     if tile_count > 2.0 {
-            //         tile_count = 1.0;
-            //         tile_increment = -1.0;
-            //     }
-            //     if tile_count < 0.0 {
-            //         tile_count = 1.0;
-            //         tile_increment = 1.0;
-            //     }
-            // }
-            //
-            // tile_time -= state.deltaTime;
-            //
-            // tile_shader.setVec2("offset", &vec2(32.0 * tile_count, 0.0));
-
-            // fish_mesh.render(&tile_shader, vec3(300.0, 300.0, 0.0), 0.0, vec3(100.0, 100.0, 1.0));
-
-            game_world.borrow().render(&mut tile_model, state.deltaTime);
-            // // line_box.render(&shader, vec3(200.0, 200.0, 0.0), vec3(50.0, 50.0, 1.0), &vec3(1.0, 1.0, 1.0));
-
-            basic_shader.use_shader_with(&projection, &view);
-            pretty_fish_model.Draw(&basic_shader, vec3(200.0, 200.0, 0.0), 20.0f32 * glfw.get_time() as f32, vec3(0.5, 0.5, 0.5));
         }
+
+        let view = state.camera.get_view_matrix();
+        let projection = Mat4::perspective_rh_gl(state.camera.zoom.to_radians(), SCR_WIDTH / SCR_HEIGHT, 0.1, 2000.0);
+        // let projection = Mat4::orthographic_rh_gl(0.0, 600.0, 0.0, 600.0, 0.1, 100.0);
+
+        GameWorld::Update(&game_world, state.deltaTime);
+
+        shader_texture.use_shader_with(&projection, &view);
+        plane.render(&shader_texture, vec3(300.0, 300.0, -50.0), 0.0, vec3(300.0, 300.0, 1.0));
+
+        tile_shader.use_shader_with(&projection, &view);
+        game_world.borrow().render(state.deltaTime);
+
+        basic_shader.use_shader_with(&projection, &view);
+        large_model.Draw(
+            &basic_shader,
+            vec3(200.0, 200.0, 50.0),
+            20.0f32 * glfw.get_time() as f32,
+            vec3(0.2, 0.2, 0.2),
+        );
 
         window.swap_buffers();
     }

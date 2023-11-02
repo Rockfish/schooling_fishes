@@ -25,7 +25,7 @@ pub struct ConfigLoader {
     pub MaxSpeed: f32,
     pub VehicleMass: f32,
 
-    pub VehicleScale: f32,
+    pub Scale: f32,
     pub MaxTurnRatePerSecond: f32,
 
     pub SeparationWeight: f32,
@@ -85,7 +85,7 @@ pub const CONFIG: ConfigLoader = ConfigLoader {
     MaxSpeed: 150.0,
 
     VehicleMass: 1.0,
-    VehicleScale: 3.5,
+    Scale: 3.5,
 
     SeparationWeight: 1.0 * STEERING_FORCE_TWEAKER,
     AlignmentWeight: 1.0 * STEERING_FORCE_TWEAKER,

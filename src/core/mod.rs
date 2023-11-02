@@ -6,8 +6,8 @@ pub mod mesh;
 pub mod model;
 pub mod model_mesh;
 pub mod shader;
+pub mod sprite_model;
 pub mod texture;
-pub mod tile_model;
 
 type ShaderId = u32;
 

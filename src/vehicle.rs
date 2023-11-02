@@ -1,16 +1,14 @@
 use crate::base_entity::{BaseEntity, EntityBase};
 use crate::config_loader::CONFIG;
-use crate::core::mesh::Mesh;
-use crate::core::shader::Shader;
+use crate::core::sprite_model::SpriteModel;
 use crate::game_world::GameWorld;
 use crate::moving_entity::MovingEntity;
 use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
 use crate::utils::{RandInRange, Truncate, WrapAround};
-use glam::{vec2, vec3, Mat4, Vec2, Vec3};
+use glam::{vec2, vec3, Vec2, Vec3};
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::core::tile_model::TileModel;
 
 #[derive(Debug)]
 pub struct Vehicle {
@@ -44,6 +42,8 @@ pub struct Vehicle {
     m_vecVehicleVB: Vec<Vec2>,
 
     color: Vec3,
+
+    sprite_model: SpriteModel,
 }
 
 impl Vehicle {
@@ -58,6 +58,7 @@ impl Vehicle {
         max_speed: f32,
         max_turn_rate: f32,
         scale: f32,
+        sprite: SpriteModel,
     ) -> Rc<RefCell<Vehicle>> {
         let mut base_entity = BaseEntity::with_type_and_position(0, position, scale);
         base_entity.scale = vec2(scale, scale);
@@ -86,6 +87,7 @@ impl Vehicle {
             m_vecVehicleVB: vec![],
             moving_entity,
             color,
+            sprite_model: sprite,
         }));
 
         let id = vehicle.borrow().id();
@@ -166,7 +168,7 @@ impl Vehicle {
         old_pos
     }
 
-    pub fn render(&mut self, mesh: &mut TileModel, delta_time: f32) {
+    pub fn render(&mut self, delta_time: f32) {
         let mut angle = self.moving_entity.heading.x.acos().to_degrees();
 
         if self.moving_entity.heading.y < 0.0 {
@@ -176,7 +178,7 @@ impl Vehicle {
         let position = vec3(self.base_entity.position.x, self.base_entity.position.y, 0.0);
         let scale = vec3(self.base_entity.scale.x, self.base_entity.scale.y, 1.0);
 
-        mesh.render(position, angle - 90.0, scale, delta_time);
+        self.sprite_model.render(position, angle - 90.0, scale, delta_time);
 
         // println!("fish id: {}   position: {}", self.ID(), position);
 

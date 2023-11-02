@@ -16,29 +16,39 @@ use std::ptr;
 use crate::core::ShaderId;
 use crate::*;
 
+#[derive(Debug, Clone)]
 pub struct Shader {
     pub id: ShaderId,
+    pub vert_file: String,
+    pub frag_file: String,
+    pub geom_file: Option<String>,
 }
 
 impl Shader {
-    pub fn new(vertexPath: &str, fragmentPath: &str, geometryPath: Option<&str>) -> Result<Self, String> {
-        let mut shader = Shader { id: 0 };
+    pub fn new(vert_file: impl Into<String>, frag_file: impl Into<String>, geom_file: Option<impl Into<String>>) -> Result<Self, String> {
+        let mut shader = Shader {
+            id: 0,
+            vert_file: vert_file.into(),
+            frag_file: frag_file.into(),
+            geom_file: geom_file.map(|f| f.into()),
+        };
+
         let mut vertexCode: String = Default::default();
         let mut fragmentCode: String = Default::default();
         let mut geometryCode: String = Default::default();
 
-        match read_file(vertexPath) {
+        match read_file(&shader.vert_file) {
             Ok(content) => vertexCode = content,
             Err(error) => return Err(error.to_string()),
         }
 
-        match read_file(fragmentPath) {
+        match read_file(&shader.frag_file) {
             Ok(content) => fragmentCode = content,
             Err(error) => return Err(error.to_string()),
         }
 
-        if let Some(geometryPath) = geometryPath {
-            match read_file(geometryPath) {
+        if let Some(geometryPath) = &shader.geom_file {
+            match read_file(&geometryPath) {
                 Ok(content) => geometryCode = content,
                 Err(error) => return Err(error.to_string()),
             }
@@ -67,7 +77,7 @@ impl Shader {
 
             // geometry shader
             let mut geometryShader: GLuint = 0;
-            if let Some(_geometryPath) = geometryPath {
+            if shader.geom_file.is_some() {
                 geometryShader = gl::CreateShader(gl::GEOMETRY_SHADER);
                 let c_string = c_string!(geometryCode);
                 gl::ShaderSource(geometryShader, 1, &c_string.as_ptr(), ptr::null());
@@ -83,7 +93,7 @@ impl Shader {
             // link the first program object
             gl::AttachShader(shader.id, vertexShader);
             gl::AttachShader(shader.id, fragmentShader);
-            if let Some(_geometryPath) = geometryPath {
+            if shader.geom_file.is_some() {
                 gl::AttachShader(shader.id, geometryShader);
             }
             gl::LinkProgram(shader.id);
@@ -95,7 +105,7 @@ impl Shader {
             // delete the shaders as they're linked into our program now and no longer necessary
             gl::DeleteShader(vertexShader);
             gl::DeleteShader(fragmentShader);
-            if let Some(_geometryPath) = geometryPath {
+            if shader.geom_file.is_some() {
                 gl::DeleteShader(geometryShader);
             }
         }
