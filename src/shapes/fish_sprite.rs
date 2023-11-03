@@ -11,7 +11,7 @@ pub struct FishSprite(SpriteModel);
 
 impl FishSprite {
 
-    pub fn new_fish_mesh(texture: &Rc<Texture>) -> Mesh {
+    pub fn new_fish_mesh(texture: &Rc<Texture>, flip_to_xz: bool) -> Mesh {
 
         let verts = vec![
             Vertex::new(vec3(-1.0, -2.0, 0.0), vec2(0.0, 0.0), Color::white()),
@@ -25,10 +25,10 @@ impl FishSprite {
             1, 3, 2,
         ];
 
-        Mesh::new(verts, indices, texture)
+        Mesh::new(verts, indices, texture, flip_to_xz)
     }
 
-    pub fn new_sprite_model(tile_shader: Rc<Shader>) -> SpriteModel {
+    pub fn new_sprite_model(tile_shader: Rc<Shader>, flip_to_xz: bool) -> SpriteModel {
 
         let tile_texture = Rc::new(
             Texture::new(
@@ -43,7 +43,7 @@ impl FishSprite {
             .unwrap(),
         );
 
-        let fish_mesh = FishSprite::new_fish_mesh(&tile_texture);
+        let fish_mesh = FishSprite::new_fish_mesh(&tile_texture, flip_to_xz);
 
         // fish positions by color
         let mut offsets = HashMap::new();

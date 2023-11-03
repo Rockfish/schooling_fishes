@@ -87,10 +87,11 @@ fn main() {
     // perspective setting
     // //let camera = Camera::camera_vec3(vec3(300.0, 300.0, 500.0));
     let camera = Camera::camera_vec3_up_yaw_pitch(
-        vec3(400.0, 400.0, 700.0),
+        // vec3(400.0, 400.0, 700.0), for current x,y world
+        vec3(0.0, 170.0, 500.0), // for xz world
         vec3(0.0, 1.0, 0.0),
         -90.0, // seems camera starts by looking down the x-axis, so needs to turn left to see the plane
-        0.0);
+        -20.0);
 
     // let camera = Camera::camera_vec3_up_yaw_pitch(
     //     vec3(400.0, -200.0, 50.0),
@@ -142,7 +143,7 @@ fn main() {
         .unwrap(),
     );
 
-    let fish_sprite = FishSprite::new_sprite_model(tile_shader.clone());
+    let fish_sprite = FishSprite::new_sprite_model(tile_shader.clone(), true);
 
     let game_world = GameWorld::new(800, 800, fish_sprite);
 
@@ -177,22 +178,23 @@ fn main() {
         let view = state.camera.get_view_matrix();
         let projection = Mat4::perspective_rh_gl(state.camera.zoom.to_radians(), SCR_WIDTH / SCR_HEIGHT, 0.1, 2000.0);
         // let projection = Mat4::orthographic_rh_gl(0.0, 600.0, 0.0, 600.0, 0.1, 100.0);
+        // let projection = Mat4::orthographic_rh_gl(0.0, 1000.0, 0.0, 1000.0, 0.0, 1000.0);
 
         GameWorld::Update(&game_world, state.deltaTime);
 
         shader_texture.use_shader_with(&projection, &view);
         plane.render(&shader_texture,
-                     vec3(400.0, 400.0, -5.0),
+                     vec3(-400.0, -5.0, -400.0),
                      0.0,
-                     vec3(400.0, 400.0, 1.0));
+                     vec3(800.0, 1.0, 800.0));
 
         tile_shader.use_shader_with(&projection, &view);
         game_world.borrow().render(state.deltaTime);
 
         basic_shader.use_shader_with(&projection, &view);
-        large_model.Draw(
+        large_model.render(
             &basic_shader,
-            vec3(200.0, 200.0, 50.0),
+            vec3(0.0, 0.0, 0.0),
             20.0f32 * glfw.get_time() as f32,
             vec3(0.2, 0.2, 0.2),
         );

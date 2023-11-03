@@ -61,10 +61,11 @@ pub struct Mesh {
     pub VAO: u32,
     pub VBO: u32,
     pub EBO: u32,
+    pub flip_to_xz: bool,
 }
 
 impl Mesh {
-    pub fn new(vertices: Vec<Vertex>, indices: Vec<u32>, texture: &Rc<Texture>) -> Mesh {
+    pub fn new(vertices: Vec<Vertex>, indices: Vec<u32>, texture: &Rc<Texture>, flip_to_xz: bool) -> Mesh {
         let mut VAO: GLuint = 0;
         let mut VBO: GLuint = 0;
         let mut EBO: GLuint = 0;
@@ -129,11 +130,24 @@ impl Mesh {
             VAO,
             VBO,
             EBO,
+            flip_to_xz
         }
     }
 
     pub fn render(&self, shader: &Shader, position: Vec3, angle: f32, scale: Vec3) {
+
+        let position = if self.flip_to_xz {
+            vec3(position.x - 400.0, 0.0, position.y - 400.0)
+        } else {
+            position
+        };
+
         let mut model_transform = Mat4::from_translation(position);
+
+        if self.flip_to_xz {
+            model_transform *= Mat4::from_axis_angle(vec3(1.0, 0.0, 0.0), 90f32.to_radians());
+        }
+
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);
         shader.setMat4("model", &model_transform);

@@ -31,6 +31,19 @@ impl Plane {
             -1.0,   1.0,  0.0,  0.0, 1.0,
         ];
 
+        // XZ plane
+        #[rustfmt::skip]
+            let vertices: [f32; 30] = [
+            // first
+            0.0, 0.0, 0.0,   0.0, 0.0,
+            1.0, 0.0, 0.0,   1.0, 0.0,
+            0.0, 0.0, 1.0,   0.0, 1.0,
+            // second
+             1.0, 0.0, 0.0,   1.0, 0.0,
+             1.0, 0.0, 1.0,   1.0, 1.0,
+             0.0, 0.0, 1.0,   0.0, 1.0,
+        ];
+
         unsafe {
             gl::GenVertexArrays(1, &mut VAO);
             gl::GenBuffers(1, &mut VBO);
@@ -68,7 +81,7 @@ impl Plane {
 
     pub fn render(&self, shader: &Shader, position: Vec3, angle: f32, scale: Vec3) {
         let mut model_transform = Mat4::from_translation(position);
-        model_transform *= Mat4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle.to_radians());
+        model_transform *= Mat4::from_axis_angle(vec3(1.0, 0.0, 0.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);
 
         shader.setMat4("model", &model_transform);

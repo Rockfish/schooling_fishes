@@ -37,9 +37,9 @@ impl Model {
         Ok(model)
     }
 
-    pub fn Draw(&self, shader: &Shader, position: Vec3, angle: f32, scale: Vec3) {
+    pub fn render(&self, shader: &Shader, position: Vec3, angle: f32, scale: Vec3) {
         let mut model_transform = Mat4::from_translation(position);
-        model_transform *= Mat4::from_axis_angle(vec3(1.0, 0.0, 0.0), 90f32.to_radians());
+        // model_transform *= Mat4::from_axis_angle(vec3(1.0, 0.0, 0.0), 90f32.to_radians());
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 1.0, 0.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);
 
