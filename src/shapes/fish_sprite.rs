@@ -7,7 +7,7 @@ use glam::{vec2, vec3};
 use std::path::PathBuf;
 use std::rc::Rc;
 
-pub struct FishSprite(SpriteModel);
+pub struct FishSprite;
 
 impl FishSprite {
 

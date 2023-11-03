@@ -77,7 +77,7 @@ impl ModelMesh {
         mesh
     }
 
-    pub fn render(&self, shader: &Shader) {
+    pub fn render(&self, shader: &Rc<Shader>) {
         // bind appropriate textures
         let mut diffuse_count: u32 = 0;
         let mut specular_count: u32 = 0;

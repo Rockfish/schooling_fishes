@@ -30,17 +30,15 @@ mod wall_2d;
 extern crate glfw;
 
 use crate::core::camera::{Camera, CameraMovement};
-use crate::core::mesh::Mesh;
-use crate::core::model::Model;
+use crate::core::model::{Model, ModelBuilder};
 use crate::core::shader::Shader;
-use crate::core::sprite_model::{SpriteAnimationType, SpriteModel};
 use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
 use crate::game_world::GameWorld;
 use crate::shapes::fish_sprite::FishSprite;
 use crate::shapes::plane::Plane;
 use glad_gl::gl;
-use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
-use glam::{vec2, vec3, Mat4, Vec3};
+use glad_gl::gl::GLuint;
+use glam::{vec3, Mat4, Vec3};
 use glfw::{Action, Context, Key};
 use log::error;
 use std::path::{Path, PathBuf};
@@ -126,8 +124,14 @@ fn main() {
         None::<String>,
     )
     .unwrap();
-    let basic_shader = Shader::new("assets/shaders/basic_model.vert", "assets/shaders/basic_model.frag", None::<String>).unwrap();
 
+    let model_shader = Shader::new(
+        "assets/shaders/basic_model.vert",
+        "assets/shaders/basic_model.frag",
+        None::<String>
+    ).unwrap();
+
+    let model_shader = Rc::new(model_shader);
     let tile_shader = Rc::new(tile_shader);
 
     let water_texture = Rc::new(
@@ -149,8 +153,10 @@ fn main() {
 
     let plane = Plane::new(water_texture);
 
-    let pretty_fish = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/Duck/glTF/Duck.gltf";
-    let large_model = Model::new(pretty_fish, false, false).unwrap();
+    let big_fish = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/BarramundiFish/glTF/BarramundiFish.gltf";
+    let duck = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/Duck/glTF/Duck.gltf";
+
+    let large_model = ModelBuilder::new(big_fish, model_shader.clone(), big_fish).build().unwrap();
 
     unsafe {
         gl::Enable(gl::DEPTH_TEST);
@@ -191,12 +197,11 @@ fn main() {
         tile_shader.use_shader_with(&projection, &view);
         game_world.borrow().render(state.deltaTime);
 
-        basic_shader.use_shader_with(&projection, &view);
+        model_shader.use_shader_with(&projection, &view);
         large_model.render(
-            &basic_shader,
             vec3(0.0, 0.0, 0.0),
             20.0f32 * glfw.get_time() as f32,
-            vec3(0.2, 0.2, 0.2),
+            vec3(100.0, 100.0, 100.0),
         );
 
         window.swap_buffers();

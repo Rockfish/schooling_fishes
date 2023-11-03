@@ -13,48 +13,80 @@ use std::ptr::*;
 use std::rc::Rc;
 
 // model data
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Model {
-    // stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-    pub textures_cache: Vec<Rc<Texture>>,
-    pub meshes: Vec<ModelMesh>,
-    pub directory: String,
-    pub gammaCorrection: bool,
-    pub flip_v: bool,
+    pub name: Rc<str>,
+    pub shader: Rc<Shader>,
+    pub meshes: Rc<Vec<ModelMesh>>
 }
 
 impl Model {
-    pub fn new(path: &str, gamma: bool, flipv: bool) -> Result<Model, Error> {
-        let mut model = Model {
-            textures_cache: vec![],
-            meshes: vec![],
-            directory: "".to_string(),
-            gammaCorrection: gamma,
-            flip_v: flipv,
-        };
-        model.directory = Path::new(path).parent().expect("path error").to_str().unwrap().to_string();
-        model.load_model(path)?;
-        Ok(model)
-    }
-
-    pub fn render(&self, shader: &Shader, position: Vec3, angle: f32, scale: Vec3) {
+    pub fn render(&self, position: Vec3, angle: f32, scale: Vec3) {
         let mut model_transform = Mat4::from_translation(position);
-        // model_transform *= Mat4::from_axis_angle(vec3(1.0, 0.0, 0.0), 90f32.to_radians());
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 1.0, 0.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);
+        self.shader.setMat4("model", &model_transform);
 
-        shader.setMat4("model", &model_transform);
+        for mesh in self.meshes.iter() {
+            mesh.render(&self.shader);
+        }
+    }
+}
 
-        // draw each mesh in the model
-        for mesh in &self.meshes {
-            mesh.render(shader);
+#[derive(Debug)]
+pub struct ModelBuilder {
+    pub name: String,
+    pub shader: Rc<Shader>,
+    pub textures_cache: Vec<Rc<Texture>>,
+    pub meshes: Vec<ModelMesh>,
+    pub filepath: String,
+    pub directory: PathBuf,
+    pub gamma_correction: bool,
+    pub flip_v: bool,
+}
+
+impl ModelBuilder {
+    pub fn new(name: impl Into<String>, shader: Rc<Shader>, path: impl Into<String>) -> Self {
+        let filepath = path.into();
+        let directory = PathBuf::from(&filepath).parent().unwrap().to_path_buf();
+        ModelBuilder {
+            name: name.into(),
+            shader,
+            textures_cache: vec![],
+            meshes: vec![],
+            filepath,
+            directory,
+            gamma_correction: false,
+            flip_v: false,
         }
     }
 
+    pub fn flipv(mut self) -> Self {
+        self.flip_v = true;
+        self
+    }
+
+    pub fn correct_gamma(mut self) -> Self {
+        self.gamma_correction = true;
+        self
+    }
+
+    pub fn build(mut self) ->  Result<Model, Error> {
+        self.load_model()?;
+        let model = Model {
+            name: Rc::from(self.name),
+            shader: self.shader,
+            meshes: Rc::from(self.meshes),
+        };
+
+        Ok(model)
+    }
+
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    fn load_model(&mut self, path: &str) -> Result<(), Error> {
+    fn load_model(&mut self) -> Result<(), Error> {
+        let path = self.filepath.clone();
         let scene = AssimpScene::from_file(
-            path,
+            &path,
             vec![
                 PostProcess::Triangulate,
                 PostProcess::GenerateSmoothNormals,
@@ -200,7 +232,7 @@ impl Model {
                         full_path,
                         &TextureConfig {
                             flip_v: self.flip_v,
-                            gamma_correction: self.gammaCorrection,
+                            gamma_correction: self.gamma_correction,
                             filter: TextureFilter::Linear,
                             texture_type,
                         },

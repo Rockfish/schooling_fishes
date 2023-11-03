@@ -1,12 +1,9 @@
 use crate::base_entity::{BaseEntity, EntityBase};
 use crate::cell_space_partition::CellSpacePartition;
 use crate::config_loader::CONFIG;
-use crate::core::mesh::Mesh;
-use crate::core::shader::Shader;
 use crate::core::sprite_model::SpriteModel;
 use crate::entity_functions::TagNeighbors;
 use crate::path::Path;
-use crate::shapes::fish_sprite::FishSprite;
 use crate::utils::*;
 use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
