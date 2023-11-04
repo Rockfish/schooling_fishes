@@ -1,16 +1,13 @@
 //--------------------------- Constants ----------------------------------
 
 use crate::base_entity::EntityBase;
-use crate::config_loader::CONFIG;
+use crate::configuration::CONFIG;
 use crate::path::Path;
 use crate::transformations::PointToWorldSpace;
-use crate::utils::{min, rand_normal_distribution, RandFloat, RandInRange, RandomClamped};
+use crate::utils::{min, RandFloat, RandInRange, RandomClamped};
 use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
 use glam::{vec2, Vec2};
-use rand::prelude::Distribution;
-use rand::thread_rng;
-use rand_distr::Normal;
 use std::cell::{Ref, RefCell};
 use std::f32::consts::TAU;
 use std::ops::Div;

@@ -1,7 +1,6 @@
 use crate::base_entity::{BaseEntity, EntityBase};
 use crate::cell_space_partition::CellSpacePartition;
-use crate::config_loader::CONFIG;
-use crate::core::sprite_model::SpriteModel;
+use crate::configuration::CONFIG;
 use crate::entity_functions::TagNeighbors;
 use crate::path::Path;
 use crate::utils::*;
@@ -11,6 +10,7 @@ use glam::{vec2, Vec2};
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
+use crate::core::model::Model;
 
 #[derive(Debug)]
 pub struct GameWorld {
@@ -57,7 +57,7 @@ pub struct GameWorld {
 }
 
 impl GameWorld {
-    pub fn new(cx: i32, cy: i32, sprite_model: SpriteModel) -> Rc<RefCell<GameWorld>> {
+    pub fn new(cx: i32, cy: i32, model: Model) -> Rc<RefCell<GameWorld>> {
         let border = 30f32;
         let path = Path::new(5, border, border, cx as f32 - border, cy as f32 - border, true);
         let cell_space = CellSpacePartition::<Vehicle>::new(cx as f32, cy as f32, CONFIG.NumCellsX, CONFIG.NumCellsY, CONFIG.NumAgents);
@@ -97,10 +97,10 @@ impl GameWorld {
                 cy as f32 / 2.0 + RandomClamped() * cy as f32 / 2.0,
             );
 
-            let mut sprite = sprite_model.clone();
+            let mut sprite = model.clone();
             // let mut sprite = sprite_model.copy();
 
-            sprite.sprite_data.step_count = (i % 3) as f32;
+            // sprite.sprite_data.step_count = (i % 3) as f32;
 
             let vehicle = Vehicle::new(
                 game_world.clone(),
@@ -131,7 +131,8 @@ impl GameWorld {
         game_world.borrow().m_Vehicles[idx].borrow().m_pSteering.borrow_mut().FlockingOff();
         game_world.borrow().m_Vehicles[idx].borrow().m_pSteering.borrow_mut().WanderOn();
 
-        game_world.borrow().m_Vehicles[idx].borrow_mut().set_scale_vec(vec2(10.0, 12.0));
+        //game_world.borrow().m_Vehicles[idx].borrow_mut().set_scale_vec(vec2(10.0, 12.0));
+        game_world.borrow().m_Vehicles[idx].borrow_mut().set_scale_vec(vec2(100.0, 100.0));
         game_world.borrow().m_Vehicles[idx].borrow_mut().set_max_speed(70.0);
 
         for (i, vehicle) in game_world.borrow().m_Vehicles.iter().enumerate() {

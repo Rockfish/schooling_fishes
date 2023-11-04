@@ -11,7 +11,7 @@
 mod base_entity;
 mod c2d_matrix;
 mod cell_space_partition;
-mod config_loader;
+mod configuration;
 mod constants;
 mod core;
 mod entity_functions;
@@ -45,7 +45,7 @@ use std::path::{Path, PathBuf};
 use std::ptr;
 use std::rc::Rc;
 
-const SCR_WIDTH: f32 = 800.0;
+const SCR_WIDTH: f32 = 1000.0;
 const SCR_HEIGHT: f32 = 800.0;
 
 struct State {
@@ -149,14 +149,15 @@ fn main() {
 
     let fish_sprite = FishSprite::new_sprite_model(tile_shader.clone(), true);
 
-    let game_world = GameWorld::new(800, 800, fish_sprite);
-
     let plane = Plane::new(water_texture);
 
     let big_fish = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/BarramundiFish/glTF/BarramundiFish.gltf";
     let duck = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/Duck/glTF/Duck.gltf";
+    let fish_model = ModelBuilder::new(big_fish, model_shader.clone(), big_fish)
+        .build()
+        .unwrap();
 
-    let large_model = ModelBuilder::new(big_fish, model_shader.clone(), big_fish).build().unwrap();
+    let game_world = GameWorld::new(SCR_WIDTH as i32, SCR_HEIGHT as i32, fish_model.clone());
 
     unsafe {
         gl::Enable(gl::DEPTH_TEST);
@@ -194,15 +195,17 @@ fn main() {
                      0.0,
                      vec3(800.0, 1.0, 800.0));
 
-        tile_shader.use_shader_with(&projection, &view);
+        // tile_shader.use_shader_with(&projection, &view);
+        model_shader.use_shader_with(&projection, &view);
+
         game_world.borrow().render(state.deltaTime);
 
-        model_shader.use_shader_with(&projection, &view);
-        large_model.render(
-            vec3(0.0, 0.0, 0.0),
-            20.0f32 * glfw.get_time() as f32,
-            vec3(100.0, 100.0, 100.0),
-        );
+        // fish_model.render(
+        //     vec3(0.0, 0.0, 0.0),
+        //     20.0f32 * glfw.get_time() as f32,
+        //     vec3(100.0, 100.0, 100.0),
+        //     0.0
+        // );
 
         window.swap_buffers();
     }

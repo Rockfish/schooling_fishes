@@ -1,6 +1,5 @@
 use crate::base_entity::{BaseEntity, EntityBase};
-use crate::config_loader::CONFIG;
-use crate::core::sprite_model::SpriteModel;
+use crate::configuration::CONFIG;
 use crate::game_world::GameWorld;
 use crate::moving_entity::MovingEntity;
 use crate::smoother::Smoother;
@@ -9,6 +8,7 @@ use crate::utils::{RandInRange, Truncate, WrapAround};
 use glam::{vec2, vec3, Vec2, Vec3};
 use std::cell::RefCell;
 use std::rc::Rc;
+use crate::core::model::Model;
 
 #[derive(Debug)]
 pub struct Vehicle {
@@ -43,7 +43,8 @@ pub struct Vehicle {
 
     color: Vec3,
 
-    sprite_model: SpriteModel,
+    //sprite_model: SpriteModel,
+    model: Model,
 }
 
 impl Vehicle {
@@ -58,7 +59,7 @@ impl Vehicle {
         max_speed: f32,
         max_turn_rate: f32,
         scale: f32,
-        sprite: SpriteModel,
+        model: Model,
     ) -> Rc<RefCell<Vehicle>> {
         let mut base_entity = BaseEntity::with_type_and_position(0, position, scale);
         base_entity.scale = vec2(scale, scale);
@@ -87,7 +88,8 @@ impl Vehicle {
             m_vecVehicleVB: vec![],
             moving_entity,
             color,
-            sprite_model: sprite,
+            // sprite_model: model,
+            model,
         }));
 
         let id = vehicle.borrow().id();
@@ -175,10 +177,15 @@ impl Vehicle {
             angle = 360.0 - angle;
         }
 
-        let position = vec3(self.base_entity.position.x, self.base_entity.position.y, 0.0);
-        let scale = vec3(self.base_entity.scale.x, self.base_entity.scale.y, 1.0);
+        // fix model orientation
+        angle += 90.0;
+        angle *= -1.0;
 
-        self.sprite_model.render(position, angle - 90.0, scale, delta_time);
+        // let position = vec3(self.base_entity.position.x, self.base_entity.position.y, 0.0);
+        let position = vec3(self.base_entity.position.x -400.0, 0.0, self.base_entity.position.y -400.0);
+        let scale = vec3(self.base_entity.scale.x, self.base_entity.scale.y, self.base_entity.scale.x);
+
+        self.model.render(position, angle, scale, delta_time);
 
         // println!("fish id: {}   position: {}", self.ID(), position);
 

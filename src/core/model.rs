@@ -17,11 +17,11 @@ use std::rc::Rc;
 pub struct Model {
     pub name: Rc<str>,
     pub shader: Rc<Shader>,
-    pub meshes: Rc<Vec<ModelMesh>>
+    pub meshes: Rc<Vec<ModelMesh>>,
 }
 
 impl Model {
-    pub fn render(&self, position: Vec3, angle: f32, scale: Vec3) {
+    pub fn render(&self, position: Vec3, angle: f32, scale: Vec3, _delta_time: f32) {
         let mut model_transform = Mat4::from_translation(position);
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 1.0, 0.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);
@@ -219,7 +219,7 @@ impl ModelBuilder {
 
         for i in 0..texture_count {
             let texture_filename = get_material_texture_filename(assimp_material, texture_type, i as u32)?;
-            let full_path = PathBuf::from(&self.directory).join(&texture_filename);
+            let full_path = self.directory.join(&texture_filename);
 
             let cached_texture = self
                 .textures_cache
