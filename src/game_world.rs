@@ -12,13 +12,14 @@ use std::f32::consts::TAU;
 use std::rc::Rc;
 use crate::core::model::Model;
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct GameWorld {
     //a container of all the moving entities
     pub m_Vehicles: Vec<Rc<RefCell<Vehicle>>>,
 
     //any obstacles
-    m_Obstacles: RefCell<Vec<BaseEntity>>,
+    // m_Obstacles: RefCell<Vec<BaseEntity>>,
+    m_Obstacles: RefCell<Vec<Rc<RefCell<dyn EntityBase>>>>,
 
     //container containing any walls in the environment
     m_Walls: Vec<Wall2D>,
@@ -192,8 +193,10 @@ impl GameWorld {
         }
     }
 
-    pub fn TagVehiclesWithinViewRange(&self, pVehicle: &Rc<RefCell<Vehicle>>, range: f32) {
-        TagNeighbors(pVehicle, &self.m_Obstacles, range);
+    pub fn TagVehiclesWithinViewRange(&self, pVehicle: Rc<RefCell<Vehicle>>, range: f32) {
+
+        let dyn_vehicle: Rc<RefCell<dyn EntityBase>> = pVehicle as Rc<RefCell<dyn EntityBase>>;
+        TagNeighbors(dyn_vehicle, &self.m_Obstacles, range);
     }
 
     pub fn render(&self, delta_time: f32) {

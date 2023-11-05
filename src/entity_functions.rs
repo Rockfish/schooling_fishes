@@ -24,6 +24,7 @@
 
 use crate::base_entity::EntityBase;
 use std::cell::RefCell;
+use std::ops::DerefMut;
 use std::rc::Rc;
 
 //----------------------- TagNeighbors ----------------------------------
@@ -31,21 +32,21 @@ use std::rc::Rc;
 //  tags any entities contained in a std container that are within the
 //  radius of the single entity parameter
 //------------------------------------------------------------------------
-pub fn TagNeighbors<E1: EntityBase, E2: EntityBase>(entity: &Rc<RefCell<E1>>, vec_of_entities: &RefCell<Vec<E2>>, radius: f32) {
+pub fn TagNeighbors(entity: Rc<RefCell<dyn EntityBase>>, vec_of_entities: &RefCell<Vec<Rc<RefCell<dyn EntityBase>>>>, radius: f32) {
     // iterate through all entities checking for range
     for curEntity in vec_of_entities.borrow_mut().iter_mut() {
         // first clear any current tag
-        curEntity.untag();
+        curEntity.borrow_mut().untag();
 
-        let to = curEntity.position() - entity.borrow().position();
+        let to = curEntity.borrow().position() - entity.borrow().position();
 
         // the bounding radius of the other is taken into account by adding it to the range
-        let range = radius + curEntity.bounding_radius();
+        let range = radius + curEntity.borrow().bounding_radius();
 
         // if entity within range, tag for further consideration. (working in
         // distance-squared space to avoid square roots)
-        if (curEntity.id() != entity.borrow().id()) && (to.length_squared() < range * range) {
-            curEntity.tag();
+        if (curEntity.borrow().id() != entity.borrow().id()) && (to.length_squared() < range * range) {
+            curEntity.borrow_mut().tag();
         }
     }
 }

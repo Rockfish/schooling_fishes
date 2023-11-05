@@ -10,7 +10,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use crate::core::model::Model;
 
-#[derive(Debug)]
 pub struct Vehicle {
     pub base_entity: BaseEntity,
 
@@ -36,12 +35,7 @@ pub struct Vehicle {
 
     //keeps a track of the most recent update time. (some of the
     //steering behaviors make use of this - see Wander)
-    pub(crate) m_dTimeElapsed: f32,
-
-    //buffer for the vehicle shape
-    m_vecVehicleVB: Vec<Vec2>,
-
-    color: Vec3,
+    pub m_dTimeElapsed: f32,
 
     //sprite_model: SpriteModel,
     model: Model,
@@ -75,8 +69,6 @@ impl Vehicle {
 
         let heading_smoother = Smoother::new(CONFIG.NumSamplesForSmoothing, vec2(0.0, 0.0));
 
-        let color = vec3(RandInRange(0.2, 1.0), RandInRange(0.2, 1.0), RandInRange(0.2, 1.0));
-
         let vehicle = Rc::new(RefCell::new(Vehicle {
             base_entity,
             m_pWorld: world,
@@ -85,10 +77,7 @@ impl Vehicle {
             m_vSmoothedHeading: Default::default(),
             m_bSmoothingOn: false,
             m_dTimeElapsed: 0.0,
-            m_vecVehicleVB: vec![],
             moving_entity,
-            color,
-            // sprite_model: model,
             model,
         }));
 
@@ -99,14 +88,6 @@ impl Vehicle {
 
         vehicle
     }
-
-    // pub fn Steering(&self) -> Rc<RefCell<SteeringBehavior>> {
-    //     if let Some(steering) = &self.m_pSteering {
-    //        steering.clone()
-    //     } else {
-    //         panic!("m_pSteering has not been initialized.")
-    //     }
-    // }
 
     //------------------------------ Update ----------------------------------
     //
@@ -154,12 +135,6 @@ impl Vehicle {
         let cx = vehicle.borrow().m_pWorld.borrow().cxClient();
         let cy = vehicle.borrow().m_pWorld.borrow().cyClient();
         WrapAround(&mut vehicle.borrow_mut().base_entity.position, cx, cy);
-
-        // TODO: Note, this moved this to gameworld object
-        //update the vehicle's current cell if space partitioning is turned on
-        // if vehicle.Steering().isSpacePartitioningOn() {
-        //     vehicle.m_pWorld.borrow_mut().m_pCellSpace.UpdateEntity(this, &OldPos);
-        // }
 
         if vehicle.borrow().m_bSmoothingOn {
             let heading = vehicle.borrow().moving_entity.heading;

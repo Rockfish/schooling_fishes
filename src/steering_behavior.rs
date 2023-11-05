@@ -58,7 +58,6 @@ pub enum BehaviorType {
     offset_pursuit = 0x10000,
 }
 
-#[derive(Debug)]
 pub struct SteeringBehavior {
     // the steering force created by the combined effect of all the selected behaviors
     pub m_vSteeringForce: Vec2,
@@ -226,7 +225,6 @@ impl SteeringBehavior {
     pub fn AlignmentOn(&mut self) {
         self.m_iFlags |= BehaviorType::alignment as i32;
     }
-
     pub fn CohesionOff(&mut self) {
         self.m_iFlags ^= BehaviorType::cohesion as i32;
     }
@@ -258,7 +256,7 @@ impl SteeringBehavior {
             if self.On(BehaviorType::separation) || self.On(BehaviorType::alignment) || self.On(BehaviorType::cohesion) {
                 let world = vehicle.borrow().m_pWorld.clone();
 
-                world.borrow().TagVehiclesWithinViewRange(vehicle, self.m_dViewDistance);
+                world.borrow().TagVehiclesWithinViewRange(vehicle.clone(), self.m_dViewDistance);
             }
         } else {
             // calculate neighbours in cell-space if any of the following 3 group

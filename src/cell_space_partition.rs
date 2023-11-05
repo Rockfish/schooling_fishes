@@ -5,14 +5,14 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Debug)]
-pub struct Cell<Entity: EntityBase> {
+pub struct Partition<Entity: EntityBase> {
     pub members: Vec<Rc<RefCell<Entity>>>,
     pub bounding_box: InvertedAABBox2D,
 }
 
-impl<Entity: EntityBase> Cell<Entity> {
-    pub fn new(top_left: Vec2, bottom_right: Vec2) -> Cell<Entity> {
-        Cell {
+impl<Entity: EntityBase> Partition<Entity> {
+    pub fn new(top_left: Vec2, bottom_right: Vec2) -> Partition<Entity> {
+        Partition {
             members: vec![],
             bounding_box: InvertedAABBox2D::new(top_left, bottom_right),
         }
@@ -21,23 +21,17 @@ impl<Entity: EntityBase> Cell<Entity> {
 
 #[derive(Debug)]
 pub struct CellSpacePartition<Entity: EntityBase> {
-    //the required amount of cells in the space
-    pub m_Cells: Vec<Cell<Entity>>,
+    // the required amount of cells in the space
+    pub m_Cells: Vec<Partition<Entity>>,
 
-    //this is used to store any valid neighbors when an agent searches
-    //its neighboring space
+    // this is used to store any valid neighbors when an agent searches its neighboring space
     pub m_Neighbors: Vec<Rc<RefCell<Entity>>>,
 
-    //this iterator will be used by the methods next and begin to traverse
-    //through the above vector of neighbors
-    // -- just iter() on m_Neighbor
-    // typename std::vector<entity>::iterator m_curNeighbor;
-
-    //the width and height of the world space the entities inhabit
+    // the width and height of the world space the entities inhabit
     m_dSpaceWidth: f32,
     m_dSpaceHeight: f32,
 
-    //the number of cells the space is going to be divided up into
+    // the number of cell partitions the space is going to be divided up into
     m_iNumCellsX: i32,
     m_iNumCellsY: i32,
 
@@ -65,7 +59,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
                 let top = y as f32 * cell_space.m_dCellSizeY;
                 let bottom = top * cell_space.m_dCellSizeY;
 
-                cell_space.m_Cells.push(Cell::<Entity>::new(vec2(left, top), vec2(right, bottom)));
+                cell_space.m_Cells.push(Partition::<Entity>::new(vec2(left, top), vec2(right, bottom)));
             }
         }
 
@@ -118,7 +112,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
         let mut current_neighbor: usize = 0;
         self.m_Neighbors.clear();
 
-        //create the query box that is the bounding box of the target's query area
+        // create the query box that is the bounding box of the target's query area
         let query_box = InvertedAABBox2D::new(
             target_pos - vec2(query_radius, query_radius),
             target_pos + vec2(query_radius, query_radius),
