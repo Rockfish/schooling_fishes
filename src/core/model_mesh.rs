@@ -7,7 +7,7 @@
 use crate::core::shader::Shader;
 use crate::core::texture::{Texture, TextureType};
 use glad_gl::gl;
-use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
+use glad_gl::gl::{GLsizei, GLsizeiptr, GLvoid};
 use glam::u32;
 use glam::*;
 use std::mem;

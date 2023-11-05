@@ -8,7 +8,7 @@ use glam::*;
 use russimp::scene::*;
 use russimp::sys::*;
 use std::os::raw::c_uint;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::ptr::*;
 use std::rc::Rc;
 

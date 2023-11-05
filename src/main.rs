@@ -33,15 +33,12 @@ use crate::core::model::ModelBuilder;
 use crate::core::shader::Shader;
 use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
 use crate::game_world::GameWorld;
-use crate::shapes::fish_sprite::FishSprite;
 use crate::shapes::plane::Plane;
 use glad_gl::gl;
-use glad_gl::gl::GLuint;
-use glam::{vec3, Mat4, Vec3};
+use glam::{vec3, Mat4};
 use glfw::{Action, Context, Key};
 use log::error;
-use std::path::{Path, PathBuf};
-use std::ptr;
+use std::path::PathBuf;
 use std::rc::Rc;
 
 const SCR_WIDTH: f32 = 1000.0;
@@ -117,17 +114,17 @@ fn main() {
         None::<String>,
     )
     .unwrap();
-    let tile_shader = Shader::new(
-        "assets/shaders/tile_texture.vert",
-        "assets/shaders/tile_texture.frag",
-        None::<String>,
-    )
-    .unwrap();
+    // let tile_shader = Shader::new(
+    //     "assets/shaders/tile_texture.vert",
+    //     "assets/shaders/tile_texture.frag",
+    //     None::<String>,
+    // )
+    // .unwrap();
 
     let model_shader = Shader::new("assets/shaders/basic_model.vert", "assets/shaders/basic_model.frag", None::<String>).unwrap();
 
     let model_shader = Rc::new(model_shader);
-    let tile_shader = Rc::new(tile_shader);
+    // let tile_shader = Rc::new(tile_shader);
 
     let water_texture = Rc::new(
         Texture::new(
@@ -142,12 +139,12 @@ fn main() {
         .unwrap(),
     );
 
-    let fish_sprite = FishSprite::new_sprite_model(tile_shader.clone(), true);
+    // let fish_sprite = FishSprite::new_sprite_model(tile_shader.clone(), true);
 
     let plane = Plane::new(water_texture);
 
     let big_fish = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/BarramundiFish/glTF/BarramundiFish.gltf";
-    let duck = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/Duck/glTF/Duck.gltf";
+    // let duck = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/Duck/glTF/Duck.gltf";
     let fish_model = ModelBuilder::new(big_fish, model_shader.clone(), big_fish).build().unwrap();
 
     let game_world = GameWorld::new(SCR_WIDTH as i32, SCR_HEIGHT as i32, fish_model.clone());
@@ -156,7 +153,7 @@ fn main() {
         gl::Enable(gl::DEPTH_TEST);
     }
 
-    let view = state.camera.get_view_matrix();
+    // let view = state.camera.get_view_matrix();
 
     // render loop
     while !window.should_close() {
@@ -198,10 +195,6 @@ fn main() {
         // );
 
         window.swap_buffers();
-    }
-
-    unsafe {
-        // gl::DeleteShader(shader.id);
     }
 }
 

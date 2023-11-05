@@ -2,7 +2,7 @@ use crate::cell_space_partition::CellSpacePartition;
 use crate::configuration::CONFIG;
 use crate::core::model::Model;
 use crate::entity_functions::TagNeighbors;
-use crate::entity_traits::{EntityBase, EntityMovable, EntitySteerable};
+use crate::entity_traits::{EntityBase, EntityMovable};
 use crate::path::Path;
 use crate::utils::*;
 use crate::vehicle::Vehicle;
@@ -73,7 +73,7 @@ impl GameWorld {
             m_bPaused: false,
             m_cxClient: cx,
             m_cyClient: cy,
-            m_vCrosshair: vec2(cx as f32 / 2.0, cy as f32 / 2.0), // seems there was a bug in original code here.
+            m_vCrosshair: vec2(cx as f32 / 2.0, cy as f32 / 2.0),
             m_dAvFrameTime: 0.0,
             m_bShowWalls: false,
             m_bShowObstacles: false,
@@ -91,15 +91,14 @@ impl GameWorld {
         let game_world = Rc::new(RefCell::new(game_world));
 
         // setup the agents
-        for i in 0..CONFIG.NumAgents {
+        for _i in 0..CONFIG.NumAgents {
             //determine a random starting position
             let spawn_pos = vec2(
                 cx as f32 / 2.0 + RandomClamped() * cx as f32 / 2.0,
                 cy as f32 / 2.0 + RandomClamped() * cy as f32 / 2.0,
             );
 
-            let mut sprite = model.clone();
-            // let mut sprite = sprite_model.copy();
+            let sprite = model.clone();
 
             // sprite.sprite_data.step_count = (i % 3) as f32;
 

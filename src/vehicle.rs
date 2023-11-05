@@ -1,6 +1,6 @@
 use crate::configuration::CONFIG;
 use crate::core::model::Model;
-use crate::entity_traits::{next_valid_id, EntityBase, EntityMovable, EntitySteerable};
+use crate::entity_traits::{next_valid_id, EntityBase, EntityMovable};
 use crate::game_world::GameWorld;
 use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
@@ -10,19 +10,15 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 pub struct Vehicle {
-    // pub base_entity: BaseEntity,
     // EntityBase
     pub id: i32,
     pub entity_type: i32,
     pub tag: bool,
     pub position: Vec2,
     pub scale: Vec2,
-    // pub heading: Vec2,
-    // pub side_vec: Vec2,
     pub bounding_radius: f32,
 
-    // pub moving_entity: MovingEntity,
-    // EntityMoving
+    // EntityMovable
     pub velocity: Vec2,
     pub heading: Vec2,
     pub side_vec: Vec2,
@@ -31,27 +27,17 @@ pub struct Vehicle {
     pub max_force: f32,
     pub max_turn_rate: f32,
 
-    //a pointer to the world data. So a vehicle can access any obstacle,
-    //path, wall or agent data
-    pub m_pWorld: Rc<RefCell<GameWorld>>,
-
-    //the steering behavior class
+    // EntitySteerable
     pub m_pSteering: RefCell<SteeringBehavior>,
-
-    //some steering behaviors give jerky looking movement. The
-    //following members are used to smooth the vehicle's heading
     m_pHeadingSmoother: Smoother<Vec2>,
-
-    //this vector represents the average of the vehicle's heading
-    //vector smoothed over the last few frames
     m_vSmoothedHeading: Vec2,
-
-    //when true, smoothing is active
     m_bSmoothingOn: bool,
 
     //keeps a track of the most recent update time. (some of the
     //steering behaviors make use of this - see Wander)
     pub m_dTimeElapsed: f32,
+
+    pub m_pWorld: Rc<RefCell<GameWorld>>,
 
     //sprite_model: SpriteModel,
     model: Model,

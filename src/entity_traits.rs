@@ -1,6 +1,4 @@
-use crate::utils::max;
-use glam::{vec2, Vec2};
-use std::default::Default;
+use glam::Vec2;
 
 static mut NEXT_ID: i32 = -1;
 

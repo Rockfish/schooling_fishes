@@ -4,7 +4,7 @@ use glad_gl::gl::{GLint, GLsizei, GLuint, GLvoid};
 use image::ColorType;
 use std::ffi::{c_uint, OsString};
 use std::fmt::{Display, Formatter};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 // pub struct Gamma(pub bool);
 // pub struct FlipV(pub bool);
