@@ -4,14 +4,13 @@ use glam::{vec2, Vec2};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Debug)]
-pub struct Partition<Entity: EntityBase> {
-    pub members: Vec<Rc<RefCell<Entity>>>,
+pub struct Partition {
+    pub members: Vec<Rc<RefCell<dyn EntityBase>>>,
     pub bounding_box: InvertedAABBox2D,
 }
 
-impl<Entity: EntityBase> Partition<Entity> {
-    pub fn new(top_left: Vec2, bottom_right: Vec2) -> Partition<Entity> {
+impl Partition {
+    pub fn new(top_left: Vec2, bottom_right: Vec2) -> Partition {
         Partition {
             members: vec![],
             bounding_box: InvertedAABBox2D::new(top_left, bottom_right),
@@ -19,13 +18,12 @@ impl<Entity: EntityBase> Partition<Entity> {
     }
 }
 
-#[derive(Debug)]
-pub struct CellSpacePartition<Entity: EntityBase> {
+pub struct CellSpacePartition {
     // the required amount of cells in the space
-    pub m_Cells: Vec<Partition<Entity>>,
+    pub m_Cells: Vec<Partition>,
 
     // this is used to store any valid neighbors when an agent searches its neighboring space
-    pub m_Neighbors: Vec<Rc<RefCell<Entity>>>,
+    pub m_Neighbors: Vec<Rc<RefCell<dyn EntityBase>>>,
 
     // the width and height of the world space the entities inhabit
     m_dSpaceWidth: f32,
@@ -39,7 +37,7 @@ pub struct CellSpacePartition<Entity: EntityBase> {
     m_dCellSizeY: f32,
 }
 
-impl<Entity: EntityBase> CellSpacePartition<Entity> {
+impl CellSpacePartition {
     pub fn new(width: f32, height: f32, num_cells_x: i32, num_cells_y: i32, max_entities: i32) -> Self {
         let mut cell_space = CellSpacePartition {
             m_Cells: vec![],
@@ -59,7 +57,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
                 let top = y as f32 * cell_space.m_dCellSizeY;
                 let bottom = top * cell_space.m_dCellSizeY;
 
-                cell_space.m_Cells.push(Partition::<Entity>::new(vec2(left, top), vec2(right, bottom)));
+                cell_space.m_Cells.push(Partition::new(vec2(left, top), vec2(right, bottom)));
             }
         }
 
@@ -92,7 +90,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
         idx
     }
 
-    pub fn add_entity(&mut self, entity: Rc<RefCell<Entity>>) {
+    pub fn add_entity(&mut self, entity: Rc<RefCell<dyn EntityBase>>) {
         let sz = self.m_Cells.len();
         let idx = self.position_to_index(&entity.borrow().position()) as usize;
         assert!(idx < sz);
@@ -137,7 +135,7 @@ impl<Entity: EntityBase> CellSpacePartition<Entity> {
     //  Checks to see if an entity has moved cells. If so the data structure
     //  is updated accordingly
     //------------------------------------------------------------------------
-    pub fn UpdateEntity(&mut self, entity: &Rc<RefCell<Entity>>, old_position: &Vec2) {
+    pub fn UpdateEntity(&mut self, entity: Rc<RefCell<dyn EntityBase>>, old_position: &Vec2) {
         // if the index for the old pos and the new pos are not equal then
         // the entity has moved to another cell.
         let old_idx = self.position_to_index(old_position);

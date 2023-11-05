@@ -391,6 +391,8 @@ impl SteeringBehavior {
             //     }
             // }
 
+            let neighbors = &vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors;
+
             if self.On(BehaviorType::cohesion) {
                 force =
                     self.Cohesion(vehicle, &self.m_pTargetAgent1, &vehicle.borrow().m_pWorld.borrow().m_Vehicles) * self.m_dWeightCohesion;
@@ -595,9 +597,9 @@ impl SteeringBehavior {
         // for the evader's current position.
         let ToEvader = evader.position() - vehicle.borrow().position();
 
-        let RelativeHeading = vehicle.borrow().moving_entity.Heading().dot(evader.moving_entity.Heading());
+        let RelativeHeading = vehicle.borrow().heading().dot(evader.heading());
 
-        if (ToEvader.dot(vehicle.borrow().moving_entity.Heading()) > 0.0) & &(RelativeHeading < -0.95)
+        if (ToEvader.dot(vehicle.borrow().heading()) > 0.0) & &(RelativeHeading < -0.95)
         //acos(0.95)=18 degs
         {
             return SteeringBehavior::Seek(vehicle, evader.position());
@@ -686,8 +688,8 @@ impl SteeringBehavior {
         // project the target into world space
         let world_target = PointToWorldSpace(
             wander_target,
-            vehicle.borrow().moving_entity.heading,
-            vehicle.borrow().moving_entity.side_vec,
+            vehicle.borrow().heading(),
+            vehicle.borrow().side(),
             vehicle.borrow().position(),
         );
 
@@ -1065,14 +1067,14 @@ impl SteeringBehavior {
 
         for pv in vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors.iter() {
             if pv.borrow().id() != vehicle.borrow().id() {
-                AverageHeading += pv.borrow().moving_entity.heading;
+                AverageHeading += pv.borrow().heading();
                 NeighborCount += 1.0;
             }
         }
 
         if NeighborCount > 0.0 {
             AverageHeading /= NeighborCount;
-            AverageHeading -= vehicle.borrow().moving_entity.heading;
+            AverageHeading -= vehicle.borrow().heading();
         }
 
         AverageHeading

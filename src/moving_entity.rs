@@ -5,11 +5,7 @@ use glam::Vec2;
 pub struct MovingEntity {
     pub velocity: Vec2,
 
-    // a normalized vector pointing in the direction the entity is heading.
-    pub heading: Vec2,
 
-    // a vector perpendicular to the heading vector
-    pub side_vec: Vec2,
 
     pub mass: f32,
 
@@ -25,11 +21,9 @@ pub struct MovingEntity {
 
 impl MovingEntity {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(velocity: Vec2, max_speed: f32, heading: Vec2, mass: f32, turn_rate: f32, max_force: f32) -> Self {
+    pub fn new(velocity: Vec2, max_speed: f32, mass: f32, turn_rate: f32, max_force: f32) -> Self {
         MovingEntity {
             velocity,
-            heading,
-            side_vec: heading.perp(),
             mass,
             max_speed,
             max_force,
@@ -51,9 +45,5 @@ impl MovingEntity {
 
     pub fn Speed(&self) -> f32 {
         self.velocity.length()
-    }
-
-    pub fn Heading(&self) -> Vec2 {
-        self.heading
     }
 }

@@ -55,13 +55,14 @@ impl Vehicle {
         scale: f32,
         model: Model,
     ) -> Rc<RefCell<Vehicle>> {
-        let mut base_entity = BaseEntity::with_type_and_position(0, position, scale);
+        let heading = vec2(rotation.sin(), -rotation.cos());
+
+        let mut base_entity = BaseEntity::new(0, position, heading, scale);
         base_entity.scale = vec2(scale, scale);
 
         let moving_entity = MovingEntity::new(
             velocity,
             max_speed,
-            vec2(rotation.sin(), -rotation.cos()),
             mass,
             max_turn_rate,
             max_force,
@@ -123,10 +124,10 @@ impl Vehicle {
         // update the heading if the vehicle has a non zero velocity
         if vehicle.borrow().moving_entity.velocity.length_squared() > 0.00000001 {
             let normalize = vehicle.borrow().moving_entity.velocity.normalize_or_zero();
-            vehicle.borrow_mut().moving_entity.heading = normalize;
+            vehicle.borrow_mut().base_entity.heading = normalize;
 
-            let prep = vehicle.borrow().moving_entity.heading.perp();
-            vehicle.borrow_mut().moving_entity.side_vec = prep;
+            let prep = vehicle.borrow().base_entity.heading.perp();
+            vehicle.borrow_mut().base_entity.side_vec = prep;
         }
 
         //EnforceNonPenetrationConstraint(this, World()->Agents());
@@ -137,7 +138,7 @@ impl Vehicle {
         WrapAround(&mut vehicle.borrow_mut().base_entity.position, cx, cy);
 
         if vehicle.borrow().m_bSmoothingOn {
-            let heading = vehicle.borrow().moving_entity.heading;
+            let heading = vehicle.borrow().base_entity.heading;
             let smoothed_heading = vehicle.borrow_mut().m_pHeadingSmoother.update(heading);
             vehicle.borrow_mut().m_vSmoothedHeading = smoothed_heading;
         }
@@ -146,9 +147,9 @@ impl Vehicle {
     }
 
     pub fn render(&mut self, delta_time: f32) {
-        let mut angle = self.moving_entity.heading.x.acos().to_degrees();
+        let mut angle = self.base_entity.heading.x.acos().to_degrees();
 
-        if self.moving_entity.heading.y < 0.0 {
+        if self.base_entity.heading.y < 0.0 {
             angle = 360.0 - angle;
         }
 
@@ -244,10 +245,10 @@ impl Vehicle {
     }
 
     pub fn heading(&self) -> Vec2 {
-        self.moving_entity.heading
+        self.base_entity.heading
     }
     pub fn side(&self) -> Vec2 {
-        self.moving_entity.side_vec
+        self.base_entity.side_vec
     }
 
     pub fn print(&self) {
@@ -272,6 +273,10 @@ impl EntityBase for Vehicle {
 
     fn position(&self) -> Vec2 {
         self.base_entity.position
+    }
+
+    fn heading(&self) -> Vec2 {
+        self.base_entity.heading
     }
 
     fn bounding_radius(&self) -> f32 {

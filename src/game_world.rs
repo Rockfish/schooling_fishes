@@ -25,7 +25,7 @@ pub struct GameWorld {
     m_Walls: Vec<Wall2D>,
 
     m_bCellSpaceOn: bool,
-    pub m_pCellSpace: RefCell<CellSpacePartition<Vehicle>>,
+    pub m_pCellSpace: RefCell<CellSpacePartition>,
 
     //any path we may create for the vehicles to follow
     m_pPath: Option<Path>,
@@ -61,7 +61,7 @@ impl GameWorld {
     pub fn new(cx: i32, cy: i32, model: Model) -> Rc<RefCell<GameWorld>> {
         let border = 30f32;
         let path = Path::new(5, border, border, cx as f32 - border, cy as f32 - border, true);
-        let cell_space = CellSpacePartition::<Vehicle>::new(cx as f32, cy as f32, CONFIG.NumCellsX, CONFIG.NumCellsY, CONFIG.NumAgents);
+        let cell_space = CellSpacePartition::new(cx as f32, cy as f32, CONFIG.NumCellsX, CONFIG.NumCellsY, CONFIG.NumAgents);
 
         let game_world = GameWorld {
             m_Vehicles: vec![],
@@ -170,7 +170,9 @@ impl GameWorld {
         for vehicle in &game_world.borrow().m_Vehicles {
             let old_position = Vehicle::Update(vehicle, time_elapsed);
             if game_world.borrow().m_bCellSpaceOn {
-                game_world.borrow().m_pCellSpace.borrow_mut().UpdateEntity(vehicle, &old_position);
+                game_world.borrow().m_pCellSpace.borrow_mut().UpdateEntity(
+                    vehicle.clone() as Rc<RefCell<dyn EntityBase>>,
+                    &old_position);
             }
         }
     }
