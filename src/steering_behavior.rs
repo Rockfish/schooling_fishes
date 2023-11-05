@@ -391,11 +391,9 @@ impl SteeringBehavior {
             //     }
             // }
 
-            let neighbors = &vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors;
-
             if self.On(BehaviorType::cohesion) {
                 force =
-                    self.Cohesion(vehicle, &self.m_pTargetAgent1, &vehicle.borrow().m_pWorld.borrow().m_Vehicles) * self.m_dWeightCohesion;
+                    SteeringBehavior::Cohesion(vehicle, &self.m_pTargetAgent1, &vehicle.borrow().m_pWorld.borrow().m_Vehicles) * self.m_dWeightCohesion;
 
                 if !SteeringBehavior::AccumulateForce(vehicle, &mut self.m_vSteeringForce, force) {
                     return self.m_vSteeringForce;
@@ -404,7 +402,7 @@ impl SteeringBehavior {
         } else {
             if self.On(BehaviorType::separation) {
                 force =
-                    SteeringBehavior::SeparationPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_Vehicles) * self.m_dWeightSeparation;
+                    SteeringBehavior::SeparationPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow().m_Neighbors) * self.m_dWeightSeparation;
 
                 if !SteeringBehavior::AccumulateForce(vehicle, &mut self.m_vSteeringForce, force) {
                     return self.m_vSteeringForce;
@@ -412,7 +410,7 @@ impl SteeringBehavior {
             }
 
             if self.On(BehaviorType::alignment) {
-                force = SteeringBehavior::AlignmentPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_Vehicles) * self.m_dWeightAlignment;
+                force = SteeringBehavior::AlignmentPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow().m_Neighbors) * self.m_dWeightAlignment;
 
                 if !SteeringBehavior::AccumulateForce(vehicle, &mut self.m_vSteeringForce, force) {
                     return self.m_vSteeringForce;
@@ -420,7 +418,7 @@ impl SteeringBehavior {
             }
 
             if self.On(BehaviorType::cohesion) {
-                force = SteeringBehavior::CohesionPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_Vehicles) * self.m_dWeightCohesion;
+                force = SteeringBehavior::CohesionPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow().m_Neighbors) * self.m_dWeightCohesion;
 
                 if !SteeringBehavior::AccumulateForce(vehicle, &mut self.m_vSteeringForce, force) {
                     return self.m_vSteeringForce;
@@ -985,7 +983,6 @@ impl SteeringBehavior {
     //  center of mass of the agents in its immediate area
     //------------------------------------------------------------------------
     pub fn Cohesion(
-        &self,
         vehicle: &Rc<RefCell<Vehicle>>,
         m_pTargetAgent1: &Option<Rc<RefCell<Vehicle>>>,
         neighbors: &Vec<Rc<RefCell<Vehicle>>>,
@@ -1037,11 +1034,11 @@ impl SteeringBehavior {
     //
     //  USES SPACIAL PARTITIONING
     //------------------------------------------------------------------------
-    pub fn SeparationPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<Vehicle>>>) -> Vec2 {
+    pub fn SeparationPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<dyn EntityBase>>>) -> Vec2 {
         let mut SteeringForce = Vec2::default();
 
         // iterate through the neighbors and sum up all the position vectors
-        for pv in vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors.iter() {
+        for pv in neighbors.iter() {
             if pv.borrow().id() != vehicle.borrow().id() {
                 let to_agent = vehicle.borrow().position() - pv.borrow().position();
                 // scale the force inversely proportional to the agents distance from its neighbor.
@@ -1058,14 +1055,14 @@ impl SteeringBehavior {
     //
     //  USES SPACIAL PARTITIONING
     //------------------------------------------------------------------------
-    pub fn AlignmentPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<Vehicle>>>) -> Vec2 {
+    pub fn AlignmentPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<dyn EntityBase>>>) -> Vec2 {
         // This will record the average heading of the neighbors
         let mut AverageHeading = Vec2::default();
 
         // This count the number of vehicles in the neighborhood
         let mut NeighborCount: f32 = 0.0;
 
-        for pv in vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors.iter() {
+        for pv in neighbors.iter() {
             if pv.borrow().id() != vehicle.borrow().id() {
                 AverageHeading += pv.borrow().heading();
                 NeighborCount += 1.0;
@@ -1087,7 +1084,7 @@ impl SteeringBehavior {
     //
     //  USES SPACIAL PARTITIONING
     //------------------------------------------------------------------------
-    pub fn CohesionPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<Vehicle>>>) -> Vec2 {
+    pub fn CohesionPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<dyn EntityBase>>>) -> Vec2 {
         // first find the center of mass of all the agents
         let mut CenterOfMass = Vec2::default();
         let mut SteeringForce = Vec2::default();
@@ -1095,7 +1092,7 @@ impl SteeringBehavior {
         let mut NeighborCount = 0;
 
         // iterate through the neighbors and sum up all the position vectors
-        for pv in vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow_mut().m_Neighbors.iter() {
+        for pv in neighbors.iter() {
             //make sure *this* agent isn't included in the calculations and that
             //the agent being examined is close enough
             if pv.borrow().id() != vehicle.borrow().id() {
