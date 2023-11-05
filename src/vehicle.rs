@@ -4,7 +4,7 @@ use crate::entity_traits::{next_valid_id, EntityBase, EntityMovable};
 use crate::game_world::GameWorld;
 use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
-use crate::utils::{Truncate, WrapAround};
+use crate::utils::{RandInRange, Truncate, WrapAround};
 use glam::{vec2, vec3, Vec2};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -32,6 +32,9 @@ pub struct Vehicle {
     m_pHeadingSmoother: Smoother<Vec2>,
     m_vSmoothedHeading: Vec2,
     m_bSmoothingOn: bool,
+
+    // temp
+    height: f32, // create some depth
 
     //keeps a track of the most recent update time. (some of the
     //steering behaviors make use of this - see Wander)
@@ -79,9 +82,10 @@ impl Vehicle {
             m_pSteering: RefCell::new(SteeringBehavior::new()),
             m_pHeadingSmoother: heading_smoother,
             m_vSmoothedHeading: Default::default(),
-            m_bSmoothingOn: false,
+            m_bSmoothingOn: true,
             m_dTimeElapsed: 0.0,
             model,
+            height: RandInRange(0.0, 50.0),
         }));
 
         let id = vehicle.borrow().id();
@@ -148,11 +152,23 @@ impl Vehicle {
         old_pos
     }
 
-    pub fn render(&mut self, delta_time: f32) {
-        let mut angle = self.heading.x.acos().to_degrees();
+    pub fn SmoothedHeading(&self) -> Vec2 {
+        self.m_vSmoothedHeading
+    }
 
-        if self.heading.y < 0.0 {
-            angle = 360.0 - angle;
+    pub fn render(&mut self, delta_time: f32) {
+        let mut angle = 0.0f32;
+
+        if self.m_bSmoothingOn {
+            angle = self.m_vSmoothedHeading.x.acos().to_degrees();
+            if self.m_vSmoothedHeading.y < 0.0 {
+                angle = 360.0 - angle;
+            }
+        } else {
+            angle = self.heading.x.acos().to_degrees();
+            if self.heading.y < 0.0 {
+                angle = 360.0 - angle;
+            }
         }
 
         // fix model orientation
@@ -160,7 +176,7 @@ impl Vehicle {
         angle *= -1.0;
 
         // let position = vec3(self.position.x, self.position.y, 0.0);
-        let position = vec3(self.position.x - 400.0, 0.0, self.position.y - 400.0);
+        let position = vec3(self.position.x - 400.0, self.height, self.position.y - 400.0);
         let scale = vec3(self.scale.x, self.scale.y, self.scale.x);
 
         self.model.render(position, angle, scale, delta_time);

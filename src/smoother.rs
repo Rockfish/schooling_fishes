@@ -30,8 +30,13 @@ impl<T: Clone + AddAssign + Div<f32, Output = T>> Smoother<T> {
     //to instantiate a Smoother pass it the number of samples you want
     //to use in the smoothing, and an example of a 'zero' type
     pub fn new(sample_size: i32, zero_value: T) -> Self {
+        let mut history = Vec::with_capacity(sample_size as usize);
+        for _i in 0..sample_size {
+            history.push(zero_value.clone());
+        }
+
         Smoother {
-            m_History: Vec::with_capacity(sample_size as usize),
+            m_History: history,
             m_iNextUpdateSlot: 0,
             m_ZeroValue: zero_value,
         }
