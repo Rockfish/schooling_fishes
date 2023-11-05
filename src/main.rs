@@ -143,7 +143,7 @@ fn main() {
 
     let plane = Plane::new(water_texture);
 
-    let big_fish = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/BarramundiFish/glTF/BarramundiFish.gltf";
+    let big_fish = "assets/models/BarramundiFish/glTF/BarramundiFish.gltf";
     // let duck = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/Duck/glTF/Duck.gltf";
     let fish_model = ModelBuilder::new(big_fish, model_shader.clone(), big_fish).build().unwrap();
 
