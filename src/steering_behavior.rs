@@ -1,7 +1,7 @@
 //--------------------------- Constants ----------------------------------
 
-use crate::base_entity::EntityBase;
 use crate::configuration::CONFIG;
+use crate::entity_traits::{EntityBase, EntityMovable, EntitySteerable};
 use crate::path::Path;
 use crate::transformations::PointToWorldSpace;
 use crate::utils::{min, RandFloat, RandInRange, RandomClamped};
@@ -296,7 +296,7 @@ impl SteeringBehavior {
         let magnitude_so_far = running_total.length();
 
         // calculate how much steering force remains to be used by this vehicle
-        let magnitude_remaining = vehicle.borrow().moving_entity.MaxForce() - magnitude_so_far;
+        let magnitude_remaining = vehicle.borrow().max_force() - magnitude_so_far;
 
         // return false if there is no more force left to use
         if magnitude_remaining <= 0.0 {
@@ -392,8 +392,8 @@ impl SteeringBehavior {
             // }
 
             if self.On(BehaviorType::cohesion) {
-                force =
-                    SteeringBehavior::Cohesion(vehicle, &self.m_pTargetAgent1, &vehicle.borrow().m_pWorld.borrow().m_Vehicles) * self.m_dWeightCohesion;
+                force = SteeringBehavior::Cohesion(vehicle, &self.m_pTargetAgent1, &vehicle.borrow().m_pWorld.borrow().m_Vehicles)
+                    * self.m_dWeightCohesion;
 
                 if !SteeringBehavior::AccumulateForce(vehicle, &mut self.m_vSteeringForce, force) {
                     return self.m_vSteeringForce;
@@ -401,8 +401,8 @@ impl SteeringBehavior {
             }
         } else {
             if self.On(BehaviorType::separation) {
-                force =
-                    SteeringBehavior::SeparationPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow().m_Neighbors) * self.m_dWeightSeparation;
+                force = SteeringBehavior::SeparationPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow().m_Neighbors)
+                    * self.m_dWeightSeparation;
 
                 if !SteeringBehavior::AccumulateForce(vehicle, &mut self.m_vSteeringForce, force) {
                     return self.m_vSteeringForce;
@@ -410,7 +410,8 @@ impl SteeringBehavior {
             }
 
             if self.On(BehaviorType::alignment) {
-                force = SteeringBehavior::AlignmentPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow().m_Neighbors) * self.m_dWeightAlignment;
+                force = SteeringBehavior::AlignmentPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow().m_Neighbors)
+                    * self.m_dWeightAlignment;
 
                 if !SteeringBehavior::AccumulateForce(vehicle, &mut self.m_vSteeringForce, force) {
                     return self.m_vSteeringForce;
@@ -418,7 +419,8 @@ impl SteeringBehavior {
             }
 
             if self.On(BehaviorType::cohesion) {
-                force = SteeringBehavior::CohesionPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow().m_Neighbors) * self.m_dWeightCohesion;
+                force = SteeringBehavior::CohesionPlus(vehicle, &vehicle.borrow().m_pWorld.borrow().m_pCellSpace.borrow().m_Neighbors)
+                    * self.m_dWeightCohesion;
 
                 if !SteeringBehavior::AccumulateForce(vehicle, &mut self.m_vSteeringForce, force) {
                     return self.m_vSteeringForce;
@@ -525,9 +527,9 @@ impl SteeringBehavior {
     pub fn Seek(vehicle: &Rc<RefCell<Vehicle>>, TargetPos: Vec2) -> Vec2 {
         let mut desired_velocity = TargetPos - vehicle.borrow().position();
         desired_velocity = desired_velocity.normalize_or_zero();
-        desired_velocity *= vehicle.borrow().moving_entity.MaxSpeed();
+        desired_velocity *= vehicle.borrow().max_speed();
 
-        desired_velocity - vehicle.borrow().moving_entity.Velocity()
+        desired_velocity - vehicle.borrow().velocity()
     }
 
     //----------------------------- Flee -------------------------------------
@@ -546,9 +548,9 @@ impl SteeringBehavior {
 
         let mut desired_velocity = vehicle.borrow().position() - TargetPos;
         desired_velocity = desired_velocity.normalize_or_zero();
-        desired_velocity *= vehicle.borrow().moving_entity.MaxSpeed();
+        desired_velocity *= vehicle.borrow().max_speed();
 
-        return desired_velocity - vehicle.borrow().moving_entity.Velocity();
+        return desired_velocity - vehicle.borrow().velocity();
     }
 
     //--------------------------- Arrive -------------------------------------
@@ -572,14 +574,14 @@ impl SteeringBehavior {
             let mut speed: f32 = dist / ((deceleration as i32) as f32 * DecelerationTweaker);
 
             // make sure the velocity does not exceed the max
-            speed = min(speed, vehicle.moving_entity.MaxSpeed());
+            speed = min(speed, vehicle.max_speed());
 
             // from here proceed just like Seek except we don't need to normalize
             // the ToTarget vector because we have already gone to the trouble
             // of calculating its length: dist.
             let desired_velocity = ToTarget * speed / dist;
 
-            return desired_velocity - vehicle.moving_entity.Velocity();
+            return desired_velocity - vehicle.velocity();
         }
 
         vec2(0.0, 0.0)
@@ -608,10 +610,10 @@ impl SteeringBehavior {
         // the lookahead time is proportional to the distance between the evader
         // and the pursuer; and is inversely proportional to the sum of the
         // agent's velocities
-        let LookAheadTime = ToEvader.length() / (vehicle.borrow().moving_entity.MaxSpeed() + evader.moving_entity.Speed());
+        let LookAheadTime = ToEvader.length() / (vehicle.borrow().max_speed() + evader.speed());
 
         // now seek to the predicted future position of the evader
-        return SteeringBehavior::Seek(vehicle, evader.position() + evader.moving_entity.Velocity() * LookAheadTime);
+        return SteeringBehavior::Seek(vehicle, evader.position() + evader.velocity() * LookAheadTime);
     }
 
     //----------------------------- Evade ------------------------------------
@@ -634,10 +636,10 @@ impl SteeringBehavior {
         // the lookahead time is proportional to the distance between the pursuer
         // and the pursuer; and is inversely proportional to the sum of the
         // agents' velocities
-        let LookAheadTime = ToPursuer.length() / (vehicle.borrow().moving_entity.MaxSpeed() + pursuer.moving_entity.Speed());
+        let LookAheadTime = ToPursuer.length() / (vehicle.borrow().max_speed() + pursuer.speed());
 
         // now flee away from predicted future position of the pursuer
-        return SteeringBehavior::Flee(vehicle, pursuer.position() + pursuer.moving_entity.Velocity() * LookAheadTime);
+        return SteeringBehavior::Flee(vehicle, pursuer.position() + pursuer.velocity() * LookAheadTime);
     }
 
     //--------------------------- Wander -------------------------------------
@@ -711,7 +713,7 @@ impl SteeringBehavior {
     //  Given a vector of CObstacles, this method returns a steering force
     //  that will prevent the agent colliding with the closest obstacle
     //------------------------------------------------------------------------
-    pub fn ObstacleAvoidance(obstacles: Vec<impl EntityBase>) -> Vec2 {
+    pub fn ObstacleAvoidance(obstacles: Vec<impl EntityMovable>) -> Vec2 {
         todo!();
         /*
         //the detection box length is proportional to the agent's velocity
@@ -1034,7 +1036,7 @@ impl SteeringBehavior {
     //
     //  USES SPACIAL PARTITIONING
     //------------------------------------------------------------------------
-    pub fn SeparationPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<dyn EntityBase>>>) -> Vec2 {
+    pub fn SeparationPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<dyn EntityMovable>>>) -> Vec2 {
         let mut SteeringForce = Vec2::default();
 
         // iterate through the neighbors and sum up all the position vectors
@@ -1055,7 +1057,7 @@ impl SteeringBehavior {
     //
     //  USES SPACIAL PARTITIONING
     //------------------------------------------------------------------------
-    pub fn AlignmentPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<dyn EntityBase>>>) -> Vec2 {
+    pub fn AlignmentPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<dyn EntityMovable>>>) -> Vec2 {
         // This will record the average heading of the neighbors
         let mut AverageHeading = Vec2::default();
 
@@ -1084,7 +1086,7 @@ impl SteeringBehavior {
     //
     //  USES SPACIAL PARTITIONING
     //------------------------------------------------------------------------
-    pub fn CohesionPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<dyn EntityBase>>>) -> Vec2 {
+    pub fn CohesionPlus(vehicle: &Rc<RefCell<Vehicle>>, neighbors: &Vec<Rc<RefCell<dyn EntityMovable>>>) -> Vec2 {
         // first find the center of mass of all the agents
         let mut CenterOfMass = Vec2::default();
         let mut SteeringForce = Vec2::default();
@@ -1146,7 +1148,7 @@ impl SteeringBehavior {
     //--------------------------- Hide ---------------------------------------
     //
     //------------------------------------------------------------------------
-    pub fn Hide(hunter: &Vehicle, obstacles: Vec<impl EntityBase>) -> Vec2 {
+    pub fn Hide(hunter: &Vehicle, obstacles: Vec<impl EntityMovable>) -> Vec2 {
         todo!();
         /*
         float    DistToClosest = Maxfloat;

@@ -71,7 +71,7 @@ impl ModelBuilder {
         self
     }
 
-    pub fn build(mut self) ->  Result<Model, Error> {
+    pub fn build(mut self) -> Result<Model, Error> {
         self.load_model()?;
         let model = Model {
             name: Rc::from(self.name),

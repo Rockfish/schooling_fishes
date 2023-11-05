@@ -22,9 +22,8 @@
 // return false;
 // }
 
-use crate::base_entity::EntityBase;
+use crate::entity_traits::EntityMovable;
 use std::cell::RefCell;
-use std::ops::DerefMut;
 use std::rc::Rc;
 
 //----------------------- TagNeighbors ----------------------------------
@@ -32,7 +31,7 @@ use std::rc::Rc;
 //  tags any entities contained in a std container that are within the
 //  radius of the single entity parameter
 //------------------------------------------------------------------------
-pub fn TagNeighbors(entity: Rc<RefCell<dyn EntityBase>>, vec_of_entities: &RefCell<Vec<Rc<RefCell<dyn EntityBase>>>>, radius: f32) {
+pub fn TagNeighbors(entity: Rc<RefCell<dyn EntityMovable>>, vec_of_entities: &RefCell<Vec<Rc<RefCell<dyn EntityMovable>>>>, radius: f32) {
     // iterate through all entities checking for range
     for curEntity in vec_of_entities.borrow_mut().iter_mut() {
         // first clear any current tag

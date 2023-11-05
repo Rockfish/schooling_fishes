@@ -1,11 +1,11 @@
-use crate::base_entity::EntityBase;
+use crate::entity_traits::EntityMovable;
 use crate::inverted_aab_box_2d::InvertedAABBox2D;
 use glam::{vec2, Vec2};
 use std::cell::RefCell;
 use std::rc::Rc;
 
 pub struct Partition {
-    pub members: Vec<Rc<RefCell<dyn EntityBase>>>,
+    pub members: Vec<Rc<RefCell<dyn EntityMovable>>>,
     pub bounding_box: InvertedAABBox2D,
 }
 
@@ -23,7 +23,7 @@ pub struct CellSpacePartition {
     pub m_Cells: Vec<Partition>,
 
     // this is used to store any valid neighbors when an agent searches its neighboring space
-    pub m_Neighbors: Vec<Rc<RefCell<dyn EntityBase>>>,
+    pub m_Neighbors: Vec<Rc<RefCell<dyn EntityMovable>>>,
 
     // the width and height of the world space the entities inhabit
     m_dSpaceWidth: f32,
@@ -90,7 +90,7 @@ impl CellSpacePartition {
         idx
     }
 
-    pub fn add_entity(&mut self, entity: Rc<RefCell<dyn EntityBase>>) {
+    pub fn add_entity(&mut self, entity: Rc<RefCell<dyn EntityMovable>>) {
         let sz = self.m_Cells.len();
         let idx = self.position_to_index(&entity.borrow().position()) as usize;
         assert!(idx < sz);
@@ -135,7 +135,7 @@ impl CellSpacePartition {
     //  Checks to see if an entity has moved cells. If so the data structure
     //  is updated accordingly
     //------------------------------------------------------------------------
-    pub fn UpdateEntity(&mut self, entity: Rc<RefCell<dyn EntityBase>>, old_position: &Vec2) {
+    pub fn UpdateEntity(&mut self, entity: Rc<RefCell<dyn EntityMovable>>, old_position: &Vec2) {
         // if the index for the old pos and the new pos are not equal then
         // the entity has moved to another cell.
         let old_idx = self.position_to_index(old_position);

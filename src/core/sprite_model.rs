@@ -12,8 +12,8 @@ pub enum SpriteAnimationType {
 }
 
 /*
-    A sprite is a glyph or series of glyphs contained in a texture.
- */
+   A sprite is a glyph or series of glyphs contained in a texture.
+*/
 
 #[derive(Debug, Clone)]
 pub struct SpriteData {
@@ -21,8 +21,8 @@ pub struct SpriteData {
     pub texture_width: f32,
     pub texture_height: f32,
     pub offset: Vec2, // position of the glyph in the texture
-    pub x_step: f32, // horizontal offset between glyphs for the same sprite
-    pub y_step: f32, // vertical offset between glyphs for the same sprite
+    pub x_step: f32,  // horizontal offset between glyphs for the same sprite
+    pub y_step: f32,  // vertical offset between glyphs for the same sprite
     pub num_steps: u32,
     pub step_timer: f32,
     pub step_count: f32,
@@ -55,13 +55,16 @@ impl SpriteModel {
             SpriteAnimationType::BackAndForth => self.update_back_and_forth(delta_time),
         }
 
-        self.shader.setVec2("offset", &vec2(
-            self.sprite_data.offset.x + self.sprite_data.x_step * self.sprite_data.step_count,
-            self.sprite_data.offset.y + self.sprite_data.y_step * self.sprite_data.step_count,
-            )
+        self.shader.setVec2(
+            "offset",
+            &vec2(
+                self.sprite_data.offset.x + self.sprite_data.x_step * self.sprite_data.step_count,
+                self.sprite_data.offset.y + self.sprite_data.y_step * self.sprite_data.step_count,
+            ),
         );
 
-        self.shader.setVec2("tex_size", &vec2(self.sprite_data.texture_width, self.sprite_data.texture_height));
+        self.shader
+            .setVec2("tex_size", &vec2(self.sprite_data.texture_width, self.sprite_data.texture_height));
 
         self.mesh.render(&self.shader, position, angle, scale);
     }

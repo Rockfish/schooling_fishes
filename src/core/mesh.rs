@@ -130,12 +130,11 @@ impl Mesh {
             VAO,
             VBO,
             EBO,
-            flip_to_xz
+            flip_to_xz,
         }
     }
 
     pub fn render(&self, shader: &Shader, position: Vec3, angle: f32, scale: Vec3) {
-
         let position = if self.flip_to_xz {
             vec3(position.x - 400.0, 0.0, position.y - 400.0)
         } else {

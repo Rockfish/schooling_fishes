@@ -1,19 +1,35 @@
-use crate::base_entity::{BaseEntity, EntityBase};
 use crate::configuration::CONFIG;
+use crate::core::model::Model;
+use crate::entity_traits::{next_valid_id, EntityBase, EntityMovable, EntitySteerable};
 use crate::game_world::GameWorld;
-use crate::moving_entity::MovingEntity;
 use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
-use crate::utils::{RandInRange, Truncate, WrapAround};
-use glam::{vec2, vec3, Vec2, Vec3};
+use crate::utils::{Truncate, WrapAround};
+use glam::{vec2, vec3, Vec2};
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::core::model::Model;
 
 pub struct Vehicle {
-    pub base_entity: BaseEntity,
+    // pub base_entity: BaseEntity,
+    // EntityBase
+    pub id: i32,
+    pub entity_type: i32,
+    pub tag: bool,
+    pub position: Vec2,
+    pub scale: Vec2,
+    // pub heading: Vec2,
+    // pub side_vec: Vec2,
+    pub bounding_radius: f32,
 
-    pub moving_entity: MovingEntity,
+    // pub moving_entity: MovingEntity,
+    // EntityMoving
+    pub velocity: Vec2,
+    pub heading: Vec2,
+    pub side_vec: Vec2,
+    pub mass: f32,
+    pub max_speed: f32,
+    pub max_force: f32,
+    pub max_turn_rate: f32,
 
     //a pointer to the world data. So a vehicle can access any obstacle,
     //path, wall or agent data
@@ -57,28 +73,28 @@ impl Vehicle {
     ) -> Rc<RefCell<Vehicle>> {
         let heading = vec2(rotation.sin(), -rotation.cos());
 
-        let mut base_entity = BaseEntity::new(0, position, heading, scale);
-        base_entity.scale = vec2(scale, scale);
-
-        let moving_entity = MovingEntity::new(
-            velocity,
-            max_speed,
-            mass,
-            max_turn_rate,
-            max_force,
-        );
-
         let heading_smoother = Smoother::new(CONFIG.NumSamplesForSmoothing, vec2(0.0, 0.0));
 
         let vehicle = Rc::new(RefCell::new(Vehicle {
-            base_entity,
+            id: next_valid_id(),
+            entity_type: 0,
+            tag: false,
+            position,
+            scale: vec2(scale, scale),
+            bounding_radius: 0.0,
+            velocity,
+            heading,
+            side_vec: Default::default(),
+            mass,
+            max_speed,
+            max_force,
+            max_turn_rate,
             m_pWorld: world,
             m_pSteering: RefCell::new(SteeringBehavior::new()),
             m_pHeadingSmoother: heading_smoother,
             m_vSmoothedHeading: Default::default(),
             m_bSmoothingOn: false,
             m_dTimeElapsed: 0.0,
-            moving_entity,
             model,
         }));
 
@@ -105,29 +121,29 @@ impl Vehicle {
         let steering_force = vehicle.borrow().m_pSteering.borrow_mut().Calculate(vehicle);
 
         // Acceleration = Force/Mass
-        let acceleration = steering_force / vehicle.borrow().moving_entity.mass;
+        let acceleration = steering_force / vehicle.borrow().mass;
 
         // update velocity
-        vehicle.borrow_mut().moving_entity.velocity += acceleration * time_elapsed;
+        vehicle.borrow_mut().velocity += acceleration * time_elapsed;
 
         // make sure vehicle does not exceed maximum velocity
-        // vehicle.moving_entity.m_vVelocity.Truncate(vehicle.moving_entity.m_dMaxSpeed);
-        let velocity = vehicle.borrow().moving_entity.velocity;
-        let max_speed = vehicle.borrow().moving_entity.max_speed;
+        // vehicle.m_vVelocity.Truncate(vehicle.m_dMaxSpeed);
+        let velocity = vehicle.borrow().velocity;
+        let max_speed = vehicle.borrow().max_speed;
         let truncated_velocity = Truncate(velocity, max_speed);
-        vehicle.borrow_mut().moving_entity.velocity = truncated_velocity;
+        vehicle.borrow_mut().velocity = truncated_velocity;
 
         // update the position
-        let travel_distance = vehicle.borrow().moving_entity.velocity * time_elapsed;
-        vehicle.borrow_mut().base_entity.position += travel_distance;
+        let travel_distance = vehicle.borrow().velocity * time_elapsed;
+        vehicle.borrow_mut().position += travel_distance;
 
         // update the heading if the vehicle has a non zero velocity
-        if vehicle.borrow().moving_entity.velocity.length_squared() > 0.00000001 {
-            let normalize = vehicle.borrow().moving_entity.velocity.normalize_or_zero();
-            vehicle.borrow_mut().base_entity.heading = normalize;
+        if vehicle.borrow().velocity.length_squared() > 0.00000001 {
+            let normalize = vehicle.borrow().velocity.normalize_or_zero();
+            vehicle.borrow_mut().heading = normalize;
 
-            let prep = vehicle.borrow().base_entity.heading.perp();
-            vehicle.borrow_mut().base_entity.side_vec = prep;
+            let prep = vehicle.borrow().heading.perp();
+            vehicle.borrow_mut().side_vec = prep;
         }
 
         //EnforceNonPenetrationConstraint(this, World()->Agents());
@@ -135,10 +151,10 @@ impl Vehicle {
         //treat the screen as a toroid
         let cx = vehicle.borrow().m_pWorld.borrow().cxClient();
         let cy = vehicle.borrow().m_pWorld.borrow().cyClient();
-        WrapAround(&mut vehicle.borrow_mut().base_entity.position, cx, cy);
+        WrapAround(&mut vehicle.borrow_mut().position, cx, cy);
 
         if vehicle.borrow().m_bSmoothingOn {
-            let heading = vehicle.borrow().base_entity.heading;
+            let heading = vehicle.borrow().heading;
             let smoothed_heading = vehicle.borrow_mut().m_pHeadingSmoother.update(heading);
             vehicle.borrow_mut().m_vSmoothedHeading = smoothed_heading;
         }
@@ -147,9 +163,9 @@ impl Vehicle {
     }
 
     pub fn render(&mut self, delta_time: f32) {
-        let mut angle = self.base_entity.heading.x.acos().to_degrees();
+        let mut angle = self.heading.x.acos().to_degrees();
 
-        if self.base_entity.heading.y < 0.0 {
+        if self.heading.y < 0.0 {
             angle = 360.0 - angle;
         }
 
@@ -157,9 +173,9 @@ impl Vehicle {
         angle += 90.0;
         angle *= -1.0;
 
-        // let position = vec3(self.base_entity.position.x, self.base_entity.position.y, 0.0);
-        let position = vec3(self.base_entity.position.x -400.0, 0.0, self.base_entity.position.y -400.0);
-        let scale = vec3(self.base_entity.scale.x, self.base_entity.scale.y, self.base_entity.scale.x);
+        // let position = vec3(self.position.x, self.position.y, 0.0);
+        let position = vec3(self.position.x - 400.0, 0.0, self.position.y - 400.0);
+        let scale = vec3(self.scale.x, self.scale.y, self.scale.x);
 
         self.model.render(position, angle, scale, delta_time);
 
@@ -239,79 +255,81 @@ impl Vehicle {
         //     Steering()->RenderAids();
         // }
     }
-
-    pub fn set_max_speed(&mut self, speed: f32) {
-        self.moving_entity.max_speed = speed;
-    }
-
-    pub fn heading(&self) -> Vec2 {
-        self.base_entity.heading
-    }
-    pub fn side(&self) -> Vec2 {
-        self.base_entity.side_vec
-    }
-
-    pub fn print(&self) {
-        println!(
-            "{:#?}\n{:#?}", // "{:#?}\n", // "{:#?}\n{:#?}\n{:#?}\n", // {:#?}\n{:#?}\n",
-            self.moving_entity,
-            // unsafe {self.m_pSteering.try_borrow_unguarded()},
-            // self.m_pHeadingSmoother,
-            // self.m_vSmoothedHeading,
-            // self.m_bSmoothingOn,
-            self.m_dTimeElapsed,
-            // self.m_vecVehicleVB,
-            // self.color
-        );
-    }
 }
 
 impl EntityBase for Vehicle {
     fn id(&self) -> i32 {
-        self.base_entity.id
+        self.id
+    }
+    fn entity_type(&self) -> i32 {
+        self.entity_type
     }
 
     fn position(&self) -> Vec2 {
-        self.base_entity.position
-    }
-
-    fn heading(&self) -> Vec2 {
-        self.base_entity.heading
+        self.position
     }
 
     fn bounding_radius(&self) -> f32 {
-        self.base_entity.bounding_radius
+        self.bounding_radius
     }
 
     fn tag(&mut self) {
-        self.base_entity.tag();
+        self.tag = true;
     }
 
     fn untag(&mut self) {
-        self.base_entity.untag();
+        self.tag = false;
     }
 
     fn is_tagged(&self) -> bool {
-        self.base_entity.is_tagged()
+        self.tag
     }
 
     fn scale(&self) -> Vec2 {
-        self.base_entity.scale
+        self.scale
     }
 
     fn set_scale_vec(&mut self, val: Vec2) {
-        self.base_entity.set_scale_vec(val);
+        self.scale = val;
     }
 
     fn set_scale_float(&mut self, val: f32) {
-        self.base_entity.set_scale_float(val);
-    }
-
-    fn entity_type(&self) -> i32 {
-        self.base_entity.entity_type()
-    }
-
-    fn set_entity_type(&mut self, new_type: i32) {
-        self.base_entity.set_entity_type(new_type);
+        self.scale = vec2(val, val);
     }
 }
+
+impl EntityMovable for Vehicle {
+    fn mass(&self) -> f32 {
+        self.mass
+    }
+
+    fn velocity(&self) -> Vec2 {
+        self.velocity
+    }
+
+    fn speed(&self) -> f32 {
+        self.velocity.length()
+    }
+
+    fn heading(&self) -> Vec2 {
+        self.heading
+    }
+
+    fn side(&self) -> Vec2 {
+        self.side_vec
+    }
+
+    fn max_force(&self) -> f32 {
+        self.max_force
+    }
+
+    fn max_speed(&self) -> f32 {
+        self.max_speed
+    }
+
+    fn set_max_speed(&mut self, speed: f32) {
+        self.max_speed = speed;
+    }
+}
+
+// impl EntitySteerable for Vehicle { }

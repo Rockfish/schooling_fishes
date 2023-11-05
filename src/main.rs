@@ -8,16 +8,15 @@
 #![allow(clippy::zero_ptr)]
 #![allow(clippy::assign_op_pattern)]
 
-mod base_entity;
 mod c2d_matrix;
 mod cell_space_partition;
 mod configuration;
 mod constants;
 mod core;
 mod entity_functions;
+mod entity_traits;
 mod game_world;
 mod inverted_aab_box_2d;
-mod moving_entity;
 mod path;
 mod shapes;
 mod smoother;
@@ -30,7 +29,7 @@ mod wall_2d;
 extern crate glfw;
 
 use crate::core::camera::{Camera, CameraMovement};
-use crate::core::model::{Model, ModelBuilder};
+use crate::core::model::ModelBuilder;
 use crate::core::shader::Shader;
 use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
 use crate::game_world::GameWorld;
@@ -89,14 +88,14 @@ fn main() {
         vec3(0.0, 170.0, 500.0), // for xz world
         vec3(0.0, 1.0, 0.0),
         -90.0, // seems camera starts by looking down the x-axis, so needs to turn left to see the plane
-        -20.0);
+        -20.0,
+    );
 
     // let camera = Camera::camera_vec3_up_yaw_pitch(
     //     vec3(400.0, -200.0, 50.0),
     //     vec3(0.0, 1.0, 0.0),
     //     -90.0, // seems camera starts by looking down the x-axis, so needs to turn left to see the plane
     //     90.0);
-
 
     // for ortho perspective
     // let camera = Camera::camera_vec3(vec3(0.0, 0.0, 55.0));
@@ -125,11 +124,7 @@ fn main() {
     )
     .unwrap();
 
-    let model_shader = Shader::new(
-        "assets/shaders/basic_model.vert",
-        "assets/shaders/basic_model.frag",
-        None::<String>
-    ).unwrap();
+    let model_shader = Shader::new("assets/shaders/basic_model.vert", "assets/shaders/basic_model.frag", None::<String>).unwrap();
 
     let model_shader = Rc::new(model_shader);
     let tile_shader = Rc::new(tile_shader);
@@ -153,9 +148,7 @@ fn main() {
 
     let big_fish = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/BarramundiFish/glTF/BarramundiFish.gltf";
     let duck = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/Duck/glTF/Duck.gltf";
-    let fish_model = ModelBuilder::new(big_fish, model_shader.clone(), big_fish)
-        .build()
-        .unwrap();
+    let fish_model = ModelBuilder::new(big_fish, model_shader.clone(), big_fish).build().unwrap();
 
     let game_world = GameWorld::new(SCR_WIDTH as i32, SCR_HEIGHT as i32, fish_model.clone());
 
@@ -190,10 +183,7 @@ fn main() {
         GameWorld::Update(&game_world, state.deltaTime);
 
         shader_texture.use_shader_with(&projection, &view);
-        plane.render(&shader_texture,
-                     vec3(-400.0, -5.0, -400.0),
-                     0.0,
-                     vec3(800.0, 1.0, 800.0));
+        plane.render(&shader_texture, vec3(-400.0, -5.0, -400.0), 0.0, vec3(800.0, 1.0, 800.0));
 
         // tile_shader.use_shader_with(&projection, &view);
         model_shader.use_shader_with(&projection, &view);

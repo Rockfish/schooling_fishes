@@ -1,7 +1,8 @@
-use crate::base_entity::{BaseEntity, EntityBase};
 use crate::cell_space_partition::CellSpacePartition;
 use crate::configuration::CONFIG;
+use crate::core::model::Model;
 use crate::entity_functions::TagNeighbors;
+use crate::entity_traits::{EntityBase, EntityMovable, EntitySteerable};
 use crate::path::Path;
 use crate::utils::*;
 use crate::vehicle::Vehicle;
@@ -10,7 +11,6 @@ use glam::{vec2, Vec2};
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
-use crate::core::model::Model;
 
 // #[derive(Debug)]
 pub struct GameWorld {
@@ -19,7 +19,7 @@ pub struct GameWorld {
 
     //any obstacles
     // m_Obstacles: RefCell<Vec<BaseEntity>>,
-    m_Obstacles: RefCell<Vec<Rc<RefCell<dyn EntityBase>>>>,
+    m_Obstacles: RefCell<Vec<Rc<RefCell<dyn EntityMovable>>>>,
 
     //container containing any walls in the environment
     m_Walls: Vec<Wall2D>,
@@ -170,9 +170,11 @@ impl GameWorld {
         for vehicle in &game_world.borrow().m_Vehicles {
             let old_position = Vehicle::Update(vehicle, time_elapsed);
             if game_world.borrow().m_bCellSpaceOn {
-                game_world.borrow().m_pCellSpace.borrow_mut().UpdateEntity(
-                    vehicle.clone() as Rc<RefCell<dyn EntityBase>>,
-                    &old_position);
+                game_world
+                    .borrow()
+                    .m_pCellSpace
+                    .borrow_mut()
+                    .UpdateEntity(vehicle.clone() as Rc<RefCell<dyn EntityMovable>>, &old_position);
             }
         }
     }
@@ -196,8 +198,7 @@ impl GameWorld {
     }
 
     pub fn TagVehiclesWithinViewRange(&self, pVehicle: Rc<RefCell<Vehicle>>, range: f32) {
-
-        let dyn_vehicle: Rc<RefCell<dyn EntityBase>> = pVehicle as Rc<RefCell<dyn EntityBase>>;
+        let dyn_vehicle: Rc<RefCell<dyn EntityMovable>> = pVehicle as Rc<RefCell<dyn EntityMovable>>;
         TagNeighbors(dyn_vehicle, &self.m_Obstacles, range);
     }
 
