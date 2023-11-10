@@ -47,4 +47,4 @@ pub trait EntityMovable: EntityBase {
 }
 
 pub trait EntitySteerable: EntityMovable {}
-impl<T> EntitySteerable for T where T: EntityMovable {}
+// impl<T> EntitySteerable for T where T: EntityMovable {}

@@ -40,6 +40,8 @@ use glfw::{Action, Context, Key};
 use log::error;
 use std::path::PathBuf;
 use std::rc::Rc;
+use crate::core::mesh::{Color, Mesh};
+use crate::shapes::mesh_plane::build_vertexes_and_indices;
 
 const SCR_WIDTH: f32 = 1000.0;
 const SCR_HEIGHT: f32 = 800.0;
@@ -129,6 +131,7 @@ fn main() {
     let water_texture = Rc::new(
         Texture::new(
             PathBuf::from("assets/images/water_texture.png"),
+            // PathBuf::from("assets/images/many_fish.png"),
             &TextureConfig {
                 flip_v: true,
                 gamma_correction: false,
@@ -141,7 +144,11 @@ fn main() {
 
     // let fish_sprite = FishSprite::new_sprite_model(tile_shader.clone(), true);
 
-    let plane = Plane::new(water_texture);
+    // let plane = Plane::new(water_texture);
+
+    let (vertices, indices) = build_vertexes_and_indices(500, 500, Color::white());
+    let plane_mesh = Mesh::new(vertices, indices, &water_texture, false);
+
 
     let big_fish = "assets/models/BarramundiFish/glTF/BarramundiFish.gltf";
     // let duck = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/Duck/glTF/Duck.gltf";
@@ -151,6 +158,8 @@ fn main() {
 
     unsafe {
         gl::Enable(gl::DEPTH_TEST);
+        gl::Enable(gl::BLEND);
+        gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
     }
 
     // let view = state.camera.get_view_matrix();
@@ -180,12 +189,16 @@ fn main() {
         GameWorld::Update(&game_world, state.deltaTime);
 
         shader_texture.use_shader_with(&projection, &view);
-        plane.render(&shader_texture, vec3(-400.0, -5.0, -400.0), 0.0, vec3(800.0, 1.0, 800.0));
+        shader_texture.setFloat("alpha", 1.0);
+        plane_mesh.render(&shader_texture, vec3(-500.0, -5.0, -500.0), 0.0, vec3(2.0, 1.0, 2.0));
 
-        // tile_shader.use_shader_with(&projection, &view);
         model_shader.use_shader_with(&projection, &view);
-
         game_world.borrow().render(state.deltaTime);
+
+
+        shader_texture.use_shader_with(&projection, &view);
+        shader_texture.setFloat("alpha", 0.4);
+        plane_mesh.render(&shader_texture, vec3(-750.0, 100.0, -750.0), 0.0, vec3(3.0, 1.0, 3.0));
 
         // fish_model.render(
         //     vec3(0.0, 0.0, 0.0),

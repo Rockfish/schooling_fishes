@@ -1,6 +1,6 @@
 use crate::configuration::CONFIG;
 use crate::core::model::Model;
-use crate::entity_traits::{next_valid_id, EntityBase, EntityMovable};
+use crate::entity_traits::{next_valid_id, EntityBase, EntityMovable, EntitySteerable};
 use crate::game_world::GameWorld;
 use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
@@ -334,4 +334,4 @@ impl EntityMovable for Vehicle {
     }
 }
 
-// impl EntitySteerable for Vehicle { }
+impl EntitySteerable for Vehicle { }

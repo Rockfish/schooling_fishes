@@ -3,3 +3,4 @@ pub mod line_box;
 pub mod plane;
 pub mod small_fish;
 pub mod triangle;
+pub mod mesh_plane;

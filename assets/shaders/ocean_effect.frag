@@ -19,6 +19,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     float roll       = 0.0;  // Rotate camera like putting your head to your shoulder
     float height     = 2.0;  // Height of the room, BUT also changes the pitch downwards.
     float fov        = 1.0;  // Basically zoom, comes with perspective distortion too.
+
     float scale      = 8.0; // Size of the rays (also changes the speed)
     float speed      = 0.16; // How quickly the rays dance
     float brightness = 1.7;  // Smaller = brighter, more intense rays
@@ -36,7 +37,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec3 vv = normalize(cross(uu,ww));
 	vec3 rd = p.x*uu + p.y*vv + fov*ww;	// view ray
     vec3 pos = -ww + rd*(ww.y/rd.y);	// raytrace plane
-    pos.y = iTime*speed;				// animate noise slice
+
+    pos.y = iTime * speed;				// animate noise slice
     pos *= scale;				        // tiling frequency
 
     // Apply the offsets to camera position
@@ -57,8 +59,11 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     float intensity = exp(noise.w*contrast - brightness);
 
     // Generate a lovely warm oceany gradient
-    vec4 c = vec4(234.0/255.0-(fragCoord.y/iResolution.y)*0.7,235.0/255.0-(fragCoord.y/iResolution.y)*0.4,166.0/255.0-(fragCoord.y/iResolution.y)*0.1,1.0);
+    vec4 c = vec4(
+        234.0/255.0-(fragCoord.y/iResolution.y)*0.7,
+        235.0/255.0-(fragCoord.y/iResolution.y)*0.4,
+        166.0/255.0-(fragCoord.y/iResolution.y)*0.1,1.0);
 
     // Generate final rgba of this pixel
-	fragColor = c+vec4(rayColour*multiply*intensity, intensity);
+	fragColor = c + vec4(rayColour * multiply * intensity, intensity);
 }
