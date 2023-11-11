@@ -114,4 +114,15 @@ mod tests {
             println!("{x}");
         }
     }
+
+    #[test]
+    pub fn test_projection() {
+        let wave_vec = vec2(10.0, 10.0);
+        let spot_vec = vec2(9.0, 4.0);
+
+        let proj_vec = spot_vec.project_onto(wave_vec);
+
+        println!("{:?}", proj_vec);
+
+    }
 }

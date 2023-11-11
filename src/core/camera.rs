@@ -124,7 +124,7 @@ impl Camera {
         // update Front, Right and Up Vectors using the updated Euler angles
         self.updateCameraVectors();
 
-        println!("camera: {:#?}", self);
+        // println!("camera: {:#?}", self);
     }
 
     // processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis

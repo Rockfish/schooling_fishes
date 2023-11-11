@@ -3,19 +3,11 @@ use crate::core::mesh::{Color, Mesh, Vertex};
 
 pub fn build_vertexes_and_indices(width: u32, height: u32, color: Color) -> (Vec<Vertex>, Vec<u32>) {
     let (verts, indices, uvs) = build_verts_and_indices_uvs(width, height);
-
     let mut vertices = Vec::with_capacity(verts.len());
 
-
     for i in 0..verts.len() {
-
-        let x = verts[i].x;
-        let z = verts[i].z;
-        let y = 5.0 * ((x/width as f32)*30.0).cos() - 5.0 *((z/height as f32) * 30.0).cos();
-        let vert = vec3(x, y, z);
-
         let vertex = Vertex {
-            position: vert,
+            position: verts[i],
             tex_coords: uvs[i],
             color: color.clone(),
         };

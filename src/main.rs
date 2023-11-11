@@ -33,7 +33,6 @@ use crate::core::model::ModelBuilder;
 use crate::core::shader::Shader;
 use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
 use crate::game_world::GameWorld;
-use crate::shapes::plane::Plane;
 use glad_gl::gl;
 use glam::{vec3, Mat4};
 use glfw::{Action, Context, Key};
@@ -48,7 +47,7 @@ const SCR_HEIGHT: f32 = 800.0;
 
 struct State {
     camera: Camera,
-    deltaTime: f32,
+    delta_time: f32,
     lastFrame: f32,
     firstMouse: bool,
     lastX: f32,
@@ -102,36 +101,34 @@ fn main() {
     // Initialize the world state
     let mut state = State {
         camera,
-        deltaTime: 0.0,
+        delta_time: 0.0,
         lastFrame: 0.0,
         firstMouse: true,
         lastX: SCR_WIDTH / 2.0,
         lastY: SCR_HEIGHT / 2.0,
     };
 
-    // let shader = Shader::new("assets/shaders/camera.vert", "assets/shaders/camera.frag", None).unwrap();
     let shader_texture = Shader::new(
         "assets/shaders/camera_texture.vert",
         "assets/shaders/camera_texture.frag",
         None::<String>,
     )
     .unwrap();
-    // let tile_shader = Shader::new(
-    //     "assets/shaders/tile_texture.vert",
-    //     "assets/shaders/tile_texture.frag",
-    //     None::<String>,
-    // )
-    // .unwrap();
+
+    let wavy_shader = Shader::new(
+        "assets/shaders/wavy_texture.vert",
+        "assets/shaders/wavy_texture.frag",
+        None::<String>,
+    )
+    .unwrap();
 
     let model_shader = Shader::new("assets/shaders/basic_model.vert", "assets/shaders/basic_model.frag", None::<String>).unwrap();
 
     let model_shader = Rc::new(model_shader);
-    // let tile_shader = Rc::new(tile_shader);
 
     let water_texture = Rc::new(
         Texture::new(
             PathBuf::from("assets/images/water_texture.png"),
-            // PathBuf::from("assets/images/many_fish.png"),
             &TextureConfig {
                 flip_v: true,
                 gamma_correction: false,
@@ -142,16 +139,24 @@ fn main() {
         .unwrap(),
     );
 
-    // let fish_sprite = FishSprite::new_sprite_model(tile_shader.clone(), true);
-
-    // let plane = Plane::new(water_texture);
+    let sand_texture = Rc::new(
+        Texture::new(
+            PathBuf::from("assets/images/ground_0024_color_1k.jpg"),
+            &TextureConfig {
+                flip_v: false,
+                gamma_correction: false,
+                filter: TextureFilter::Linear,
+                texture_type: TextureType::Diffuse,
+            },
+        )
+            .unwrap(),
+    );
 
     let (vertices, indices) = build_vertexes_and_indices(500, 500, Color::white());
-    let plane_mesh = Mesh::new(vertices, indices, &water_texture, false);
-
+    let surface_mesh = Mesh::new(vertices.clone(), indices.clone(), &water_texture, false);
+    let bottom_mesh = Mesh::new(vertices, indices, &sand_texture, false);
 
     let big_fish = "assets/models/BarramundiFish/glTF/BarramundiFish.gltf";
-    // let duck = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/Duck/glTF/Duck.gltf";
     let fish_model = ModelBuilder::new(big_fish, model_shader.clone(), big_fish).build().unwrap();
 
     let game_world = GameWorld::new(SCR_WIDTH as i32, SCR_HEIGHT as i32, fish_model.clone());
@@ -162,13 +167,11 @@ fn main() {
         gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
     }
 
-    // let view = state.camera.get_view_matrix();
-
     // render loop
     while !window.should_close() {
-        let currentFrame = glfw.get_time() as f32;
-        state.deltaTime = currentFrame - state.lastFrame;
-        state.lastFrame = currentFrame;
+        let current_time = glfw.get_time() as f32;
+        state.delta_time = current_time - state.lastFrame;
+        state.lastFrame = current_time;
 
         glfw.poll_events();
         for (_, event) in glfw::flush_messages(&events) {
@@ -186,26 +189,22 @@ fn main() {
         // let projection = Mat4::orthographic_rh_gl(0.0, 600.0, 0.0, 600.0, 0.1, 100.0);
         // let projection = Mat4::orthographic_rh_gl(0.0, 1000.0, 0.0, 1000.0, 0.0, 1000.0);
 
-        GameWorld::Update(&game_world, state.deltaTime);
+        GameWorld::Update(&game_world, state.delta_time);
 
+        // bottom
         shader_texture.use_shader_with(&projection, &view);
         shader_texture.setFloat("alpha", 1.0);
-        plane_mesh.render(&shader_texture, vec3(-500.0, -5.0, -500.0), 0.0, vec3(2.0, 1.0, 2.0));
+        bottom_mesh.render(&shader_texture, vec3(-750.0, -5.0, -750.0), 0.0, vec3(3.0, 1.0, 3.0));
 
+        // fish
         model_shader.use_shader_with(&projection, &view);
-        game_world.borrow().render(state.deltaTime);
+        game_world.borrow().render(state.delta_time);
 
-
-        shader_texture.use_shader_with(&projection, &view);
-        shader_texture.setFloat("alpha", 0.4);
-        plane_mesh.render(&shader_texture, vec3(-750.0, 100.0, -750.0), 0.0, vec3(3.0, 1.0, 3.0));
-
-        // fish_model.render(
-        //     vec3(0.0, 0.0, 0.0),
-        //     20.0f32 * glfw.get_time() as f32,
-        //     vec3(100.0, 100.0, 100.0),
-        //     0.0
-        // );
+        // surface
+        wavy_shader.use_shader_with(&projection, &view);
+        wavy_shader.setFloat("alpha", 0.4);
+        wavy_shader.setFloat("current_time", current_time);
+        surface_mesh.render(&wavy_shader, vec3(-750.0, 100.0, -750.0), 0.0, vec3(3.0, 1.0, 3.0));
 
         window.swap_buffers();
     }
@@ -221,22 +220,22 @@ fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent, stat
             framebuffer_size_event(window, width, height);
         }
         glfw::WindowEvent::Key(Key::W, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::Forward, state.deltaTime);
+            state.camera.ProcessKeyboard(CameraMovement::Forward, state.delta_time);
         }
         glfw::WindowEvent::Key(Key::S, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::Backward, state.deltaTime);
+            state.camera.ProcessKeyboard(CameraMovement::Backward, state.delta_time);
         }
         glfw::WindowEvent::Key(Key::A, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::Left, state.deltaTime);
+            state.camera.ProcessKeyboard(CameraMovement::Left, state.delta_time);
         }
         glfw::WindowEvent::Key(Key::D, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::Right, state.deltaTime);
+            state.camera.ProcessKeyboard(CameraMovement::Right, state.delta_time);
         }
         glfw::WindowEvent::Key(Key::Q, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::Up, state.deltaTime);
+            state.camera.ProcessKeyboard(CameraMovement::Up, state.delta_time);
         }
         glfw::WindowEvent::Key(Key::Z, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::Down, state.deltaTime);
+            state.camera.ProcessKeyboard(CameraMovement::Down, state.delta_time);
         }
         glfw::WindowEvent::CursorPos(xpos, ypos) => mouse_handler(state, xpos, ypos),
         glfw::WindowEvent::Scroll(xoffset, ysoffset) => scroll_handler(state, xoffset, ysoffset),
@@ -251,7 +250,7 @@ fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent, stat
 fn framebuffer_size_event(_window: &mut glfw::Window, width: i32, height: i32) {
     // make sure the viewport matches the new window dimensions; note that width and
     // height will be significantly larger than specified on retina displays.
-    println!("Framebuffer size: {}, {}", width, height);
+    // println!("Framebuffer size: {}, {}", width, height);
     unsafe {
         gl::Viewport(0, 0, width, height);
     }
