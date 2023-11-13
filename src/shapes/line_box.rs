@@ -1,7 +1,7 @@
-use crate::core::shader::Shader;
-use crate::core::SIZE_OF_FLOAT;
-use glad_gl::gl;
-use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
+use small_gl_core::shader::Shader;
+use small_gl_core::SIZE_OF_FLOAT;
+use small_gl_core::gl;
+use small_gl_core::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use glam::{Mat4, Vec3};
 use std::ptr;
 
@@ -52,8 +52,8 @@ impl LineBox {
             // shader.use_shader();
             let mut model_transform = Mat4::from_translation(position);
             model_transform *= Mat4::from_scale(scale);
-            shader.setMat4("model", &model_transform);
-            shader.setVec3("color", &color);
+            shader.set_mat4("model", &model_transform);
+            shader.set_vec3("color", &color);
 
             gl::BindVertexArray(self.line_VAO);
             gl::DrawArrays(gl::LINE_LOOP, 0, 4);

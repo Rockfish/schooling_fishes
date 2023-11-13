@@ -1,8 +1,8 @@
-use crate::core::shader::Shader;
-use crate::core::texture::Texture;
-use crate::core::SIZE_OF_FLOAT;
-use glad_gl::gl;
-use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
+use small_gl_core::shader::Shader;
+use small_gl_core::texture::Texture;
+use small_gl_core::SIZE_OF_FLOAT;
+use small_gl_core::gl;
+use small_gl_core::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use glam::{vec3, Mat4, Vec3};
 use std::ptr;
 use std::rc::Rc;
@@ -84,8 +84,8 @@ impl Plane {
         model_transform *= Mat4::from_axis_angle(vec3(1.0, 0.0, 0.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);
 
-        shader.setMat4("model", &model_transform);
-        shader.setInt("texture_diffuse1", 0);
+        shader.set_mat4("model", &model_transform);
+        shader.set_int("texture_diffuse1", 0);
 
         unsafe {
             gl::BindVertexArray(self.VAO);

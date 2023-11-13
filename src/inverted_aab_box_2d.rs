@@ -1,4 +1,4 @@
-use glad_gl::gl;
+use small_gl_core::gl;
 use glam::Vec2;
 
 #[derive(Debug)]

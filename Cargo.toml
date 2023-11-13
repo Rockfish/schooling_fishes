@@ -6,17 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-#glfw = "0.52.0"
-glad-gl = { path = "./glad-gl" }
 glam = "0.24.1"
-#russimp = { path = "/Users/john/Dev_Rust/Repos/russimp" }
-#ordered-float = { version = "3.0", default-features = false }
-#itertools = "0.11.0"
+glfw = "0.53.0"
 image = "0.24.7"
 russimp = "2.0.6"
 rand = "0.8.5"
 log = "0.4.20"
 rand_distr = "0.4.3"
-
-[dependencies.glfw]
-version = "*"
+small_gl_core = { git = "https://github.com/Rockfish/small_gl_core.git" }

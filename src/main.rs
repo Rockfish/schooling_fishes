@@ -12,7 +12,6 @@ mod c2d_matrix;
 mod cell_space_partition;
 mod configuration;
 mod constants;
-mod core;
 mod entity_functions;
 mod entity_traits;
 mod game_world;
@@ -28,18 +27,18 @@ mod wall_2d;
 
 extern crate glfw;
 
-use crate::core::camera::{Camera, CameraMovement};
-use crate::core::model::ModelBuilder;
-use crate::core::shader::Shader;
-use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
+use small_gl_core::camera::{Camera, CameraMovement};
+use small_gl_core::model::ModelBuilder;
+use small_gl_core::shader::Shader;
+use small_gl_core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
 use crate::game_world::GameWorld;
-use glad_gl::gl;
+use small_gl_core::gl;
 use glam::{vec3, Mat4};
 use glfw::{Action, Context, Key};
 use log::error;
 use std::path::PathBuf;
 use std::rc::Rc;
-use crate::core::mesh::{Color, Mesh};
+use small_gl_core::mesh::{Color, Mesh};
 use crate::shapes::mesh_plane::build_vertexes_and_indices;
 
 const SCR_WIDTH: f32 = 1000.0;
@@ -179,8 +178,7 @@ fn main() {
         }
 
         unsafe {
-            // render
-            gl::ClearColor(0.1, 0.5, 0.1, 1.0);
+            gl::ClearColor(0.0, 0.02, 0.45, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
@@ -193,8 +191,8 @@ fn main() {
 
         // bottom
         shader_texture.use_shader_with(&projection, &view);
-        shader_texture.setFloat("alpha", 1.0);
-        bottom_mesh.render(&shader_texture, vec3(-750.0, -5.0, -750.0), 0.0, vec3(3.0, 1.0, 3.0));
+        shader_texture.set_float("alpha", 1.0);
+        bottom_mesh.render(&shader_texture, vec3(-2500.0, -5.0, -2500.0), 0.0, vec3(10.0, 1.0, 10.0));
 
         // fish
         model_shader.use_shader_with(&projection, &view);
@@ -202,8 +200,8 @@ fn main() {
 
         // surface
         wavy_shader.use_shader_with(&projection, &view);
-        wavy_shader.setFloat("alpha", 0.4);
-        wavy_shader.setFloat("current_time", current_time);
+        wavy_shader.set_float("alpha", 0.4);
+        wavy_shader.set_float("current_time", current_time);
         surface_mesh.render(&wavy_shader, vec3(-750.0, 100.0, -750.0), 0.0, vec3(3.0, 1.0, 3.0));
 
         window.swap_buffers();
@@ -220,22 +218,22 @@ fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent, stat
             framebuffer_size_event(window, width, height);
         }
         glfw::WindowEvent::Key(Key::W, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::Forward, state.delta_time);
+            state.camera.process_keyboard(CameraMovement::Forward, state.delta_time);
         }
         glfw::WindowEvent::Key(Key::S, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::Backward, state.delta_time);
+            state.camera.process_keyboard(CameraMovement::Backward, state.delta_time);
         }
         glfw::WindowEvent::Key(Key::A, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::Left, state.delta_time);
+            state.camera.process_keyboard(CameraMovement::Left, state.delta_time);
         }
         glfw::WindowEvent::Key(Key::D, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::Right, state.delta_time);
+            state.camera.process_keyboard(CameraMovement::Right, state.delta_time);
         }
         glfw::WindowEvent::Key(Key::Q, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::Up, state.delta_time);
+            state.camera.process_keyboard(CameraMovement::Up, state.delta_time);
         }
         glfw::WindowEvent::Key(Key::Z, _, _, _) => {
-            state.camera.ProcessKeyboard(CameraMovement::Down, state.delta_time);
+            state.camera.process_keyboard(CameraMovement::Down, state.delta_time);
         }
         glfw::WindowEvent::CursorPos(xpos, ypos) => mouse_handler(state, xpos, ypos),
         glfw::WindowEvent::Scroll(xoffset, ysoffset) => scroll_handler(state, xoffset, ysoffset),
@@ -276,5 +274,5 @@ fn mouse_handler(state: &mut State, xposIn: f64, yposIn: f64) {
 }
 
 fn scroll_handler(state: &mut State, _xoffset: f64, yoffset: f64) {
-    state.camera.ProcessMouseScroll(yoffset as f32);
+    state.camera.process_mouse_scroll(yoffset as f32);
 }

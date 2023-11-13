@@ -1,7 +1,7 @@
-use crate::core::shader::Shader;
-use crate::core::SIZE_OF_FLOAT;
-use glad_gl::gl;
-use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
+use small_gl_core::shader::Shader;
+use small_gl_core::SIZE_OF_FLOAT;
+use small_gl_core::gl;
+use small_gl_core::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use glam::{vec3, Mat4, Vec3};
 use std::ptr;
 
@@ -51,8 +51,8 @@ impl Triangle {
         model_transform *= Mat4::from_scale(scale);
 
         shader.use_shader();
-        shader.setMat4("model", &model_transform);
-        shader.setVec3("color", color);
+        shader.set_mat4("model", &model_transform);
+        shader.set_vec3("color", color);
 
         unsafe {
             gl::BindVertexArray(self.VAO);

@@ -1,5 +1,5 @@
 use crate::configuration::CONFIG;
-use crate::core::model::Model;
+use small_gl_core::model::Model;
 use crate::entity_traits::{next_valid_id, EntityBase, EntityMovable, EntitySteerable};
 use crate::game_world::GameWorld;
 use crate::smoother::Smoother;

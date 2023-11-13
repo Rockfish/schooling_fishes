@@ -1,5 +1,5 @@
 use glam::{Vec2, vec2, vec3, Vec3};
-use crate::core::mesh::{Color, Mesh, Vertex};
+use small_gl_core::mesh::{Color, Mesh, Vertex};
 
 pub fn build_vertexes_and_indices(width: u32, height: u32, color: Color) -> (Vec<Vertex>, Vec<u32>) {
     let (verts, indices, uvs) = build_verts_and_indices_uvs(width, height);

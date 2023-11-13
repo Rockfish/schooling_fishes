@@ -1,6 +1,5 @@
 use crate::cell_space_partition::CellSpacePartition;
 use crate::configuration::CONFIG;
-use crate::core::model::Model;
 use crate::entity_functions::TagNeighbors;
 use crate::entity_traits::{EntityBase, EntityMovable};
 use crate::path::Path;
@@ -11,6 +10,8 @@ use glam::{vec2, Vec2};
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
+use small_gl_core::model::Model;
+
 
 // #[derive(Debug)]
 pub struct GameWorld {

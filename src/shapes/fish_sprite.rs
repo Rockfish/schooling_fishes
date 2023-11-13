@@ -1,7 +1,7 @@
-use crate::core::mesh::{Color, Mesh, Vertex};
-use crate::core::shader::Shader;
-use crate::core::sprite_model::{SpriteAnimationType, SpriteData, SpriteModel};
-use crate::core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
+use small_gl_core::mesh::{Color, Mesh, Vertex};
+use small_gl_core::shader::Shader;
+use small_gl_core::sprite_model::{SpriteAnimationType, SpriteData, SpriteModel};
+use small_gl_core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
 use glam::{vec2, vec3};
 use std::collections::HashMap;
 use std::path::PathBuf;
