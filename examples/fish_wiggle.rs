@@ -8,26 +8,8 @@
 #![allow(clippy::zero_ptr)]
 #![allow(clippy::assign_op_pattern)]
 
-mod c2d_matrix;
-mod cell_space_partition;
-mod configuration;
-mod entity_functions;
-mod entity_traits;
-mod game_world;
-mod inverted_aab_box_2d;
-mod path;
-mod shapes;
-mod smoother;
-mod steering_behavior;
-mod transformations;
-mod utils;
-mod vehicle;
-mod wall_2d;
-
 extern crate glfw;
 
-use crate::game_world::GameWorld;
-use crate::shapes::mesh_plane::build_vertexes_and_indices;
 use glam::{vec3, Mat4};
 use glfw::{Action, Context, Key};
 use log::error;
@@ -36,7 +18,7 @@ use small_gl_core::gl;
 use small_gl_core::mesh::{Color, Mesh};
 use small_gl_core::model::ModelBuilder;
 use small_gl_core::shader::Shader;
-use small_gl_core::texture::{Texture, TextureConfig};
+use small_gl_core::texture::{Texture, TextureConfig, TextureFilter, TextureType, TextureWrap};
 use std::rc::Rc;
 
 const SCR_WIDTH: f32 = 1000.0;
@@ -50,9 +32,6 @@ struct State {
     firstMouse: bool,
     lastX: f32,
     lastY: f32,
-    window_scale: (f32, f32),
-    viewport_width: f32,
-    viewport_height: f32,
 }
 
 fn error_callback(err: glfw::Error, description: String) {
@@ -84,7 +63,7 @@ fn main() {
     // //let camera = Camera::camera_vec3(vec3(300.0, 300.0, 500.0));
     let camera = Camera::camera_vec3_up_yaw_pitch(
         // vec3(400.0, 400.0, 700.0), for current x,y world
-        vec3(0.0, 170.0, 500.0), // for xz world
+        vec3(0.0, 50.0, 100.0), // for xz world
         vec3(0.0, 1.0, 0.0),
         -90.0, // seems camera starts by looking down the x-axis, so needs to turn left to see the plane
         -20.0,
@@ -108,9 +87,6 @@ fn main() {
         firstMouse: true,
         lastX: SCR_WIDTH / 2.0,
         lastY: SCR_HEIGHT / 2.0,
-        window_scale: window.get_content_scale(),
-        viewport_width: SCR_WIDTH,
-        viewport_height: SCR_HEIGHT,
     };
 
     let shader_texture = Shader::new("assets/shaders/camera_texture.vert", "assets/shaders/camera_texture.frag").unwrap();
@@ -122,18 +98,8 @@ fn main() {
 
     let model_shader = Rc::new(model_shader);
 
-    let water_texture = Rc::new(Texture::new("assets/images/water_texture.png", &TextureConfig::new().set_flipv(true)).unwrap());
-
-    let sand_texture = Rc::new(Texture::new("assets/images/ground_0024_color_1k.jpg", &TextureConfig::new()).unwrap());
-
-    let (vertices, indices) = build_vertexes_and_indices(500, 500, Color::white());
-    let surface_mesh = Mesh::new(vertices.clone(), indices.clone(), &water_texture, false);
-    let bottom_mesh = Mesh::new(vertices, indices, &sand_texture, false);
-
     let big_fish = "assets/models/BarramundiFish/glTF/BarramundiFish.gltf";
     let fish_model = ModelBuilder::new("big_fish", big_fish).build().unwrap();
-
-    let game_world = GameWorld::new(state.viewport_width as i32, state.viewport_height as i32, fish_model.clone());
 
     unsafe {
         gl::Enable(gl::DEPTH_TEST);
@@ -157,38 +123,27 @@ fn main() {
         }
 
         unsafe {
-            gl::ClearColor(0.0, 0.02, 0.45, 1.0);
+            gl::ClearColor(0.2, 0.50, 0.2, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
         let view = state.camera.get_view_matrix();
-        let projection = Mat4::perspective_rh_gl(
-            state.camera.zoom.to_radians(),
-            state.viewport_width / state.viewport_height,
-            0.1,
-            2000.0,
-        );
+        // let view = Mat4::look_at_rh(state.camera.position, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+        let projection = Mat4::perspective_rh_gl(state.camera.zoom.to_radians(), SCR_WIDTH / SCR_HEIGHT, 0.1, 2000.0);
         // let projection = Mat4::orthographic_rh_gl(0.0, 600.0, 0.0, 600.0, 0.1, 100.0);
         // let projection = Mat4::orthographic_rh_gl(0.0, 1000.0, 0.0, 1000.0, 0.0, 1000.0);
-
-        GameWorld::Update(&game_world, state.delta_time);
-
-        // bottom
-        shader_texture.use_shader_with(&projection, &view);
-        shader_texture.set_float("alpha", 1.0);
-        bottom_mesh.render(&shader_texture, vec3(-2500.0, -5.0, -2500.0), 0.0, vec3(10.0, 1.0, 10.0));
 
         // fish
         wiggle_shader.use_shader_with(&projection, &view);
         wiggle_shader.set_vec3("nosePos", &vec3(0.0, 0.0, -0.3));
         wiggle_shader.set_float("time", state.frame_time);
-        game_world.borrow().render(&wiggle_shader);
 
-        // surface
-        wavy_shader.use_shader_with(&projection, &view);
-        wavy_shader.set_float("alpha", 0.4);
-        wavy_shader.set_float("current_time", current_time);
-        surface_mesh.render(&wavy_shader, vec3(-750.0, 100.0, -750.0), 0.0, vec3(3.0, 1.0, 3.0));
+        let mut model = Mat4::from_translation(vec3(0.0, 0.0, 0.0));
+        model *= Mat4::from_scale(vec3(20.0, 20.0, 20.0));
+
+        wiggle_shader.set_mat4("model", &model);
+
+        fish_model.render(&wiggle_shader);
 
         window.swap_buffers();
     }
@@ -201,7 +156,7 @@ fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent, stat
     match event {
         glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => window.set_should_close(true),
         glfw::WindowEvent::FramebufferSize(width, height) => {
-            framebuffer_size_event(window, state, width, height);
+            framebuffer_size_event(window, width, height);
         }
         glfw::WindowEvent::Key(Key::W, _, _, _) => {
             state.camera.process_keyboard(CameraMovement::Forward, state.delta_time);
@@ -231,18 +186,13 @@ fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent, stat
 
 // glfw: whenever the window size changed (by OS or user resize) this event fires.
 // ---------------------------------------------------------------------------------------------
-fn framebuffer_size_event(_window: &mut glfw::Window, state: &mut State, width: i32, height: i32) {
-    println!("resize: width, height: {}, {}", width, height);
-    set_view_port(state, width, height);
-}
-
-fn set_view_port(state: &mut State, width: i32, height: i32) {
+fn framebuffer_size_event(_window: &mut glfw::Window, width: i32, height: i32) {
+    // make sure the viewport matches the new window dimensions; note that width and
+    // height will be significantly larger than specified on retina displays.
+    // println!("Framebuffer size: {}, {}", width, height);
     unsafe {
         gl::Viewport(0, 0, width, height);
     }
-
-    state.viewport_width = width as f32 / state.window_scale.0;
-    state.viewport_height = height as f32 / state.window_scale.1;
 }
 
 fn mouse_handler(state: &mut State, xposIn: f64, yposIn: f64) {

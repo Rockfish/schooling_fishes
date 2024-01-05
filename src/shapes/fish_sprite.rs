@@ -1,10 +1,9 @@
+use glam::{vec2, vec3};
 use small_gl_core::mesh::{Color, Mesh, Vertex};
 use small_gl_core::shader::Shader;
 use small_gl_core::sprite_model::{SpriteAnimationType, SpriteData, SpriteModel};
-use small_gl_core::texture::{Texture, TextureConfig, TextureFilter, TextureType};
-use glam::{vec2, vec3};
+use small_gl_core::texture::{Texture, TextureConfig, TextureFilter, TextureType, TextureWrap};
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::rc::Rc;
 
 pub struct FishSprite;
@@ -26,12 +25,14 @@ impl FishSprite {
     pub fn new_sprite_model(tile_shader: Rc<Shader>, flip_to_xz: bool) -> SpriteModel {
         let tile_texture = Rc::new(
             Texture::new(
-                PathBuf::from("assets/images/fish_3.png"),
+                "assets/images/fish_3.png",
                 &TextureConfig {
                     flip_v: true,
+                    flip_h: false,
                     gamma_correction: false,
                     filter: TextureFilter::Linear,
                     texture_type: TextureType::Diffuse,
+                    wrap: TextureWrap::Clamp,
                 },
             )
             .unwrap(),
@@ -60,7 +61,6 @@ impl FishSprite {
 
         let fish_model = SpriteModel {
             name: Rc::from("Fish"),
-            shader: tile_shader.clone(),
             mesh: Rc::new(fish_mesh),
             sprite_data: fish_data,
         };

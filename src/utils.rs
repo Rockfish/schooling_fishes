@@ -123,6 +123,5 @@ mod tests {
         let proj_vec = spot_vec.project_onto(wave_vec);
 
         println!("{:?}", proj_vec);
-
     }
 }

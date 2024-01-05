@@ -1,11 +1,12 @@
 use crate::configuration::CONFIG;
-use small_gl_core::model::Model;
 use crate::entity_traits::{next_valid_id, EntityBase, EntityMovable, EntitySteerable};
 use crate::game_world::GameWorld;
 use crate::smoother::Smoother;
 use crate::steering_behavior::SteeringBehavior;
 use crate::utils::{RandInRange, Truncate, WrapAround};
-use glam::{vec2, vec3, Vec2};
+use glam::{vec2, vec3, Mat4, Vec2};
+use small_gl_core::model::Model;
+use small_gl_core::shader::Shader;
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -156,7 +157,7 @@ impl Vehicle {
         self.m_vSmoothedHeading
     }
 
-    pub fn render(&mut self, delta_time: f32) {
+    pub fn render(&mut self, shader: &Shader) {
         let mut angle = 0.0f32;
 
         if self.m_bSmoothingOn {
@@ -179,7 +180,12 @@ impl Vehicle {
         let position = vec3(self.position.x - 400.0, self.height, self.position.y - 400.0);
         let scale = vec3(self.scale.x, self.scale.y, self.scale.x);
 
-        self.model.render(position, angle, scale, delta_time);
+        let mut model_transform = Mat4::from_translation(position);
+        model_transform *= Mat4::from_axis_angle(vec3(0.0, 1.0, 0.0), angle.to_radians());
+        model_transform *= Mat4::from_scale(scale);
+        shader.set_mat4("model", &model_transform);
+
+        self.model.render(shader);
 
         // println!("fish id: {}   position: {}", self.ID(), position);
 
@@ -334,4 +340,4 @@ impl EntityMovable for Vehicle {
     }
 }
 
-impl EntitySteerable for Vehicle { }
+impl EntitySteerable for Vehicle {}

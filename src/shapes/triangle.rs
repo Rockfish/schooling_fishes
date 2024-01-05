@@ -1,8 +1,8 @@
-use small_gl_core::shader::Shader;
-use small_gl_core::SIZE_OF_FLOAT;
+use glam::{vec3, Mat4, Vec3};
 use small_gl_core::gl;
 use small_gl_core::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
-use glam::{vec3, Mat4, Vec3};
+use small_gl_core::shader::Shader;
+use small_gl_core::SIZE_OF_FLOAT;
 use std::ptr;
 
 pub struct Triangle {

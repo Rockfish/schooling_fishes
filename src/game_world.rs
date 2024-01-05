@@ -7,11 +7,11 @@ use crate::utils::*;
 use crate::vehicle::Vehicle;
 use crate::wall_2d::Wall2D;
 use glam::{vec2, Vec2};
+use small_gl_core::model::Model;
+use small_gl_core::shader::Shader;
 use std::cell::RefCell;
 use std::f32::consts::TAU;
 use std::rc::Rc;
-use small_gl_core::model::Model;
-
 
 // #[derive(Debug)]
 pub struct GameWorld {
@@ -99,8 +99,7 @@ impl GameWorld {
                 cy as f32 / 2.0 + RandomClamped() * cy as f32 / 2.0,
             );
 
-            let sprite = model.clone();
-
+            // let sprite = model.clone();
             // sprite.sprite_data.step_count = (i % 3) as f32;
 
             let vehicle = Vehicle::new(
@@ -113,7 +112,7 @@ impl GameWorld {
                 CONFIG.MaxSpeed,
                 CONFIG.MaxTurnRatePerSecond,
                 CONFIG.Scale,
-                sprite,
+                model.clone(),
             );
 
             vehicle.borrow().m_pSteering.borrow_mut().FlockingOn();
@@ -202,7 +201,7 @@ impl GameWorld {
         TagNeighbors(dyn_vehicle, &self.m_Obstacles, range);
     }
 
-    pub fn render(&self, delta_time: f32) {
+    pub fn render(&self, shader: &Shader) {
         for wall in &self.m_Walls {
             wall.Render(true);
         }
@@ -214,7 +213,7 @@ impl GameWorld {
         let mut first = true;
         //render the agents
         for vehicle in &self.m_Vehicles {
-            vehicle.borrow_mut().render(delta_time);
+            vehicle.borrow_mut().render(shader);
 
             //render cell partitioning stuff
             if self.m_bShowCellSpaceInfo && first {

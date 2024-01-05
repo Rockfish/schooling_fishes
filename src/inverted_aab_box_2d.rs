@@ -1,5 +1,5 @@
-use small_gl_core::gl;
 use glam::Vec2;
+use small_gl_core::gl;
 
 #[derive(Debug)]
 pub struct InvertedAABBox2D {

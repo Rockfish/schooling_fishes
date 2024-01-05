@@ -1,9 +1,9 @@
+use glam::{vec3, Mat4, Vec3};
+use small_gl_core::gl;
+use small_gl_core::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use small_gl_core::shader::Shader;
 use small_gl_core::texture::Texture;
 use small_gl_core::SIZE_OF_FLOAT;
-use small_gl_core::gl;
-use small_gl_core::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
-use glam::{vec3, Mat4, Vec3};
 use std::ptr;
 use std::rc::Rc;
 

@@ -42,25 +42,25 @@ pub fn PointToWorldSpace(point: Vec2, AgentHeading: Vec2, AgentSide: Vec2, Agent
 //  this function transforms the 2D vectors into the object's world space
 //------------------------------------------------------------------------
 inline std::vector<Vector2D> WorldTransform(std::vector<Vector2D> &points,
-											const Vector2D   &pos,
-											const Vector2D   &forward,
-											const Vector2D   &side)
+                                            const Vector2D   &pos,
+                                            const Vector2D   &forward,
+                                            const Vector2D   &side)
 {
-	//copy the original vertices into the buffer about to be transformed
-	std::vector<Vector2D> TranVector2Ds = points;
+    //copy the original vertices into the buffer about to be transformed
+    std::vector<Vector2D> TranVector2Ds = points;
 
-	//create a transformation matrix
-	C2DMatrix matTransform;
+    //create a transformation matrix
+    C2DMatrix matTransform;
 
-	//rotate
-	matTransform.Rotate(forward, side);
+    //rotate
+    matTransform.Rotate(forward, side);
 
-	//and translate
-	matTransform.Translate(pos.x, pos.y);
+    //and translate
+    matTransform.Translate(pos.x, pos.y);
 
-	//now transform the object's vertices
-	matTransform.TransformVector2Ds(TranVector2Ds);
+    //now transform the object's vertices
+    matTransform.TransformVector2Ds(TranVector2Ds);
 
-	return TranVector2Ds;
+    return TranVector2Ds;
 }
  */

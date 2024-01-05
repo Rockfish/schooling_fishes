@@ -82,7 +82,7 @@ pub const CONFIG: ConfigLoader = ConfigLoader {
 
     SteeringForceTweaker: STEERING_FORCE_TWEAKER,
     MaxSteeringForce: 2.0 * STEERING_FORCE_TWEAKER,
-    MaxSpeed: 100.0, //150.0,
+    MaxSpeed: 80.0, //150.0,
 
     VehicleMass: 1.0,
     Scale: 20.0, //3.5,
